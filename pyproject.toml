@@ -1,0 +1,12 @@
+[project]
+name = "parser"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "cryptography>=48.0.0",
+    "playwright>=1.59.0",
+    "playwright-stealth>=2.0.3",
+    "pywebio>=1.8.4",
+    "requests>=2.33.1",
+]
