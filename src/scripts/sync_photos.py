@@ -1,0 +1,153 @@
+"""
+ფოტოების სინქრონიზაცია — ბაზიდან წავიკითხავთ image_urls-ს, რომ ჯერ ვერ
+ჩატვირთული ფოტოები ჩავტვირთოთ ლოკალურად + R2-ში.
+
+გაშვება:
+    python -m src.scripts.sync_photos              # ყველა მანქანა
+    python -m src.scripts.sync_photos --source autopapa --limit 100
+
+რა ხდება:
+  1. ბაზიდან ვირჩევთ მანქანებს რომელთა image_keys ჯერ ცარიელია.
+  2. თითო მანქანის image_urls-ს ვტვირთავთ ლოკალურ photos/ ფოლდერში.
+  3. თუ R2 კონფიგურირებულია — იქაც ვტვირთავთ.
+  4. ბაზაში ვაახლებთ image_keys-ს (ლისტი key-ების).
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import time
+
+import httpx
+import psycopg
+
+from src.common.config import DATABASE_URL, r2_is_configured
+from src.common.db import update_image_keys
+from src.common.storage import fetch_and_store
+
+
+def fetch_pending_sync(
+    source: str | None, limit: int | None
+) -> list[tuple[int, str, str, list[str]]]:
+    """ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს."""
+    query = """
+        SELECT id, source, source_id, image_urls
+        FROM cars
+        WHERE image_urls IS NOT NULL
+          AND array_length(image_urls, 1) > 0
+          AND (image_keys IS NULL OR array_length(image_keys, 1) IS NULL)
+    """
+    params: list = []
+
+    if source:
+        query += " AND source = %s"
+        params.append(source)
+
+    query += " ORDER BY id"
+
+    if limit:
+        query += " LIMIT %s"
+        params.append(limit)
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+            return list(cur.fetchall())
+
+
+async def fetch_pending(
+    source: str | None, limit: int | None
+) -> list[tuple[int, str, str, list[str]]]:
+    return await asyncio.to_thread(fetch_pending_sync, source, limit)
+
+
+async def process_car(
+    http_client: httpx.AsyncClient,
+    semaphore: asyncio.Semaphore,
+    car_db_id: int,
+    source: str,
+    source_id: str,
+    image_urls: list[str],
+    upload_to_cloud: bool,
+) -> int:
+    """ერთი მანქანის ყველა ფოტოს ჩატვირთვა.
+
+    აბრუნებს წარმატებით ჩატვირთული ფოტოების რაოდენობას.
+    """
+    async with semaphore:
+        keys: list[str] = []
+        for index, url in enumerate(image_urls, start=1):
+            key = await fetch_and_store(
+                http_client, url, source, source_id, index,
+                upload_to_cloud=upload_to_cloud,
+            )
+            if key:
+                keys.append(key)
+
+        if keys:
+            await update_image_keys(car_db_id, keys)
+        return len(keys)
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser(description="ფოტოების სინქრონიზაცია")
+    parser.add_argument("--source", help="მხოლოდ ერთი წყაროდან (autopapa/myauto)")
+    parser.add_argument("--limit", type=int, help="რამდენი მანქანა მაქსიმუმ")
+    parser.add_argument(
+        "--concurrent", type=int, default=5, help="ერთდროული მანქანების რაოდენობა"
+    )
+    parser.add_argument(
+        "--local-only",
+        action="store_true",
+        help="მხოლოდ ლოკალურად — R2-ში არ ატვირთო",
+    )
+    args = parser.parse_args()
+
+    upload_to_cloud = (not args.local_only) and r2_is_configured()
+    if not args.local_only and not r2_is_configured():
+        print("R2 არ არის კონფიგურირებული — მხოლოდ ლოკალურად ვინახავთ.")
+
+    pending = await fetch_pending(args.source, args.limit)
+    print(f"დასამუშავებელი მანქანები: {len(pending)}")
+
+    if not pending:
+        return
+
+    start = time.time()
+    semaphore = asyncio.Semaphore(args.concurrent)
+
+    async with httpx.AsyncClient(
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://autopapa.ge/",
+        },
+        follow_redirects=True,
+    ) as client:
+        tasks = [
+            process_car(
+                client, semaphore, car_id, source, source_id, urls, upload_to_cloud
+            )
+            for car_id, source, source_id, urls in pending
+        ]
+
+        total_photos = 0
+        for index, coro in enumerate(asyncio.as_completed(tasks), start=1):
+            n_photos = await coro
+            total_photos += n_photos
+
+            if index % 10 == 0 or index == len(tasks):
+                elapsed = time.time() - start
+                rate = index / elapsed if elapsed else 0
+                print(
+                    f"[{index}/{len(tasks)}] photos:{total_photos} "
+                    f"rate:{rate:.1f} car/s"
+                )
+
+    print(f"\nდასრულდა. ფოტოები: {total_photos}, დრო: {time.time() - start:.0f} წმ.")
+
+
+if __name__ == "__main__":
+    from src.common.runtime import run
+
+    run(main())

@@ -6,20 +6,27 @@ import time
 from playwright.async_api import async_playwright
 
 CSV_FILE = 'MyAuto.csv'
-API_BASE = 'https://api2.myauto.ge/ka/products'
-DICT_URL = 'https://api2.myauto.ge/ka/appdata/other'
-WARMUP_URL = 'https://www.myauto.ge/ka/s/iyideba-manqanebi?Page=1'
-LIST_URL = 'https://www.myauto.ge/ka/pr/{car_id}/sale'
+AUTH_FILE = 'auth.json'
+LIST_URL = (
+    'https://myauto.ge/ka/s/iyideba-manqanebi'
+    '?vehicleType=0&bargainType=0&currId=1&mileageType=1&layoutId=1&page={page}'
+)
+CAR_URL = 'https://www.myauto.ge/ka/pr/{car_id}/sale'
 IMAGE_URL = 'https://static.my.ge/myauto/photos/{photo}/large/{car_id}_{n}.jpg'
+API_HOST = 'api2.myauto.ge'
+API_PATH = '/ka/products'
+USER_AGENT = (
+    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) CLDB 2.1.3.08; Chrome/129.0.0.0; Safari/537.36'
+)
 
-CONCURRENT_PAGES = 25
-BATCH_FLUSH = 200
+CONCURRENT = 10
 MAX_IMAGES = 20
-PER_PAGE = 30
-RETRY_PAGE = 3
-TIMEOUT_MS = 30000
+BATCH_FLUSH = 200
+PAGE_TIMEOUT = 25000
+API_WAIT = 20
 
-VIN_RE = re.compile(r'\b[A-HJ-NPR-Z0-9]{17}\b')
+VIN_RE = re.compile(r'\b[A-HJ-NPR-Z0-9]{17}\b') # patara asoebit tu weria uppercase daamate
 
 FIELDS = [
     'ID', 'Source',
@@ -38,127 +45,24 @@ FIELDS = [
     'Video_1',
 ] + [f'Image_{i}' for i in range(1, MAX_IMAGES + 1)]
 
-
 CURRENCY_MAP = {1: 'USD', 2: 'EUR', 3: 'GEL'}
 
-FUEL_FALLBACK = {
+FUEL_FB = {
     1: 'ჰიბრიდი', 2: 'ბენზინი', 3: 'დიზელი', 4: 'ელექტრო',
     5: 'ბენზინი/გაზი', 6: 'ჰიბრიდი', 7: 'დატენვადი ჰიბრიდი',
 }
-GEAR_FALLBACK = {1: 'მექანიკა', 2: 'ავტომატიკა', 3: 'ტიპტრონიკი', 4: 'ვარიატორი'}
-DRIVE_FALLBACK = {1: 'წინა', 2: 'უკანა', 3: '4x4'}
-DOOR_FALLBACK = {1: '2/3', 2: '4/5', 3: '6+'}
-MATERIAL_FALLBACK = {1: 'ტყავი', 2: 'ნაჭერი', 3: 'ველვეტი', 4: 'კომბინირებული', 5: 'სხვა'}
-
-API_HEADERS = {
-    'accept': '*/*',
-    'accept-language': 'ka',
-    'origin': 'https://www.myauto.ge',
-    'referer': 'https://www.myauto.ge/',
-    'sec-ch-ua': '"Not/A)Brand";v="8", "Chromium";v="129", "Google Chrome";v="129"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-site',
-    'content-type': 'application/json',
-}
-
-USER_AGENT = (
-    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 '
-    '(KHTML, like Gecko) CLDB 2.1.3.08; Chrome/129.0.0.0; Safari/537.36'
-)
-
-
-def reset_csv():
-    with open(CSV_FILE, 'w', newline='', encoding='utf-8-sig') as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        writer.writeheader()
-
-
-def append_batch(rows, retries=10):
-    if not rows:
-        return 0
-    for attempt in range(retries):
-        try:
-            with open(CSV_FILE, 'a', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(f, fieldnames=FIELDS)
-                writer.writerows(rows)
-            return len(rows)
-        except PermissionError:
-            print(f'[CSV LOCKED — close Excel] retry {attempt + 1}/{retries}')
-            time.sleep(3)
-    return 0
-
-
-def format_phone(raw: str) -> str:
-    if not raw:
-        return ''
-    cleaned = raw.strip()
-    digits_and_stars = re.sub(r'[^\d*]', '', cleaned)
-    if not digits_and_stars:
-        return ''
-    if digits_and_stars.startswith('995'):
-        return '+' + digits_and_stars
-    if digits_and_stars.startswith(('5', '7', '3')) and len(digits_and_stars) >= 9:
-        return '+995' + digits_and_stars
-    return '+' + digits_and_stars
-
-
-def find_vin(text: str) -> str:
-    if not text:
-        return ''
-    m = VIN_RE.search(text.upper())
-    return m.group(0) if m else ''
-
-
-def to_int_str(x) -> str:
-    if x is None or x == '':
-        return ''
-    try:
-        return str(int(x))
-    except (ValueError, TypeError):
-        return ''
-
-
-def lookup(table: dict, key, fallback: dict) -> str:
-    if key is None or key == 0:
-        return ''
-    if key in table:
-        return table[key]
-    return fallback.get(key, '')
-
-
-async def fetch_json(api_context, url, params=None):
-    for attempt in range(RETRY_PAGE):
-        try:
-            response = await api_context.get(url, params=params, timeout=TIMEOUT_MS)
-            if response.status == 200:
-                return await response.json()
-            if response.status in (429, 503):
-                await asyncio.sleep(2 + attempt * 2)
-                continue
-            return None
-        except Exception:
-            await asyncio.sleep(1 + attempt)
-    return None
-
-
-DICT_URLS = [
-    'https://api2.myauto.ge/ka/appdata/other',
-    'https://api2.myauto.ge/ka/dictionaries/get',
-    'https://api2.myauto.ge/en/appdata/other',
-]
-
-COLOR_FALLBACK = {
+GEAR_FB = {1: 'მექანიკა', 2: 'ავტომატიკა', 3: 'ტიპტრონიკი', 4: 'ვარიატორი'}
+DRIVE_FB = {1: 'წინა', 2: 'უკანა', 3: '4x4'}
+DOOR_FB = {1: '2/3', 2: '4/5', 3: '6+'}
+MATERIAL_FB = {1: 'ტყავი', 2: 'ნაჭერი', 3: 'ველვეტი', 4: 'კომბინირებული', 5: 'სხვა'}
+COLOR_FB = {
     1: 'თეთრი', 2: 'შავი', 3: 'წითელი', 4: 'მწვანე', 5: 'ლურჯი',
     6: 'ვერცხლისფერი', 7: 'ყვითელი', 8: 'ნარინჯისფერი', 9: 'ყავისფერი',
     10: 'ოქროსფერი', 11: 'ბორდოსფერი', 12: 'რუხი', 13: 'შავი მეტალიკი',
     14: 'რუხი მეტალიკი', 15: 'მუქი ლურჯი', 16: 'ვერცხლისფერი მეტალიკი',
     17: 'ბეჟი', 18: 'მწვანე მეტალიკი', 19: 'სხვა',
 }
-
-LOCATION_FALLBACK = {
+LOCATION_FB = {
     1: 'საქართველო', 2: 'თბილისი', 3: 'ბათუმი', 4: 'ქუთაისი', 5: 'რუსთავი',
     6: 'გორი', 7: 'ფოთი', 8: 'ზუგდიდი', 9: 'ხაშური', 10: 'სამტრედია',
     11: 'სენაკი', 12: 'ოზურგეთი', 13: 'მცხეთა', 14: 'ახალციხე', 15: 'მარნეული',
@@ -168,61 +72,83 @@ LOCATION_FALLBACK = {
     31: 'სიღნაღი', 32: 'წალენჯიხა', 33: 'ჩხოროწყუ', 34: 'მესტია', 35: 'ამბროლაური',
     80: 'ბაკურიანი',
 }
-
-CATEGORY_FALLBACK = {
+CATEGORY_FB = {
     1: 'სედანი', 2: 'ჰეტჩბეკი', 3: 'უნივერსალი', 4: 'კუპე', 5: 'ჯიპი',
     6: 'პიკაპი', 7: 'კაბრიოლეტი', 8: 'მინივენი', 9: 'მიკროავტობუსი',
     10: 'ლიმუზინი', 11: 'ფურგონი', 12: 'სატვირთო', 13: 'მოტოციკლი',
     14: 'სკუტერი', 15: 'ATV', 30: 'მინივენი', 66: 'კროსოვერი',
 }
 
-
-async def fetch_dicts(api_context) -> dict:
-    dicts = {
-        'fuel': {}, 'gear': {}, 'drive': {}, 'color': {}, 'saloon_color': {},
-        'location': {}, 'category': {}, 'door': {}, 'material': {},
-    }
-    data = None
-    for url in DICT_URLS:
-        data = await fetch_json(api_context, url)
-        if data and (data.get('data') or data.get('Data')):
-            print(f'Dict source: {url}')
-            break
-        data = None
-    if not data:
-        print('[WARN] dict fetch failed (all endpoints), using fallbacks')
-        return dicts
-    root = data.get('data', data.get('Data', {}))
-    for item in root.get('FuelTypes', []) or []:
-        dicts['fuel'][item.get('fuel_type_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('GearTypes', []) or []:
-        dicts['gear'][item.get('gear_type_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('DriveTypes', []) or []:
-        dicts['drive'][item.get('drive_type_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('Colors', []) or []:
-        cid = item.get('color_id') or item.get('id')
-        title = item.get('title', '')
-        dicts['color'][cid] = title
-        dicts['saloon_color'][cid] = title
-    for item in root.get('Locations', []) or []:
-        dicts['location'][item.get('location_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('Categories', []) or []:
-        dicts['category'][item.get('category_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('DoorTypes', []) or []:
-        dicts['door'][item.get('door_type_id') or item.get('id')] = item.get('title', '')
-    for item in root.get('SaloonMaterials', []) or []:
-        dicts['material'][item.get('saloon_material_id') or item.get('id')] = item.get('title', '')
-    return dicts
+BLOCK_DOMAINS = (
+    'google-analytics.com', 'googletagmanager.com', 'facebook.net',
+    'hotjar.com', 'clarity.ms', 'addthis.com', 'doubleclick.net',
+    'recaptcha.net', 'adocean.pl', 'livecaller.io',
+)
 
 
-def build_description(item: dict) -> str:
+def reset_csv():
+    with open(CSV_FILE, 'w', newline='', encoding='utf-8-sig') as f:
+        csv.DictWriter(f, fieldnames=FIELDS).writeheader()
+
+
+def append_batch(rows, retries=10):
+    if not rows:
+        return 0
+    for attempt in range(retries):
+        try:
+            with open(CSV_FILE, 'a', newline='', encoding='utf-8-sig') as f:
+                csv.DictWriter(f, fieldnames=FIELDS).writerows(rows)
+            return len(rows)
+        except PermissionError:
+            print(f'[CSV LOCKED — close Excel] retry {attempt + 1}/{retries}')
+            time.sleep(3)
+    return 0
+
+
+def safe_str(x):
+    return '' if x is None else str(x).strip()
+
+
+def find_vin(text):
+    if not text:
+        return ''
+    m = VIN_RE.search(text.upper())
+    return m.group(0) if m else ''
+
+
+def format_phone(raw):
+    if not raw:
+        return ''
+    digits = re.sub(r'[^\d]', '', raw)
+    if not digits:
+        return ''
+    if digits.startswith('995') and len(digits) >= 11:
+        return '+' + digits
+    if len(digits) == 9 and digits[0] in '5739':
+        return '+995' + digits
+    if digits.startswith('7') and len(digits) == 11:
+        return '+' + digits
+    return '+' + digits
+
+
+def to_int_str(x):
+    try:
+        return str(int(x)) if x is not None else ''
+    except (ValueError, TypeError):
+        return ''
+
+
+def lookup(table, key, fallback):
+    if not key:
+        return ''
+    return table.get(key) or fallback.get(key, '')
+
+
+def build_description(item):
     parts = []
-    raw = safe_str(item.get('car_desc'))
-    raw = re.sub(r'\n{3,}', '\n\n', raw)
+    raw = re.sub(r'\n{3,}', '\n\n', safe_str(item.get('car_desc')))
     if raw:
         parts.append(raw)
-
-    flags = []
     flag_map = {
         'abs': 'ABS', 'esd': 'ESP', 'el_windows': 'ელ. შუშები',
         'conditioner': 'კონდინციონერი', 'climat_control': 'კლიმატკონტროლი',
@@ -234,19 +160,15 @@ def build_description(item: dict) -> str:
         'back_camera': 'უკანა კამერა', 'start_stop': 'Start/Stop',
         'has_turbo': 'ტურბო', 'tech_inspection': 'ტექდათვალიერება',
     }
-    for k, label in flag_map.items():
-        if item.get(k):
-            flags.append(label)
+    flags = [label for k, label in flag_map.items() if item.get(k)]
     if flags:
         parts.append('ფუნქციები: ' + ', '.join(flags))
-
     if item.get('airbags'):
         parts.append(f'აირბაგები: {item["airbags"]}')
-
     return '\n\n'.join(parts)
 
 
-def build_images(item: dict) -> list:
+def build_images(item):
     car_id = item.get('car_id')
     photo = item.get('photo', '')
     pic_n = item.get('pic_number') or 0
@@ -254,7 +176,7 @@ def build_images(item: dict) -> list:
         return []
     photo_ver = item.get('photo_ver', '')
     urls = []
-    for i in range(1, min(pic_n, MAX_IMAGES) + 1):
+    for i in range(1, min(int(pic_n), MAX_IMAGES) + 1):
         url = IMAGE_URL.format(photo=photo, car_id=car_id, n=i)
         if photo_ver:
             url += f'?v={photo_ver}'
@@ -262,13 +184,7 @@ def build_images(item: dict) -> list:
     return urls
 
 
-def safe_str(x) -> str:
-    if x is None:
-        return ''
-    return str(x).strip()
-
-
-def process_item(item: dict, dicts: dict):
+def process_item(item, dicts):
     if not isinstance(item, dict):
         return None
     car_id = item.get('car_id')
@@ -282,20 +198,18 @@ def process_item(item: dict, dicts: dict):
     if car_model_extra and car_model_extra.lower() not in model.lower():
         model = (model_name + ' ' + car_model_extra).strip()
 
-    currency_id = item.get('currency_id')
-    currency = CURRENCY_MAP.get(currency_id, '')
+    currency = CURRENCY_MAP.get(item.get('currency_id'), '')
     price = to_int_str(item.get('price'))
 
-    engine_cc = item.get('engine_volume')
     engine_l = ''
+    engine_cc = item.get('engine_volume')
     if engine_cc:
         try:
             engine_l = f'{int(engine_cc) / 1000:.1f}'
         except (ValueError, TypeError):
-            engine_l = ''
+            pass
 
     mileage = to_int_str(item.get('car_run_km') or item.get('car_run'))
-
     steering = 'მარჯვენა' if item.get('right_wheel') else 'მარცხენა'
 
     vin_raw = safe_str(item.get('vin'))
@@ -307,174 +221,217 @@ def process_item(item: dict, dicts: dict):
             vin = vin_raw
 
     customs = 'განბაჟებული' if item.get('customs_passed') else 'განუბაჟებელი'
-
-    seller_name = safe_str(item.get('client_name'))
-    phone = format_phone(safe_str(item.get('client_phone')))
-
-    posted = safe_str(item.get('order_date'))
-    views = to_int_str(item.get('views'))
-
-    url = LIST_URL.format(car_id=car_id)
-    video = safe_str(item.get('video_url'))
-
     images = build_images(item)
 
+    catalyst = item.get('has_catalyst')
     row = {
         'ID':                 str(car_id),
         'Source':             'myauto',
         'Manufacturer':       man,
         'Model':              model,
         'Year':               to_int_str(item.get('prod_year')),
-        'Body_Type':          lookup(dicts['category'], item.get('category_id'), CATEGORY_FALLBACK),
+        'Body_Type':          lookup(dicts['category'], item.get('category_id'), CATEGORY_FB),
         'Price':              price,
         'Currency':           currency,
         'Price_With_Customs': '',
         'Engine_Volume_L':    engine_l,
-        'Engine_Type':        lookup(dicts['fuel'], item.get('fuel_type_id'), FUEL_FALLBACK),
+        'Engine_Type':        lookup(dicts['fuel'], item.get('fuel_type_id'), FUEL_FB),
         'Cylinders':          to_int_str(item.get('cylinders')),
         'Has_Turbo':          'კი' if item.get('has_turbo') else '',
         'Power_HP':           to_int_str(item.get('hp')),
-        'Gearbox':            lookup(dicts['gear'], item.get('gear_type_id'), GEAR_FALLBACK),
-        'Drive_Wheels':       lookup(dicts['drive'], item.get('drive_type_id'), DRIVE_FALLBACK),
+        'Gearbox':            lookup(dicts['gear'], item.get('gear_type_id'), GEAR_FB),
+        'Drive_Wheels':       lookup(dicts['drive'], item.get('drive_type_id'), DRIVE_FB),
         'Mileage_KM':         mileage,
-        'Color':              lookup(dicts['color'], item.get('color_id'), COLOR_FALLBACK),
-        'Doors':              lookup(dicts['door'], item.get('door_type_id'), DOOR_FALLBACK),
+        'Color':              lookup(dicts['color'], item.get('color_id'), COLOR_FB),
+        'Doors':              lookup(dicts['door'], item.get('door_type_id'), DOOR_FB),
         'Seats':              '',
-        'Interior_Color':     lookup(dicts['saloon_color'], item.get('saloon_color_id'), COLOR_FALLBACK),
-        'Interior_Material':  lookup(dicts['material'], item.get('saloon_material_id'), MATERIAL_FALLBACK),
+        'Interior_Color':     lookup(dicts['saloon_color'], item.get('saloon_color_id'), COLOR_FB),
+        'Interior_Material':  lookup(dicts['material'], item.get('saloon_material_id'), MATERIAL_FB),
         'Steering':           steering,
         'Condition':          '',
         'Customs_Cleared':    customs,
-        'Has_Catalyst':       'კი' if item.get('has_catalyst') == 1 else ('არა' if item.get('has_catalyst') == 2 else ''),
+        'Has_Catalyst':       'კი' if catalyst == 1 else ('არა' if catalyst == 2 else ''),
         'Tech_Inspection':    'კი' if item.get('tech_inspection') else '',
         'VIN':                vin,
         'License_Plate':      safe_str(item.get('license_number')),
-        'Location':           lookup(dicts['location'], item.get('location_id'), LOCATION_FALLBACK),
-        'Seller_Name':        seller_name,
-        'Phone':              phone,
-        'Posted_Date':        posted,
-        'Views':              views,
-        'URL':                url,
+        'Location':           lookup(dicts['location'], item.get('location_id'), LOCATION_FB),
+        'Seller_Name':        safe_str(item.get('client_name')),
+        'Phone':              format_phone(safe_str(item.get('client_phone'))),
+        'Posted_Date':        safe_str(item.get('order_date')),
+        'Views':              to_int_str(item.get('views')),
+        'URL':                CAR_URL.format(car_id=car_id),
         'Description':        build_description(item),
-        'Video_1':            video,
+        'Video_1':            safe_str(item.get('video_url')),
     }
     for i in range(MAX_IMAGES):
-        row[f'Image_{i+1}'] = images[i] if i < len(images) else ''
+        row[f'Image_{i + 1}'] = images[i] if i < len(images) else ''
     return row
 
 
-async def fetch_listing_page(api_context, page_num):
-    params = {
-        'TypeID': '0',
-        'ForRent': 'false',
-        'CurrencyID': '3',
-        'MileageType': '1',
-        'Page': str(page_num),
-    }
-    return await fetch_json(api_context, API_BASE, params=params)
+async def block_handler(route):
+    req = route.request
+    if req.resource_type in {'image', 'media', 'font'}:
+        await route.abort()
+        return
+    if any(d in req.url for d in BLOCK_DOMAINS):
+        await route.abort()
+        return
+    await route.continue_()
+
+
+async def fetch_page(page, page_num):
+    event = asyncio.Event()
+    result = []
+
+    async def on_response(response):
+        if API_HOST in response.url and API_PATH in response.url and not event.is_set():
+            try:
+                data = await response.json()
+                result.append(data)
+                event.set()
+            except Exception:
+                pass
+
+    page.on('response', on_response)
+    try:
+        await page.goto(LIST_URL.format(page=page_num), wait_until='commit', timeout=PAGE_TIMEOUT)
+        await asyncio.wait_for(event.wait(), timeout=API_WAIT)
+        return result[0] if result else None
+    except Exception:
+        return None
+    finally:
+        page.remove_listener('response', on_response)
+
+
+async def worker(context, queue, csv_lock, dicts, stats):
+    page = await context.new_page()
+    local_buf = []
+
+    while True:
+        try:
+            page_num = queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
+
+        for attempt in range(3):
+            try:
+                data = await fetch_page(page, page_num)
+                if data and data.get('statusCode') == 1:
+                    for item in (data.get('data') or {}).get('items') or []:
+                        try:
+                            row = process_item(item, dicts)
+                            if row:
+                                local_buf.append(row)
+                        except Exception:
+                            pass
+                    stats['done'] += 1
+                    if stats['done'] % 50 == 0 or stats['done'] == stats['total']:
+                        elapsed = time.time() - stats['start']
+                        rate = stats['done'] / elapsed if elapsed else 0
+                        eta = (stats['total'] - stats['done']) / rate if rate else 0
+                        print(
+                            f'[{stats["done"]}/{stats["total"]}] '
+                            f'saved:{stats["saved"]} '
+                            f'pages/s:{rate:.1f} '
+                            f'ETA:{eta:.0f}s'
+                        )
+                    break
+                elif attempt < 2:
+                    await asyncio.sleep(2)
+            except Exception as e:
+                if attempt == 2:
+                    stats['failed'] += 1
+                    print(f'[FAIL page {page_num}] {e}')
+                else:
+                    await asyncio.sleep(1 + attempt)
+
+        if len(local_buf) >= BATCH_FLUSH:
+            async with csv_lock:
+                stats['saved'] += append_batch(local_buf)
+                local_buf.clear()
+
+    if local_buf:
+        async with csv_lock:
+            stats['saved'] += append_batch(local_buf)
+
+    await page.close()
 
 
 async def main():
     print('Resetting MyAuto.csv...')
     reset_csv()
-
     start = time.time()
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
-                '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
+                '--disable-blink-features=AutomationControlled',
             ],
         )
+        auth = AUTH_FILE if os.path.exists(AUTH_FILE) else None
+        if auth:
+            print(f'Loading saved session from {AUTH_FILE}')
+        else:
+            print('No auth.json found — running without login (run login.py first if needed)')
         context = await browser.new_context(
             user_agent=USER_AGENT,
             locale='ka-GE',
-            extra_http_headers=API_HEADERS,
+            storage_state=auth,
         )
+        await context.route('**/*', block_handler)
 
-        print('Warming up (visiting myauto.ge for clearance)...')
-        warmup_page = await context.new_page()
-        try:
-            await warmup_page.goto(WARMUP_URL, wait_until='domcontentloaded', timeout=60000)
-            await warmup_page.wait_for_timeout(3000)
-        except Exception as e:
-            print(f'[WARN] warmup partial: {e}')
-        await warmup_page.close()
+        print('Fetching page 1 to discover totals...')
+        probe = await context.new_page()
+        first_data = await fetch_page(probe, 1)
+        await probe.close()
 
-        api_context = context.request
-
-        print('Fetching dictionaries...')
-        dicts = await fetch_dicts(api_context)
-        sizes = {k: len(v) for k, v in dicts.items()}
-        print(f'Dictionaries loaded: {sizes}')
-
-        print('Fetching page 1 to discover total...')
-        first = await fetch_listing_page(api_context, 1)
-        if not first or first.get('statusCode') != 1:
-            print('Failed to fetch first page. Exiting.')
+        if not first_data or first_data.get('statusCode') != 1:
+            print('Could not get page 1 data — check connection or USER_AGENT. Exiting.')
             await browser.close()
             return
 
-        meta = first.get('data', {}).get('meta', {})
+        meta = (first_data.get('data') or {}).get('meta') or {}
         total = meta.get('total', 0)
         last_page = meta.get('last_page', 0)
-        per_page = meta.get('per_page', PER_PAGE)
-        print(f'Total cars: {total} | Pages: {last_page} | Per page: {per_page}')
+        print(f'Total cars: {total} | Pages: {last_page}')
 
-        buffer = []
-        saved = 0
+        dicts = {
+            'fuel': {}, 'gear': {}, 'drive': {}, 'color': {},
+            'saloon_color': {}, 'location': {}, 'category': {}, 'door': {}, 'material': {},
+        }
 
-        for item in first.get('data', {}).get('items', []) or []:
+        first_rows = []
+        for item in (first_data.get('data') or {}).get('items') or []:
             try:
                 row = process_item(item, dicts)
                 if row:
-                    buffer.append(row)
-            except Exception as e:
-                print(f'[SKIP item] {e}')
+                    first_rows.append(row)
+            except Exception:
+                pass
 
-        sem = asyncio.Semaphore(CONCURRENT_PAGES)
+        csv_lock = asyncio.Lock()
+        stats = {'done': 1, 'total': last_page, 'saved': 0, 'failed': 0, 'start': start}
 
-        async def get_page(p_num):
-            async with sem:
-                return p_num, await fetch_listing_page(api_context, p_num)
+        async with csv_lock:
+            stats['saved'] += append_batch(first_rows)
 
-        tasks = [get_page(p) for p in range(2, last_page + 1)]
+        queue = asyncio.Queue()
+        for page_num in range(2, last_page + 1):
+            queue.put_nowait(page_num)
 
-        done_pages = 1
-        failed_pages = 0
-        for coro in asyncio.as_completed(tasks):
-            page_num, data = await coro
-            done_pages += 1
-            if not data:
-                failed_pages += 1
-                continue
-            items = data.get('data', {}).get('items', []) or []
-            for item in items:
-                try:
-                    row = process_item(item, dicts)
-                    if row:
-                        buffer.append(row)
-                except Exception as e:
-                    print(f'[SKIP item page {page_num}] {e}')
-
-            if len(buffer) >= BATCH_FLUSH:
-                saved += append_batch(buffer)
-                buffer.clear()
-
-            if done_pages % 20 == 0 or done_pages == last_page:
-                elapsed = time.time() - start
-                rate = done_pages / elapsed if elapsed else 0
-                eta = (last_page - done_pages) / rate if rate else 0
-                print(f'[{done_pages}/{last_page}] saved:{saved + len(buffer)} '
-                      f'failed:{failed_pages} pages/s:{rate:.1f} ETA:{eta:.0f}s')
-
-        saved += append_batch(buffer)
+        n_workers = min(CONCURRENT, max(1, last_page - 1))
+        tasks = [
+            asyncio.create_task(worker(context, queue, csv_lock, dicts, stats))
+            for _ in range(n_workers)
+        ]
+        await asyncio.gather(*tasks)
         await browser.close()
 
-    print(f'Done. Saved {saved} cars in {time.time() - start:.0f}s. Failed pages: {failed_pages}')
+    elapsed = time.time() - start
+    print(f'Done. Saved {stats["saved"]} cars in {elapsed:.0f}s. Failed pages: {stats["failed"]}')
 
 
 if __name__ == '__main__':

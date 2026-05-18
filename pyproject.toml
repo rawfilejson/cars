@@ -1,12 +1,25 @@
 [project]
-name = "parser"
-version = "0.1.0"
-requires-python = ">=3.14"
+name = "cars"
+version = "0.2.0"
+description = "ქართული მანქანების მონაცემთა ბაზა — autopapa.ge / myauto.ge პარსერი"
+requires-python = ">=3.12"
 dependencies = [
-    "beautifulsoup4>=4.14.3",
-    "cryptography>=48.0.0",
     "playwright>=1.59.0",
     "playwright-stealth>=2.0.3",
-    "pywebio>=1.8.4",
-    "requests>=2.33.1",
+    "psycopg[binary]>=3.2.0",
+    "python-dotenv>=1.0.1",
+    "boto3>=1.35.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.9.0",
+    # API (Phase 3)
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "slowapi>=0.1.9",
+    "pyjwt[crypto]>=2.10.0",
+    "python-multipart>=0.0.20",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7.0",
 ]

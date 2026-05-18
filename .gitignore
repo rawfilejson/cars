@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# გარემოს ცვლადები — არასოდეს არ უნდა შევიდეს repo-ში
+.env
+.env.local
+.env.*.local
+
+# Playwright session-ი (შეიცავს cookies-ს / authtokens-ს)
+auth.json
+chrome_profile/
+
+# გენერირებული ფაილები
+photos/
+*.csv
+*.csv.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+logs/
