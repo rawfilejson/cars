@@ -19,13 +19,11 @@
 name: Scheduled Parser
 
 on:
-  schedule:
-    # UTC დრო. საქართველო = UTC+4. ანუ:
-    #   03:00 UTC = 07:00 თბ.
-    #   15:00 UTC = 19:00 თბ.
-    - cron: '0 3 * * *'
-    - cron: '0 15 * * *'
-  workflow_dispatch:                       # ხელით გაშვების შესაძლებლობა
+  # cron გათიშულია სანამ GitHub Secrets-ი არ დავაყენებთ.
+  # secrets-ის დამატების შემდეგ უნდა გავახსნათ:
+  #   - cron: '0 3 * * *'      # 07:00 თბილისი
+  #   - cron: '0 15 * * *'     # 19:00 თბილისი
+  workflow_dispatch:           # მხოლოდ ხელით
 
 # parallel-ად ერთდროულად ერთი job-ი მუშაობდეს
 concurrency:
