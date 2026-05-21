@@ -1,16 +1,7 @@
-"""
-ანტი-დეტექციის ლოგიკა — საიტს ვერ უნდა მიგვიხვდეს, რომ ბოტი ვართ.
+"""Playwright setup with light anti-bot measures.
 
-რამდენიმე layer-ი:
-  1. ბრაუზერის flag-ების მოშორება (--disable-blink-features=AutomationControlled)
-  2. JS-დან navigator.webdriver-ის დამალვა
-  3. რეალური User-Agent, locale, timezone, viewport
-  4. playwright-stealth ბიბლიოთეკის გამოყენება (canvas/webgl/audio fingerprint masking)
-  5. რესურსების ბლოკი (image/css/font) — სიჩქარისთვის და fingerprint-ის შემცირებისთვის
-  6. პროქსიის მხარდაჭერა (.env-ში PROXY_URL)
-
-შენიშვნა: 100%-იანი დაცვა შეუძლებელია. დიდი საიტებზე (Cloudflare bot fight mode,
-DataDome, PerimeterX) ეს მაინც დაიჭერს. autopapa.ge-ზე საკმარისად მუშაობს.
+These won't get us past Cloudflare bot-fight or DataDome. For autopapa.ge
+and myauto.ge's current setup, this is enough.
 """
 
 from __future__ import annotations
@@ -21,10 +12,6 @@ from playwright.async_api import BrowserContext, Playwright, Route
 
 from .config import PROXY_URL
 
-
-# ---------------------------------------------------------------------------
-# User-Agent პული — განახლებული 2024-2025-ში
-# ---------------------------------------------------------------------------
 
 USER_AGENTS = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -37,16 +24,9 @@ USER_AGENTS = (
     "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
 )
 
-
-# ---------------------------------------------------------------------------
-# რესურსების ფილტრი
-# ---------------------------------------------------------------------------
-
-# რესურსების ტიპები რომელთა გადმოწერა არ გვინდა (სიჩქარისთვის).
-# ფოტოს URL-ებს მაინც ვიღებთ DOM-დან — სურათების ფაილებს არ ვწერდით.
+# Resource types we don't need — saves bandwidth and reduces fingerprint surface.
 BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet"}
 
-# ანალიტიკის და ტრაკინგის დომენები — fingerprint signal-ის შემცირებისთვის
 BLOCKED_DOMAINS = (
     "google-analytics.com", "googletagmanager.com",
     "facebook.net", "facebook.com",
@@ -58,11 +38,6 @@ BLOCKED_DOMAINS = (
 
 
 async def block_heavy_resources(route: Route) -> None:
-    """Playwright route handler — ბლოკავს არასაჭირო რესურსებს.
-
-    გამოყენება:
-        await page.route("**/*", block_heavy_resources)
-    """
     request = route.request
 
     if request.resource_type in BLOCKED_RESOURCE_TYPES:
@@ -74,22 +49,14 @@ async def block_heavy_resources(route: Route) -> None:
     await route.continue_()
 
 
-# ---------------------------------------------------------------------------
-# Stealth კონტექსტი
-# ---------------------------------------------------------------------------
-
-# JS კოდი რომელიც გაეშვება ყოველი ფურცლის ჩატვირთვამდე.
-# webdriver flag-ის დამალვა + plugins/languages რეალისტიკისთვის.
+# Runs before every page load to hide automation tells.
 _STEALTH_INIT_SCRIPT = """
-// webdriver flag-ის სრულად დამალვა
 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
 
-// რეალისტური languages
 Object.defineProperty(navigator, 'languages', {
     get: () => ['ka-GE', 'ka', 'en-US', 'en']
 });
 
-// რეალისტური plugins (ცარიელი მასივი ბოტს უწევს)
 Object.defineProperty(navigator, 'plugins', {
     get: () => [
         { name: 'PDF Viewer' },
@@ -100,10 +67,8 @@ Object.defineProperty(navigator, 'plugins', {
     ]
 });
 
-// Chrome runtime object - სრულიად რეალური ბრაუზერის ინდიკატორი
 window.chrome = window.chrome || { runtime: {}, loadTimes: () => {}, csi: () => {} };
 
-// permissions API - notification permission ნამდვილ ბრაუზერში "default" ან "granted"
 const originalQuery = window.navigator.permissions?.query;
 if (originalQuery) {
     window.navigator.permissions.query = (parameters) =>
@@ -115,20 +80,7 @@ if (originalQuery) {
 
 
 async def create_stealth_context(playwright: Playwright) -> tuple:
-    """ქმნის ბრაუზერს და მის კონტექსტს stealth პარამეტრებით.
-
-    აბრუნებს (browser, context) — ორივეს ცალკე უნდა დაიხურო ბოლოს.
-
-    გამოყენება:
-        async with async_playwright() as p:
-            browser, context = await create_stealth_context(p)
-            try:
-                page = await context.new_page()
-                ...
-            finally:
-                await context.close()
-                await browser.close()
-    """
+    """Returns (browser, context). Caller must close both."""
     browser = await playwright.chromium.launch(
         headless=True,
         args=[
@@ -136,7 +88,6 @@ async def create_stealth_context(playwright: Playwright) -> tuple:
             "--no-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
-            "--disable-web-security",            # CORS-ის გვერდის გავლა (კონტროლირებად ვიყენებთ)
             "--disable-features=IsolateOrigins,site-per-process",
         ],
     )
@@ -146,20 +97,16 @@ async def create_stealth_context(playwright: Playwright) -> tuple:
         "viewport": {"width": 1366, "height": 768},
         "locale": "ka-GE",
         "timezone_id": "Asia/Tbilisi",
-        # extra headers რეალისტური brauserisas
         "extra_http_headers": {
             "Accept-Language": "ka-GE,ka;q=0.9,en-US;q=0.8,en;q=0.7",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         },
     }
 
-    # პროქსი (თუ კონფიგურირებულია)
     if PROXY_URL:
         context_args["proxy"] = {"server": PROXY_URL}
 
     context = await browser.new_context(**context_args)
-
-    # ყოველი ფურცლის ჩატვირთვამდე ვუშვებთ stealth-ის სკრიპტს
     await context.add_init_script(_STEALTH_INIT_SCRIPT)
 
     return browser, context

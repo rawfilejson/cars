@@ -1,14 +1,7 @@
-"""
-ტექსტური მონაცემების გასუფთავება და ნორმალიზაცია.
+"""Cleanup helpers for messy data from car listing sites.
 
-საიტიდან მონაცემები ჩვეულებრივ მოდის "ბინძურად":
-  * ფასი — "$11 500" (ნიშანი + არასაჭირო space-ები)
-  * გარბენი — "312 000 კმ. / 195 000 მილი" (ორი ერთეული, ერთად)
-  * ნომერი — "tel:+995595..." ან "595..."
-  * წელი — "2021 წ." (text-ი ციფრების გვერდით)
-
-ეს მოდული ამ ბინძურ ფორმებს გადააქცევს ნორმალურ ფორმაში: int-ად, float-ად,
-+-ით დაწყებულ ნომრად და ა.შ. PostgreSQL-ში ნორმალურად ჩასაწერად.
+Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი",
+"2.5 ლ". We turn that into numbers we can sort and search by.
 """
 
 from __future__ import annotations
@@ -16,19 +9,13 @@ from __future__ import annotations
 import re
 
 
-# ფასის ნიშნები
-_PRICE_USD_RE = re.compile(r"\$|usd", re.IGNORECASE)
-_PRICE_EUR_RE = re.compile(r"€|eur", re.IGNORECASE)
-_PRICE_GEL_RE = re.compile(r"₾|gel|ლარ", re.IGNORECASE)
+_PRICE_USD = re.compile(r"\$|usd", re.IGNORECASE)
+_PRICE_EUR = re.compile(r"€|eur", re.IGNORECASE)
+_PRICE_GEL = re.compile(r"₾|gel|ლარ", re.IGNORECASE)
 
 
 def clean_int(text: str | None) -> int | None:
-    """ციფრების ამოღება და int-ად დაბრუნება.
-
-    "$11 500" → 11500
-    "2021 წ." → 2021
-    ცარიელი/არ-ციფრიანი → None
-    """
+    """Strip everything non-digit, return int. Empty in → None."""
     if not text:
         return None
     digits = re.sub(r"\D", "", str(text))
@@ -36,11 +23,6 @@ def clean_int(text: str | None) -> int | None:
 
 
 def clean_decimal(text: str | None) -> float | None:
-    """წილადი რიცხვის ამოღება.
-
-    "2.5 ლ" → 2.5
-    "1,6" → 1.6 (ქართულ ლოკაიზაციაში მძიმე)
-    """
     if not text:
         return None
     match = re.search(r"\d+(?:[.,]\d+)?", str(text))
@@ -52,38 +34,8 @@ def clean_decimal(text: str | None) -> float | None:
         return None
 
 
-def clean_engine_volume(text: str | None) -> float | None:
-    """ძრავის მოცულობა ლიტრებში — smart cleanup.
-
-    რეალური დიაპაზონი: 0.5 — 12.0 ლიტრი (პასაჟირული) ან 20+ (კომერციული).
-    წყაროში ცუდი მონაცემები გვხვდება:
-      * "1499" — CC-ში (cubic centimeters) იყო ჩაწერილი → 1.499 L
-      * "460" — typo (460L ფიზიკურად შეუძლებელია, ალბათ 4.6)
-      * "999" — placeholder ცარიელი მნიშვნელობისთვის
-
-    წესები:
-      * 0.1 — 50.0 → უცვლელად
-      * 50 — 30000 (CC) → /1000-ზე (1500 cc → 1.5 L)
-      * > 30000 → None (აშკარა garbage)
-    """
-    value = clean_decimal(text)
-    if value is None:
-        return None
-
-    if 0.1 <= value <= 50:
-        return value
-    if 50 < value <= 30000:                          # CC-ში ჩაწერილი
-        return round(value / 1000, 2)
-    return None                                      # garbage
-
-
 def split_price(raw: str | None) -> tuple[int | None, str]:
-    """ფასი + ვალუტა ცალკე-ცალკე.
-
-    "$9 500"   → (9500,  "USD")
-    "€12 000"  → (12000, "EUR")
-    "1500 ₾"   → (1500,  "GEL")
-    """
+    """`$9 500` → (9500, "USD"). Detects $, €, ₾, or GEL/USD/EUR words."""
     if not raw:
         return None, ""
 
@@ -91,51 +43,42 @@ def split_price(raw: str | None) -> tuple[int | None, str]:
     if amount is None:
         return None, ""
 
-    if _PRICE_USD_RE.search(raw):
+    if _PRICE_USD.search(raw):
         return amount, "USD"
-    if _PRICE_EUR_RE.search(raw):
+    if _PRICE_EUR.search(raw):
         return amount, "EUR"
-    if _PRICE_GEL_RE.search(raw):
+    if _PRICE_GEL.search(raw):
         return amount, "GEL"
 
     return amount, ""
 
 
 def format_phone(raw: str | None) -> str:
-    """ნომრის ნორმალიზაცია — ყოველთვის +-ით და სრული საერთაშორისო კოდით.
+    """Normalize to E.164-ish format. Always returns "+" prefix or empty.
 
-    წესები:
-      * "tel:+995595..."  → "+995595..."
-      * 9 ნიშნა საქართველო (5/7/3-ით იწყება) → +995 ემატება
-      * 11 ნიშნა რუსეთი (7-ით) → მარტო + ემატება
-      * სხვა შემთხვევაში — უბრალოდ + ემატება წინ
+    Handles:
+      "tel:+995595..."  → "+995595..."
+      9-digit GE mobile → prepend +995
+      Russian 11-digit  → just prepend +
+      Anything else     → strip non-digits and prepend +
     """
     if not raw:
         return ""
 
-    # მხოლოდ ციფრების დატოვება
     digits = re.sub(r"\D", "", str(raw).replace("tel:", ""))
     if not digits:
         return ""
 
-    # უკვე ქართული ნომერი (995-ით იწყება)
     if digits.startswith("995") and len(digits) >= 11:
         return "+" + digits
-
-    # ქართული მობილური 9 ციფრიანი
     if len(digits) == 9 and digits[0] in ("5", "7", "3"):
         return "+995" + digits
-
-    # რუსეთის 11 ციფრიანი (7-ით იწყება)
     if len(digits) == 11 and digits[0] == "7":
         return "+" + digits
-
-    # უცნობი ფორმატი — უბრალოდ + წინ
     return "+" + digits
 
 
 def normalize_steering(text: str | None) -> str:
-    """საჭე — მარცხენა/მარჯვენა."""
     if not text:
         return ""
     if "მარცხენა" in text:
@@ -146,7 +89,7 @@ def normalize_steering(text: str | None) -> str:
 
 
 def parse_customs(text: str | None) -> bool | None:
-    """განბაჟებული → True, განუბაჟებელი → False, უცნობი → None."""
+    """Returns True if cleared, False if not, None if unknown."""
     if not text:
         return None
     text = text.strip()
@@ -158,7 +101,6 @@ def parse_customs(text: str | None) -> bool | None:
 
 
 def parse_bool_yes_no(text: str | None) -> bool | None:
-    """„კი"/„დიახ" → True, „არა" → False, სხვა → None."""
     if not text:
         return None
     text = text.strip().lower()
@@ -170,11 +112,28 @@ def parse_bool_yes_no(text: str | None) -> bool | None:
 
 
 def clean_text(text: str | None) -> str:
-    """ზედმეტი whitespace-ის გასუფთავება, multi-newline → double-newline."""
+    """Collapse extra whitespace, leave structure intact."""
     if not text:
         return ""
-    # მრავალი ცარიელი ხაზი → ორი
     cleaned = re.sub(r"\n{3,}", "\n\n", text)
-    # მრავალი space → ერთი (მაგრამ newline-ი არ შევცვალოთ)
     cleaned = re.sub(r"[ \t]+", " ", cleaned)
     return cleaned.strip()
+
+
+def clean_engine_volume(text: str | None) -> float | None:
+    """Engine volume in liters. Handles common bad-data cases:
+
+      "2.5 ლ"    → 2.5
+      "1499"     → 1.499 (was entered in CC instead of L)
+      "460"      → None (impossible, treat as garbage)
+    """
+    value = clean_decimal(text)
+    if value is None:
+        return None
+
+    if 0.1 <= value <= 50:
+        return value
+    if 50 < value <= 30000:
+        # Looks like cubic centimeters — convert to liters.
+        return round(value / 1000, 2)
+    return None

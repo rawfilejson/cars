@@ -1,27 +1,12 @@
-"""
-AutoPapa.ge-ს პარსერი.
+"""Scraper for autopapa.ge listings.
 
-რა ხდება საერთო ჯამში:
-  1. ვხსნით ბრაუზერს stealth-ის პარამეტრებით (იხ. common.anti_detection).
-  2. ვათვალიერებთ საძიებო გვერდებს და ვაგროვებთ მანქანების ლინკებს.
-  3. რესუმე — ჯერ ვამოწმებთ ბაზაში რა გვაქვს უკვე, რომ ხელახლა არ შევცადოთ.
-  4. ერთდროულად რამდენიმე ფურცელში ვიხსნით თითო მანქანას და ვამოწერთ
-     პარამეტრებს, აღწერას, ფოტოებს, ვინ კოდს და ა.შ.
-  5. ბაზაში ვწერთ batch-ად (CONCURRENT_PAGES მანქანა ერთად).
+We use Playwright (not plain HTTP) because the VIN reveal needs a click,
+and the price-with-customs block is rendered after page load.
 
-ვინ-ის ლოგიკა:
-  * ჯერ ვცდილობთ ღილაკზე დაჭერით (autopapa-ს colorbox popup ანახებს ვინ-ს).
-  * მერე ვცდილობთ აღწერაში ვიპოვოთ (regex-ით, case-insensitive).
-  * მერე AJAX endpoint-ით /get_vin/ge/{id}.
-  * Asterisk-ით (ან წერტილებით) მასკირებული ვინ-ი — გამოვტოვებთ.
-  * ყოველთვის დიდი ასოებით ვწერთ ბაზაში.
-
-პარამეტრების ლოგიკა (მნიშვნელოვანი):
-  autopapa-ს გვერდი მონაცემებს ორ ადგილას ინახავს:
-    1. `.nameInfoObject` ბლოკი მარჯვნივ — წელი, ძარის ტიპი, გარბენი და ა.შ.
-    2. `.comment-all` ფიჩერების ჩამონათვალი — გადაცემათა კოლოფი, საჭე,
-       სალონის ფერი, მასალები, ცილინდრების რაოდენობა და ა.შ.
-  ჩვენ ვამოღებთ ორივეს და ვაერთიანებთ — თუ რომელიმე ცარიელია, მეორედან ვცდილობთ.
+Flow:
+  1. Walk through the search results paginating with the `next` button.
+  2. For each listing URL, open the detail page and pull out everything.
+  3. Batch-insert into Postgres (ON CONFLICT updates existing rows).
 """
 
 from __future__ import annotations
@@ -48,60 +33,37 @@ from src.common.normalize import (
 from src.common.vin import best_vin
 
 
-# ---------------------------------------------------------------------------
-# კონფიგი
-# ---------------------------------------------------------------------------
-
 SOURCE = "autopapa"
 HOST = "https://autopapa.ge"
 START_URL = "https://autopapa.ge/ge/usd/search?order=date&page=1"
 
 
-# ---------------------------------------------------------------------------
-# დამხმარე ფუნქციები
-# ---------------------------------------------------------------------------
-
-# ID-ის ამოღება URL-დან: https://autopapa.ge/ge/usd/toyota/camry/905889 → 905889
 _ID_FROM_URL_RE = re.compile(r"/(\d+)(?:[?#]|$)")
 
 
 def extract_id(url: str) -> str:
-    """URL-დან მანქანის id-ის გამოღება."""
     match = _ID_FROM_URL_RE.search(url)
     return match.group(1) if match else ""
 
 
 def first_int(text: str | None) -> int | None:
-    """პირველი მთლიანი რიცხვის ამოღება ტექსტიდან.
-
-    "4/5"      → 4
-    "4-5"      → 4
-    "26 000"   → 26000
-    "200 ც.ძ." → 200
-    """
+    """First integer in `text`. "4/5" → 4, "26 000 კმ" → 26000."""
     if not text:
         return None
-    match = re.search(r"\d+", str(text).replace(" ", " "))
+    s = str(text)
+    match = re.search(r"\d", s)
     if not match:
         return None
-    # თუ ციფრებს შორის space-ი არის (26 000) — გავაერთიანოთ
-    extended = re.match(r"[\d\s]+", str(text)[match.start():])
-    if extended:
-        digits = re.sub(r"\D", "", extended.group(0))
-        return int(digits) if digits else None
-    return int(match.group(0))
+    # Walk forward collecting digits and inner spaces ("26 000" stays together).
+    tail = re.match(r"[\d\s]+", s[match.start():])
+    digits = re.sub(r"\D", "", tail.group(0)) if tail else match.group(0)
+    return int(digits) if digits else None
 
 
 def parse_features(text: str | None) -> dict[str, str]:
-    """`.comment-all`-ის ტექსტიდან key:value პარამეტრების ამოღება.
+    """`.comment-all` reads "feature1, key: value, feature2, ..." — pull the key:value pairs.
 
-    შესასვლელი ფორმატი:
-        "ლუქი, გადაცემათა კოლოფი: ავტომატიკა, საჭე: მარცხენა, ABS, ..."
-
-    გამოსავალი:
-        {"გადაცემათა კოლოფი": "ავტომატიკა", "საჭე": "მარცხენა", ...}
-
-    ფიჩერები რომელშიც ":" არ არის (ABS, ESP, ლუქი) უგულებელყოფილია.
+    Plain features (ABS, ESP) are skipped here; they show up in the description text instead.
     """
     if not text:
         return {}
@@ -118,7 +80,7 @@ def parse_features(text: str | None) -> dict[str, str]:
 
 
 def merge_params(info: dict[str, str], features: dict[str, str]) -> dict[str, str]:
-    """ორი წყაროდან მონაცემები ერთად. InfoObject-ი უპირატესობით."""
+    """InfoObject values override feature-text values when both present."""
     merged = dict(features)
     for key, value in info.items():
         if value:
@@ -127,23 +89,11 @@ def merge_params(info: dict[str, str], features: dict[str, str]) -> dict[str, st
 
 
 def has_keyword(text: str | None, *keywords: str) -> bool:
-    """რომელიმე keyword-ი ტექსტში არსებობს თუ არა."""
-    if not text:
-        return False
-    return any(kw in text for kw in keywords)
-
-
-# ---------------------------------------------------------------------------
-# ლინკების კრება — საძიებო გვერდები
-# ---------------------------------------------------------------------------
+    return bool(text) and any(kw in text for kw in keywords)
 
 
 async def collect_listing_links(page: Page) -> list[str]:
-    """ყველა საძიებო გვერდიდან მანქანის ლინკების კრება.
-
-    autopapa-ს pagination მუშაობს რეგულარული next-ღილაკით (`a[rel=next]`).
-    ვაგრძელებთ ვიდრე ღილაკი ფურცელზე არსებობს.
-    """
+    """Paginate through search results, return all detail-page URLs."""
     links: list[str] = []
 
     while True:
@@ -159,17 +109,10 @@ async def collect_listing_links(page: Page) -> list[str]:
         await next_btn.click()
         await page.wait_for_selector("div.boxCatalog2", timeout=PAGE_TIMEOUT_MS)
 
-    # დუბლიკატების მოშორება + query string-ის გასუფთავება
-    seen = dict.fromkeys(link.split("?")[0] for link in links)
-    return list(seen)
+    return list(dict.fromkeys(link.split("?")[0] for link in links))
 
 
-# ---------------------------------------------------------------------------
-# პარამეტრების ცხრილის წაკითხვა (InfoObject)
-# ---------------------------------------------------------------------------
-
-# JS კოდი — ერთი ფურცლიდან ვიღებთ ყველა .nameInfoObject-ს ერთად.
-# უფრო სწრაფია ვიდრე ცალკ-ცალკე query_selector_all + await ციკლი.
+# Grab all .nameInfoObject rows in one round-trip.
 _EXTRACT_PARAMS_JS = """
 () => {
     const result = {};
@@ -186,33 +129,21 @@ _EXTRACT_PARAMS_JS = """
 
 
 async def extract_info_params(page: Page) -> dict[str, str]:
-    """InfoObject ცხრილის სრული dict — ქართული label-ი → value."""
     return await page.evaluate(_EXTRACT_PARAMS_JS)
 
 
-# ---------------------------------------------------------------------------
-# ვინ-ის ამოღება (სამი წყაროდან)
-# ---------------------------------------------------------------------------
-
-
 async def fetch_vin_by_click(page: Page) -> str:
-    """1-ლი ცდა: ვინი ღილაკით.
-
-    autopapa-ს ვინ ჩვეულებრივ დამალულია "VIN-ის გაგება" ღილაკის უკან —
-    დაჭერით იხსნება popup და მასში წერია სრული ვინ.
-    """
+    """Click the "show VIN" button and read the popup contents."""
     try:
         btn = await page.query_selector("button.hidden-vin")
         if not btn:
             return ""
-
         await btn.click()
         await page.wait_for_function(
             "() => { const el = document.querySelector('#cboxLoadedContent');"
             " return el && /[A-HJ-NPR-Z0-9]{17}/i.test(el.innerText); }",
             timeout=4000,
         )
-
         content = await page.evaluate(
             "() => document.querySelector('#cboxLoadedContent')?.innerText || ''"
         )
@@ -223,10 +154,7 @@ async def fetch_vin_by_click(page: Page) -> str:
 
 
 async def fetch_vin_via_ajax(context: BrowserContext, car_id: str) -> str:
-    """3-ე ცდა: პირდაპირ AJAX endpoint-ი.
-
-    /get_vin/ge/{id} აბრუნებს მცირე HTML-ს, რომელშიც ნამდვილი ვინ წერია.
-    """
+    """Fallback: hit the JSON endpoint autopapa uses internally."""
     page = await context.new_page()
     try:
         await page.route("**/*", block_heavy_resources)
@@ -242,47 +170,25 @@ async def fetch_vin_via_ajax(context: BrowserContext, car_id: str) -> str:
         await page.close()
 
 
-# ---------------------------------------------------------------------------
-# კონტაქტი / location / გამყიდველი
-# ---------------------------------------------------------------------------
-
-
 async def extract_contact(page: Page) -> tuple[str, str]:
-    """ლოკაცია (ქალაქი) + გამყიდველის სახელი.
-
-    ფორმატი HTML-ში:
-        რუსთავი, საქართველო   |   განუბაჟებელი
-        Sopio Bekauri, დარეკეთ +995595...
-
-    თუ გამყიდველის სახელი არ წერია — სტრიქონი იწყება ", დარეკეთ"-ით,
-    seller სტრიქონი ცარიელად რჩება.
-    """
+    """Returns (location, seller_name). Seller is often empty (just a phone)."""
     raw = await page.evaluate(
         "() => document.querySelector('.contactObjectNew > div')?.innerText?.trim() || ''"
     )
     lines = [line.strip() for line in raw.split("\n") if line.strip()]
 
-    # ლოკაცია — პირველი ხაზიდან | სიმბოლომდე
     location = re.split(r"\s*\|\s*", lines[0])[0].strip() if lines else ""
 
-    # გამყიდველი — მეორე ხაზიდან ", დარეკეთ"-მდე
     seller = ""
     if len(lines) > 1:
-        # მოვაშოროთ ", დარეკეთ ..." და თუ რა დარჩა, ის გამყიდველის სახელია
         before_call = re.split(r",?\s*დარეკეთ", lines[1])[0].strip()
-        # თუ ბოლოს მძიმე დარჩა (ცარიელი სახელის შემთხვევაში) — გავწმინდოთ
         seller = before_call.strip(",").strip()
 
     return location, seller
 
 
-# ---------------------------------------------------------------------------
-# Posted date + Views ამოღება
-# ---------------------------------------------------------------------------
-
-
 async def extract_meta(page: Page) -> tuple[int | None, str]:
-    """`info-ads-page` ბლოკიდან ნახვების რაოდენობა + განთავსების თარიღი."""
+    """Returns (views, posted_date)."""
     views: int | None = None
     posted = ""
     for item in await page.query_selector_all(".info-ads-page .item"):
@@ -294,13 +200,7 @@ async def extract_meta(page: Page) -> tuple[int | None, str]:
     return views, posted
 
 
-# ---------------------------------------------------------------------------
-# ვიდეო და ფოტოები
-# ---------------------------------------------------------------------------
-
-
 async def extract_video(page: Page) -> str:
-    """ვიდეოს URL — YouTube embed ან autopapa-ს გალერეიდან."""
     for el in await page.query_selector_all(".thumbs .video a"):
         href = await el.get_attribute("href")
         if href and not href.startswith(("#", "javascript:")):
@@ -315,7 +215,6 @@ async def extract_video(page: Page) -> str:
 
 
 async def extract_photos(page: Page) -> list[str]:
-    """ფოტოების URL-ების სია (გალერიის რიგით)."""
     photos: list[str] = []
     for el in await page.query_selector_all("a.hidden-galler-images"):
         href = await el.get_attribute("href")
@@ -324,28 +223,12 @@ async def extract_photos(page: Page) -> list[str]:
     return photos
 
 
-# ---------------------------------------------------------------------------
-# ფასები
-# ---------------------------------------------------------------------------
-
-
-async def extract_prices(
-    page: Page,
-) -> tuple[int | None, str, int | None]:
-    """ფასი + ვალუტა + ფასი განბაჟებით (USD).
-
-    autopapa აჩვენებს:
-      - მთავარი ფასი (გამყიდველის): "$31 000"
-      - საქართველოში განბაჟებით: "$32 618" (current)
-      - საწყისი ფასი (ძველი ტარიფი 2 აპრილამდე): "$32 514"
-    ვინახავთ მთავარს და განბაჟებულს.
-    """
-    # მთავარი ფასი
+async def extract_prices(page: Page) -> tuple[int | None, str, int | None]:
+    """Returns (price, currency, price_with_georgian_customs)."""
     price_el = await page.query_selector(".priceObject")
     price_raw = (await price_el.inner_text()).strip() if price_el else ""
     price_amount, price_currency = split_price(price_raw)
 
-    # ფასი განბაჟებით — ახალი ტარიფი (current)
     pwc_el = await page.query_selector(
         ".country-prices__card--current .country-prices__value"
     )
@@ -356,26 +239,16 @@ async def extract_prices(
     return price_amount, price_currency, price_with_customs
 
 
-# ---------------------------------------------------------------------------
-# ერთი მანქანის scrape — სრულად
-# ---------------------------------------------------------------------------
-
-
 async def scrape_one(
     context: BrowserContext, url: str, semaphore: asyncio.Semaphore
 ) -> Car | None:
-    """ერთი მანქანის სრული scrape. None-ის შემთხვევაში fail-ი იყო."""
-
     async with semaphore:
         for attempt in range(RETRY_PER_CAR):
             page = await context.new_page()
             try:
                 await page.route("**/*", block_heavy_resources)
-                await page.goto(
-                    url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS
-                )
+                await page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
                 await page.wait_for_selector(".titleObject", timeout=8_000)
-
                 return await _build_car_from_page(context, page, url)
             except Exception as exc:
                 if attempt == RETRY_PER_CAR - 1:
@@ -388,16 +261,11 @@ async def scrape_one(
         return None
 
 
-async def _build_car_from_page(
-    context: BrowserContext, page: Page, url: str
-) -> Car:
-    """ერთი მანქანის გვერდიდან ყველაფრის ამოღება. dict → Car."""
-
+async def _build_car_from_page(context: BrowserContext, page: Page, url: str) -> Car:
     car_id = extract_id(url)
 
-    # --- სათაური (Mercedes-Benz GLS 450 / Toyota Camry / ...) ---
-    # firstChild-ით ვიღებთ მხოლოდ პირველ text node-ს, რომ ფასის კონვერტორი
-    # ან მაგვარი ცალკეული ბავშვი ელემენტი არ ჩაერიოს.
+    # Title has children (price, currency converter) — only the first text node
+    # is the actual "Make Model" string.
     title = await page.evaluate(
         "() => document.querySelector('.titleObject')?.firstChild?.textContent?.trim() || ''"
     )
@@ -405,55 +273,38 @@ async def _build_car_from_page(
     manufacturer = title_parts[0] if title_parts else ""
     model = " ".join(title_parts[1:]) if len(title_parts) > 1 else ""
 
-    # --- პარამეტრები ორი წყაროდან: InfoObject + features ---
+    # Combine the structured params (right column) with the feature-list (left
+    # column) — they overlap on some fields, prefer the structured one.
     info_params = await extract_info_params(page)
-
-    # features text — .comment-all
     ca_el = await page.query_selector(".comment-all")
     features_text = (await ca_el.inner_text()).strip() if ca_el else ""
-    feature_params = parse_features(features_text)
+    params = merge_params(info_params, parse_features(features_text))
 
-    # მონაცემები ერთად — InfoObject-ი ჯობნის features-ს თუ ორივეგან წერია
-    params = merge_params(info_params, feature_params)
-
-    # --- ფასები ---
     price_amount, price_currency, price_with_customs = await extract_prices(page)
 
-    # --- ტელეფონი ---
     phone_el = await page.query_selector('a[href^="tel:"]')
-    phone = (
-        format_phone(await phone_el.get_attribute("href")) if phone_el else ""
-    )
+    phone = format_phone(await phone_el.get_attribute("href")) if phone_el else ""
 
-    # --- განბაჟება ---
     customs_el = await page.query_selector(".contactObjectNew nobr")
     customs_text = (await customs_el.inner_text()).strip() if customs_el else ""
     customs_cleared = parse_customs(customs_text)
 
-    # --- ლოკაცია + გამყიდველი ---
     location, seller_name = await extract_contact(page)
 
-    # --- აღწერა (features + გამყიდველის ტექსტი) ---
     cs_el = await page.query_selector(".comment-seller")
     seller_text = (await cs_el.inner_text()).strip() if cs_el else ""
     description = clean_text(features_text + "\n\n" + seller_text)
 
-    # --- ნახვები + Posted ---
     views, posted = await extract_meta(page)
-
-    # --- ვიდეო + ფოტოები ---
     video_url = await extract_video(page)
     image_urls = await extract_photos(page)
 
-    # --- ვინ-ი (სამი წყაროდან — საუკეთესო) ---
+    # Try the VIN three ways: button click, description text, then AJAX.
     vin_from_click = await fetch_vin_by_click(page)
-    vin_from_ajax = (
-        await fetch_vin_via_ajax(context, car_id) if car_id else ""
-    )
+    vin_from_ajax = await fetch_vin_via_ajax(context, car_id) if car_id else ""
     vin = best_vin(vin_from_click, description, vin_from_ajax)
 
-    # --- მთლიანი dict → Car მოდელი ---
-    # გარბენი: "26 000 კმ. / 16 250 მილი" → 26000 (km only)
+    # "26 000 კმ. / 16 250 მილი" — keep the km part.
     mileage = first_int(params.get("გარბენი", "").split("/")[0])
 
     return Car(
@@ -476,8 +327,8 @@ async def _build_car_from_page(
         drive_wheels=params.get("წამყვანი თვლები", ""),
         mileage_km=mileage,
         color=params.get("ძარის ფერი", ""),
-        doors=first_int(params.get("კარები")),         # "4/5" → 4
-        seats=first_int(params.get("ადგილების რაოდენობა")),  # "4-5" → 4
+        doors=first_int(params.get("კარები")),
+        seats=first_int(params.get("ადგილების რაოდენობა")),
         interior_color=params.get("სალონის ფერი", ""),
         interior_material=params.get("მასალები", ""),
         steering=normalize_steering(features_text),
@@ -495,19 +346,11 @@ async def _build_car_from_page(
     )
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-
 async def run() -> None:
-    """მთავარი ციკლი — ლინკები → scrape → ბაზაში."""
-
-    print(f"AutoPapa parser — {SOURCE}")
-    print(f"  CONCURRENT_PAGES = {CONCURRENT_PAGES}")
+    print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES})")
 
     already_saved = await get_existing_ids(SOURCE)
-    print(f"  ბაზაში უკვე გვაქვს: {len(already_saved)} მანქანა")
+    print(f"  In DB: {len(already_saved)} listings")
 
     start_time = time.time()
 
@@ -521,31 +364,23 @@ async def run() -> None:
             all_links = await collect_listing_links(page)
             await page.close()
 
-            new_links = [
-                link for link in all_links if extract_id(link) not in already_saved
-            ]
-            total = len(all_links)
-            new = len(new_links)
-            print(f"  სულ: {total} | ახალი: {new} | გამოტოვებული: {total - new}")
+            new_links = [link for link in all_links if extract_id(link) not in already_saved]
+            total, new = len(all_links), len(new_links)
+            print(f"  Found: {total} | New: {new} | Skipping: {total - new}")
 
             if not new_links:
-                print("ახალი მანქანა არ არის. დასრულდა.")
+                print("Nothing new to scrape.")
                 return
 
             await _scrape_all(context, new_links, start_time)
-
         finally:
             await context.close()
             await browser.close()
 
-    print(f"\nდასრულდა. სრული დრო: {time.time() - start_time:.0f} წმ.")
+    print(f"\nDone in {time.time() - start_time:.0f}s")
 
 
-async def _scrape_all(
-    context: BrowserContext, urls: list[str], start_time: float
-) -> None:
-    """ბევრი მანქანის scrape ერთდროულად + batch ჩაწერა ბაზაში."""
-
+async def _scrape_all(context: BrowserContext, urls: list[str], start_time: float) -> None:
     semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
     tasks = [scrape_one(context, url, semaphore) for url in urls]
 

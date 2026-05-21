@@ -1,20 +1,10 @@
-"""
-VIN კოდის ამოღება და ვალიდაცია.
+"""VIN extraction and validation.
 
-VIN (Vehicle Identification Number) — მანქანის უნიკალური 17 ნიშნა იდენტიფიკატორი.
+A VIN is exactly 17 characters: digits and uppercase letters,
+excluding I, O and Q (so they don't get confused with 1 and 0).
 
-წესები:
-  * 17 სიმბოლო ზუსტად
-  * მხოლოდ ციფრები (0-9) და დიდი ლათინური ასოები (A-Z),
-    გარდა I, O, Q-სა (რომ ციფრებთან არ აერიონ: 1, 0).
-  * აქ შემოვამოწმებთ მხოლოდ ფორმატს — ნამდვილ checksum-ს არ ვამოწმებთ
-    (autopapa-ს ვინ-ები ხშირად არასწორი checksum-ით არის შენახული).
-
-განსაკუთრებული ნიუანსები:
-  * ხშირად ვინ წერია მცირე ასოებით (აღწერაში) — სტრიქონს upper()-ად ვაქცევთ.
-  * სიტეებზე ხანდახან ვინი მასკირებულია: "KMHL34*****" — ასეთს ვტოვებთ ცარიელად.
-  * აღწერაში ვინ შეიძლება ეწეროს რამდენიმე ფორმით: VIN: 1HGBH..., ვინი 1HGBH...,
-    ან თვითონ კოდი ცალკე ხაზად. რეგექსი ყველა შემთხვევას იჭერს.
+We don't verify the checksum — real-world listings often have invalid
+checksums and we'd rather show them than drop them.
 """
 
 from __future__ import annotations
@@ -22,41 +12,29 @@ from __future__ import annotations
 import re
 
 
-# VIN-ის რეგექსი: 17 სიმბოლო, ციფრები + დიდი ლათინური ასოები გარდა I, O, Q-სა.
-# \b მოსაზღვრულია სიტყვის საზღვრებით, რომ აღწერაში ცალკე სიტყვად იჭიროს.
+# 17 chars, A-Z minus I/O/Q, plus 0-9. Word boundaries so we don't catch
+# longer junk like "VIN12345678901234567ABC".
 VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")
 
 
 def is_valid_vin(text: str) -> bool:
-    """შემოწმება — ვინ-ის ფორმატის შესაბამისობა.
-
-    არ ვამოწმებთ checksum-ს ვინაიდან რეალურ მონაცემებში ცუდი checksum-იც გვხვდება.
-    """
-    if not text or len(text) != 17:
-        return False
-    if "*" in text:                                  # მასკირებული ვინი — გამოვტოვებთ
+    if not text or len(text) != 17 or "*" in text:
         return False
     return bool(VIN_PATTERN.fullmatch(text.upper()))
 
 
 def find_vin(text: str) -> str:
-    """ეძებს ვინ-ის კოდს მოცემულ ტექსტში.
+    """Return the first VIN found in `text`, uppercased.
 
-    აბრუნებს ვინ-ს დიდი ასოებით თუ ვიპოვით, ცარიელ სტრიქონს — თუ არა.
-
-    ლოგიკა:
-      1. ვაქცევთ ტექსტს დიდი ასოებად — რომ "kmhd1234..." ფორმაც დაიჭიროს.
-      2. ვშლით ვარსკვლავიან ნაწილებს — "KMHL34*****" აღარ უნდა იყოს match.
-      3. რეგექსით ვეძებთ პირველ 17 ნიშნა შესაბამისობას.
+    Masked VINs like "KMHL34*****" are skipped — we wipe out any token
+    containing `*` before searching.
     """
     if not text:
         return ""
 
-    upper_text = text.upper()
-
-    # ვშლით ვარსკვლავიან ფრაგმენტებს, რომ მასკირებული VIN-ი არ ჩათვალოს.
-    # მაგ: "VIN: KMHL34***** TEST" → "VIN:   TEST"
-    cleaned = re.sub(r"[A-Z0-9]*\*+[A-Z0-9*]*", " ", upper_text)
+    upper = text.upper()
+    # Wipe masked tokens so the regex doesn't catch their non-masked parts.
+    cleaned = re.sub(r"[A-Z0-9]*\*+[A-Z0-9*]*", " ", upper)
 
     match = VIN_PATTERN.search(cleaned)
     if not match:
@@ -67,11 +45,7 @@ def find_vin(text: str) -> str:
 
 
 def best_vin(*sources: str) -> str:
-    """არჩევს საუკეთესო ვინ-ს მრავალი წყაროდან.
-
-    გამოყენების შემთხვევა: ერთი ვინი მოვიდა ღილაკზე დაჭერით, მეორე — აღწერიდან.
-    უპირატესობა ენიჭება პირველს რომელიც ვალიდურია.
-    """
+    """Try each source in order, return first valid VIN found."""
     for src in sources:
         vin = find_vin(src) if src else ""
         if vin:

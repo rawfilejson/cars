@@ -1,14 +1,9 @@
-"""
-ფოტოების შენახვა — ლოკალურად + Cloudflare R2-ში.
+"""Photo storage — download from source CDN to local + Cloudflare R2.
 
-R2 არის S3-compatible storage — ვიყენებთ boto3-ით, მხოლოდ endpoint-ი
-სხვაა. ფასი: ~$0.015/GB/თვე, zero egress fees (ე.ი. წაკითხვა უფასოა).
+R2 is S3-compatible, so boto3 works. We just point it at R2's endpoint.
 
-სტრუქტურა:
-  ლოკალური: photos/{source}/{car_id}/{index}.jpg
-  R2:       {source}/{car_id}/{index}.jpg
-
-key-ი ერთიდაიგივეა ორივეგან — ერთხელ რომ ვიცოდე, ორივეგან ვიპოვი.
+Key layout (same in local and R2):
+    {source}/{source_id}/{index}.jpg
 """
 
 from __future__ import annotations
@@ -38,45 +33,26 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# ფაილის გაფართოების ამოცნობა URL-დან
-# ---------------------------------------------------------------------------
-
 _EXT_RE = re.compile(r"\.(jpg|jpeg|png|webp|gif)(?:\?|$)", re.IGNORECASE)
 
 
 def _guess_extension(url: str) -> str:
-    """URL-დან ფაილის გაფართოების ამოღება. default: .jpg."""
     match = _EXT_RE.search(url)
     return f".{match.group(1).lower()}" if match else ".jpg"
 
 
 def make_image_key(source: str, source_id: str, index: int, url: str) -> str:
-    """R2-სა და ლოკალურ საქაღალდეში გამოყენებული გასაღები (key)."""
-    ext = _guess_extension(url)
-    return f"{source}/{source_id}/{index}{ext}"
-
-
-# ---------------------------------------------------------------------------
-# ლოკალური საქაღალდე
-# ---------------------------------------------------------------------------
+    return f"{source}/{source_id}/{index}{_guess_extension(url)}"
 
 
 def local_path(key: str) -> Path:
-    """key-ის შესაბამისი ლოკალური ფაილის გზა."""
     return PHOTOS_DIR / key
 
 
-async def download_to_local(
-    client: httpx.AsyncClient, url: str, key: str
-) -> bool:
-    """ფოტოს გადმოწერა და ლოკალურ ფაილში შენახვა.
-
-    აბრუნებს True თუ წარმატებით ჩაიწერა, False — თუ ცდუნდა.
-    """
+async def download_to_local(client: httpx.AsyncClient, url: str, key: str) -> bool:
     path = local_path(key)
     if path.exists() and path.stat().st_size > 0:
-        return True                                  # უკვე გადმოწერილია
+        return True
 
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -90,44 +66,44 @@ async def download_to_local(
         return False
 
 
-# ---------------------------------------------------------------------------
-# R2 — S3-compatible upload
-# ---------------------------------------------------------------------------
+_r2_client: "S3Client | None" = None
 
 
 def _create_r2_client() -> "S3Client | None":
-    """R2 client-ის შექმნა. None თუ კონფიგი ცარიელია."""
     if not r2_is_configured():
         return None
-
-    import boto3                                     # lazy import — სიჩქარისთვის
-
+    import boto3
     return boto3.client(
         "s3",
         endpoint_url=r2_endpoint(),
         aws_access_key_id=R2_ACCESS_KEY_ID,
         aws_secret_access_key=R2_SECRET_ACCESS_KEY,
-        region_name="auto",                          # R2-ისთვის "auto" სტანდარტია
+        region_name="auto",
     )
 
 
-_r2_client: "S3Client | None" = None
-
-
 def get_r2_client() -> "S3Client | None":
-    """Cached R2 client — ერთხელ ვქმნით, ხელახლა ვიყენებთ."""
     global _r2_client
     if _r2_client is None:
         _r2_client = _create_r2_client()
     return _r2_client
 
 
+def _content_type(key: str) -> str:
+    ext = key.rsplit(".", 1)[-1].lower()
+    return {
+        "jpg":  "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png":  "image/png",
+        "webp": "image/webp",
+        "gif":  "image/gif",
+    }.get(ext, "image/jpeg")
+
+
 def upload_to_r2_sync(local_file: Path, key: str) -> bool:
-    """ლოკალური ფაილის ატვირთვა R2-ში. boto3 sync-ია — async-ში to_thread-ით ვუშვებთ."""
     client = get_r2_client()
     if client is None:
         return False
-
     try:
         client.upload_file(
             str(local_file),
@@ -142,32 +118,13 @@ def upload_to_r2_sync(local_file: Path, key: str) -> bool:
 
 
 async def upload_to_r2(local_file: Path, key: str) -> bool:
-    """async wrapper sync upload-ისთვის."""
     return await asyncio.to_thread(upload_to_r2_sync, local_file, key)
 
 
-def _content_type(key: str) -> str:
-    """MIME ტიპის გამოცნობა გაფართოებიდან."""
-    ext = key.rsplit(".", 1)[-1].lower()
-    return {
-        "jpg":  "image/jpeg",
-        "jpeg": "image/jpeg",
-        "png":  "image/png",
-        "webp": "image/webp",
-        "gif":  "image/gif",
-    }.get(ext, "image/jpeg")
-
-
 def public_url_for(key: str) -> str:
-    """R2 public URL მოცემული key-სთვის."""
     if not R2_PUBLIC_URL:
         return ""
     return f"{R2_PUBLIC_URL.rstrip('/')}/{key}"
-
-
-# ---------------------------------------------------------------------------
-# ერთად — გადმოწერა + R2 ატვირთვა
-# ---------------------------------------------------------------------------
 
 
 async def fetch_and_store(
@@ -178,14 +135,10 @@ async def fetch_and_store(
     index: int,
     upload_to_cloud: bool = True,
 ) -> str | None:
-    """ერთი ფოტოს გადმოწერა → ლოკალური ფაილი → (არასავალდებულო) R2 ატვირთვა.
-
-    აბრუნებს key-ს თუ წარმატებით შენახა, None — თუ ცდუნდა.
-    """
+    """Returns the storage key on success, None on failure."""
     key = make_image_key(source, source_id, index, url)
 
-    ok = await download_to_local(client, url, key)
-    if not ok:
+    if not await download_to_local(client, url, key):
         return None
 
     if upload_to_cloud and r2_is_configured():
