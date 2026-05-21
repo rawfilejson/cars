@@ -1,0 +1,27 @@
+# Render.com deploy config
+# When you connect this repo to Render, it reads this file automatically.
+
+services:
+  - type: web
+    name: cars-api
+    runtime: docker
+    plan: free                  # change to "starter" ($7/mo) to remove cold starts
+    region: frankfurt           # closest to Georgia
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: PRODUCTION
+        value: "1"
+      # secrets — set these manually in Render dashboard:
+      - key: DATABASE_URL
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
