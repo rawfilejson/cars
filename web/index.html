@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>car — VIN კოდით, ნომრით ან სხვა ინფორმაციით ძიება</title>
-    <meta name="description" content="უფასო ძიება autopapa.ge და myauto.ge-ის განცხადებებში — VIN, ნომერი, ან სხვა ინფორმაცია">
+    <title>car — VIN / phone / free-text search across autopapa.ge and myauto.ge</title>
+    <meta name="description" content="Aggregated listings from autopapa.ge and myauto.ge. Free, no signup.">
 
-    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- კონფიგი — config.js-ში API_BASE-ი ხელით ჩაასვა -->
     <script src="config.js"></script>
+    <script src="i18n.js"></script>
 
     <style>
         body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -19,140 +17,124 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-<!-- =========================================================== -->
-<!-- ჰედერი -->
-<!-- =========================================================== -->
 <header class="gradient-bg text-white py-5 shadow-lg">
-    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between">
+    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-4">
         <h1 class="text-xl md:text-2xl font-bold tracking-wide">
             🚗 car
         </h1>
-        <div class="text-right text-sm">
+        <div class="flex items-center gap-4 text-sm">
             <div id="stats-line" class="text-slate-300 hidden">
-                ბაზაში: <span id="total-cars" class="font-bold text-white">—</span> განცხადება
+                <span id="nav-listings-count">—</span>
+            </div>
+            <div class="flex gap-1 border-l border-slate-600 pl-4">
+                <button class="lang-btn px-2 py-1 hover:text-white" data-lang="ka">KA</button>
+                <span class="text-slate-600">/</span>
+                <button class="lang-btn px-2 py-1 hover:text-white" data-lang="en">EN</button>
             </div>
         </div>
     </div>
 </header>
 
-<!-- =========================================================== -->
-<!-- ძირითადი კონტენტი -->
-<!-- =========================================================== -->
 <main class="max-w-5xl mx-auto px-4 py-10">
 
-    <!-- Hero -->
     <div class="text-center mb-6">
-        <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-3">
-            იპოვე განცხადება VIN კოდით
-        </h2>
-        <p class="text-slate-600 max-w-2xl mx-auto">
-            ერთ ვებგვერდზე გავყავი
-            <strong>autopapa.ge</strong> და <strong>myauto.ge</strong>-ის ყველა განცხადება.
-            ეძებე VIN კოდით, ნომრით ან სხვა ინფორმაციით —
-            <strong class="text-green-700">სრულიად უფასოდ, რეგისტრაციის გარეშე</strong>.
-        </p>
+        <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-3" data-i18n="hero_title"></h2>
+        <p class="text-slate-600 max-w-2xl mx-auto" data-i18n-html="hero_desc_html"></p>
     </div>
 
-    <!-- თარიღის შენიშვნა -->
-    <div class="max-w-2xl mx-auto mb-10 px-4 py-3 bg-amber-50 border-l-4 border-amber-400 rounded text-sm text-amber-900">
-        📅 <strong>გაითვალისწინე:</strong> მონაცემთა ბაზის შენახვა დავიწყეთ
-        <strong>2026 წლის 10 მაისიდან</strong>. ამ თარიღამდე გამოქვეყნებული
-        განცხადებები ბაზაში არ გვექნება.
-    </div>
+    <div class="max-w-2xl mx-auto mb-10 px-4 py-3 bg-amber-50 border-l-4 border-amber-400 rounded text-sm text-amber-900"
+         data-i18n-html="notice_date_html"></div>
 
-    <!-- ძიების ფორმა -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex gap-2 mb-4 flex-wrap">
-            <button class="search-tab px-4 py-2 bg-blue-500 text-white rounded" data-tab="vin">VIN კოდი</button>
-            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="phone">ნომერი</button>
-            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="free_text">სხვა ინფორმაცია</button>
+            <button class="search-tab px-4 py-2 bg-blue-500 text-white rounded" data-tab="vin" data-i18n="tab_vin"></button>
+            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="phone" data-i18n="tab_phone"></button>
+            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="free_text" data-i18n="tab_text"></button>
         </div>
 
         <div class="flex gap-2">
             <input id="search-input" type="text"
-                   placeholder="შეიყვანე VIN კოდი (17 სიმბოლო)"
+                   data-i18n-placeholder="ph_vin"
                    class="flex-1 px-4 py-3 border border-slate-300 rounded focus:border-blue-500 focus:outline-none">
             <button id="btn-search"
-                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded font-semibold disabled:bg-slate-400">
-                ძიება
-            </button>
+                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded font-semibold disabled:bg-slate-400"
+                    data-i18n="btn_search"></button>
         </div>
 
         <p id="search-meta" class="mt-3 text-sm text-slate-500"></p>
     </div>
 
-    <!-- შედეგების ბლოკი -->
     <div id="results"></div>
 
-    <!-- ცარიელი state -->
-    <div id="empty-state" class="text-center py-16 text-slate-400">
-        ჯერ ძიება არ გაგიკეთებიათ
-    </div>
+    <div id="empty-state" class="text-center py-16 text-slate-400" data-i18n="empty_state"></div>
 
 </main>
 
-<!-- =========================================================== -->
-<!-- ფუტერი -->
-<!-- =========================================================== -->
 <footer class="mt-20 py-8 text-center text-sm text-slate-500 border-t">
-    <p>მონაცემები autopapa.ge და myauto.ge-დან · ღია წყაროებიდან</p>
+    <p data-i18n="footer_about"></p>
     <p class="mt-2">
-        კონტაქტი:
+        <span data-i18n="footer_contact"></span>
         <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener"
            class="font-semibold underline hover:text-blue-700">@deme.brn</a>
     </p>
 </footer>
 
-<!-- =========================================================== -->
-<!-- JavaScript -->
-<!-- =========================================================== -->
 <script>
-    // ----------------------------------------------------------
-    // კონფიგი (config.js-დან)
-    // ----------------------------------------------------------
     const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
 
-    // ----------------------------------------------------------
-    // Stats — total cars count load on page open
-    // ----------------------------------------------------------
+    // ----- Stats -----
     async function loadStats() {
         try {
             const resp = await fetch(`${API_BASE}/stats`);
             if (!resp.ok) return;
             const data = await resp.json();
-            document.getElementById('total-cars').textContent = data.total_cars.toLocaleString();
+            const n = data.total_cars.toLocaleString();
+            document.getElementById('nav-listings-count').textContent = t('nav_listings_count', { n });
             document.getElementById('stats-line').classList.remove('hidden');
         } catch (e) {
-            // silent — ვებსაიტი მაინც მუშაობს stats-ის გარეშე
+            // silent
         }
     }
 
-    loadStats();
+    // ----- Language switch -----
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+        btn.onclick = () => setLang(btn.dataset.lang);
+    });
 
-    // ----------------------------------------------------------
-    // ძიების ფორმის ლოგიკა
-    // ----------------------------------------------------------
+    document.addEventListener('langchange', () => {
+        loadStats();                                  // refresh count translation
+        updateTabPlaceholder();
+        // re-render last results if any
+        if (lastResponse) renderResults(lastResponse);
+    });
+
+    // ----- Tabs -----
     let currentTab = 'vin';
+    let lastResponse = null;
 
-    document.querySelectorAll('.search-tab').forEach(btn => {
+    function updateTabPlaceholder() {
+        const placeholderKey = {
+            vin: 'ph_vin',
+            phone: 'ph_phone',
+            free_text: 'ph_text',
+        }[currentTab];
+        document.getElementById('search-input').placeholder = t(placeholderKey);
+    }
+
+    document.querySelectorAll('.search-tab').forEach((btn) => {
         btn.onclick = () => {
-            document.querySelectorAll('.search-tab').forEach(b => {
+            document.querySelectorAll('.search-tab').forEach((b) => {
                 b.classList.remove('bg-blue-500', 'text-white');
                 b.classList.add('bg-slate-200');
             });
             btn.classList.add('bg-blue-500', 'text-white');
             btn.classList.remove('bg-slate-200');
             currentTab = btn.dataset.tab;
-
-            const placeholder = {
-                vin:       'შეიყვანე VIN კოდი (17 სიმბოლო)',
-                phone:     'შეიყვანე ნომერი (555555555 ან +995555555555)',
-                free_text: 'მაგალითად: Toyota Camry 2020 თბილისი',
-            }[currentTab];
-            document.getElementById('search-input').placeholder = placeholder;
+            updateTabPlaceholder();
         };
     });
 
+    // ----- Search -----
     async function doSearch() {
         const value = document.getElementById('search-input').value.trim();
         if (!value) return;
@@ -163,7 +145,7 @@
         const empty = document.getElementById('empty-state');
 
         btn.disabled = true;
-        btn.textContent = 'ძიება...';
+        btn.textContent = t('btn_searching');
         meta.textContent = '';
         empty.classList.add('hidden');
 
@@ -178,48 +160,40 @@
 
             if (!resp.ok) {
                 const err = await resp.json();
-                if (resp.status === 429) {
-                    meta.innerHTML = `<span class="text-orange-600">${err.detail}</span>`;
-                } else {
-                    meta.innerHTML = `<span class="text-red-600">${err.detail}</span>`;
-                }
+                meta.innerHTML = `<span class="${resp.status === 429 ? 'text-orange-600' : 'text-red-600'}">${err.detail}</span>`;
                 results.innerHTML = '';
+                lastResponse = null;
                 return;
             }
 
-            const data = await resp.json();
-            renderResults(data);
+            lastResponse = await resp.json();
+            renderResults(lastResponse);
         } catch (e) {
-            meta.innerHTML = `<span class="text-red-600">შეცდომა: ${e.message}</span>`;
+            meta.innerHTML = `<span class="text-red-600">${t('err_fetch', { msg: e.message })}</span>`;
         } finally {
             btn.disabled = false;
-            btn.textContent = 'ძიება';
+            btn.textContent = t('btn_search');
         }
     }
 
     document.getElementById('btn-search').onclick = doSearch;
-    document.getElementById('search-input').addEventListener('keypress', e => {
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') doSearch();
     });
 
-    // ----------------------------------------------------------
-    // შედეგების render
-    // ----------------------------------------------------------
+    // ----- Results render -----
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
 
-        let metaText = `<strong>${data.results_count}</strong> შედეგი`;
+        let metaText = `<strong>${t('results_count', { n: data.results_count })}</strong>`;
         if (data.remaining_free_searches !== null && data.remaining_free_searches !== undefined) {
-            metaText += ` · ამ საათში დარჩა ${data.remaining_free_searches} ცდა`;
+            metaText += t('results_remaining', { n: data.remaining_free_searches });
         }
         meta.innerHTML = metaText;
 
         if (data.results.length === 0) {
-            results.innerHTML = `
-                <div class="text-center py-10 text-slate-500">
-                    ვერაფერი ვიპოვე ამ მოთხოვნით 🤷‍♂️
-                </div>`;
+            results.innerHTML = `<div class="text-center py-10 text-slate-500">${t('no_results')}</div>`;
             return;
         }
 
@@ -232,16 +206,17 @@
             return `<span class="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${cls}">${escapeHtml(src)}</span>`;
         };
 
-        results.innerHTML = data.results.map(car => `
+        const cleared = t('cleared');
+        const notCleared = t('not_cleared');
+
+        results.innerHTML = data.results.map((car) => `
             <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden hover:shadow-lg transition relative">
                 <div class="absolute top-2 right-2 z-10">${sourceBadge(car.source)}</div>
                 <div class="flex flex-col md:flex-row">
                     <div class="md:w-64 flex-shrink-0">
                         ${car.image_urls && car.image_urls.length > 0
-                            ? `<img src="${car.image_urls[0]}" class="w-full h-48 object-cover"
-                                    onerror="this.style.display='none'">`
-                            : `<div class="w-full h-48 bg-slate-200 flex items-center justify-center text-slate-400">📷</div>`
-                        }
+                            ? `<img src="${car.image_urls[0]}" class="w-full h-48 object-cover" onerror="this.style.display='none'">`
+                            : `<div class="w-full h-48 bg-slate-200 flex items-center justify-center text-slate-400">📷</div>`}
                     </div>
                     <div class="p-4 flex-1">
                         <div class="flex items-start justify-between">
@@ -255,33 +230,29 @@
                                 <p class="font-bold text-lg text-green-600">
                                     ${car.price_amount ? car.price_amount.toLocaleString() : '—'} ${car.price_currency || ''}
                                 </p>
-                                <p class="text-xs text-slate-500">${car.customs_cleared === true ? 'განბაჟებული' : car.customs_cleared === false ? 'განუბაჟებელი' : ''}</p>
+                                <p class="text-xs text-slate-500">${car.customs_cleared === true ? cleared : car.customs_cleared === false ? notCleared : ''}</p>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-sm text-slate-600">
-                            ${car.mileage_km ? `<div>📊 ${car.mileage_km.toLocaleString()} კმ</div>` : ''}
+                            ${car.mileage_km ? `<div>📊 ${car.mileage_km.toLocaleString()} km</div>` : ''}
                             ${car.engine_volume_l ? `<div>⚙️ ${car.engine_volume_l}L</div>` : ''}
                             ${car.engine_type ? `<div>⛽ ${escapeHtml(car.engine_type)}</div>` : ''}
                             ${car.gearbox ? `<div>🔧 ${escapeHtml(car.gearbox)}</div>` : ''}
                         </div>
-
                         ${car.vin ? `
                             <div class="mt-3 p-2 bg-blue-50 rounded text-sm">
                                 <strong>VIN:</strong> <code class="font-mono">${escapeHtml(car.vin)}</code>
                             </div>` : ''}
-
                         ${car.phone ? `
                             <div class="mt-2 text-sm">
                                 <strong>📞</strong> <a href="tel:${escapeHtml(car.phone)}" class="text-blue-600">${escapeHtml(car.phone)}</a>
                                 ${car.seller_name ? ` · ${escapeHtml(car.seller_name)}` : ''}
                             </div>` : ''}
-
                         <div class="mt-3 flex gap-2">
                             <a href="${car.url}" target="_blank" rel="noopener"
-                               class="text-sm text-blue-600 hover:underline">წყაროზე ნახვა →</a>
+                               class="text-sm text-blue-600 hover:underline">${t('view_source')}</a>
                             ${car.image_urls && car.image_urls.length > 1
-                                ? `<span class="text-sm text-slate-400">+${car.image_urls.length - 1} ფოტო</span>`
+                                ? `<span class="text-sm text-slate-400">${t('more_photos', { n: car.image_urls.length - 1 })}</span>`
                                 : ''}
                         </div>
                     </div>
@@ -295,6 +266,10 @@
         div.textContent = text;
         return div.innerHTML;
     }
+
+    // Initial load
+    loadStats();
+    updateTabPlaceholder();
 </script>
 
 </body>

@@ -1,211 +1,215 @@
-# cars — ქართული მანქანების მონაცემთა ბაზა
+# car
 
-პროექტი: autopapa.ge და myauto.ge საიტებიდან მანქანების ინფორმაციის ამოღება,
-სტრუქტურირებულ PostgreSQL ბაზაში შენახვა და მერე ვებსაიტის წინიდან მათი ძიება
-(VIN-ით, ნომრით, თავისუფალი ტექსტით).
+Aggregated search for car listings from **autopapa.ge** and **myauto.ge** —
+search by VIN, phone number, or free text. Free, no signup.
 
-## სტრუქტურა
+🇬🇪 [ქართული](#ქართულად) · 🇬🇧 [English](#english)
+
+Live: <https://cars.demee-metreveli.workers.dev>
+
+---
+
+## English
+
+### What this is
+
+Two of the biggest car listing sites in Georgia (autopapa.ge and myauto.ge)
+don't share data. If a car is up for sale on both, you can't easily search
+across them. If someone calls you offering a car, looking up its history
+means hunting through both sites manually.
+
+This project scrapes both sites twice a day, normalizes the data into one
+Postgres schema, and exposes a single search endpoint:
+
+- **VIN** — full 17 characters or prefix
+- **Phone** — any format (`+995555555555`, `995555555555`, `555555555`)
+- **Free text** — trigram fuzzy search across descriptions
+
+### Architecture
 
 ```
-cars/
-├── db/
-│   └── schema.sql              # PostgreSQL ცხრილების სქემა
-├── docker-compose.yml          # ლოკალური Postgres
-├── pyproject.toml              # dependencies
-├── .env.example                # კონფიგის შაბლონი (.env-ად დააკოპირე)
-├── .gitignore
-└── src/
-    ├── common/
-    │   ├── config.py           # .env-დან კონფიგის წაკითხვა
-    │   ├── models.py           # Car (Pydantic) — მონაცემთა ფორმა
-    │   ├── vin.py              # VIN-ის ამოღება / ვალიდაცია
-    │   ├── normalize.py        # ფასი, ნომერი, გარბენი — გასუფთავება
-    │   ├── anti_detection.py   # Playwright stealth + რესურსების ფილტრი
-    │   ├── db.py               # PostgreSQL helpers (upsert_cars და სხვ.)
-    │   └── storage.py          # ფოტოები: ლოკალური + Cloudflare R2
-    ├── parsers/
-    │   └── autopapa.py         # autopapa.ge პარსერი
-    └── scripts/
-        ├── init_db.py          # სქემის გაშვება (თუ Docker არ იყენებ)
-        ├── migrate_csv.py      # ძველი CSV → DB
-        └── sync_photos.py      # ფოტოების ჩამოტვირთვა + R2
+                                ┌──────────────────┐
+                                │  Cloudflare      │
+                                │  static Worker   │
+                                │  (frontend)      │
+                                └────────┬─────────┘
+                                         │ fetch
+                                         ▼
+                                ┌──────────────────┐
+                                │  Render          │
+                                │  FastAPI         │
+                                │  (backend)       │
+                                └────────┬─────────┘
+                                         │
+                  ┌──────────────────────┼──────────────────────┐
+                  ▼                      ▼                      ▼
+         ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
+         │  Supabase    │       │  Cloudflare  │       │ GitHub       │
+         │  PostgreSQL  │       │  R2 (photos) │       │ Actions      │
+         │              │       │              │       │ (scheduled   │
+         │              │       │              │       │  parser)     │
+         └──────────────┘       └──────────────┘       └──────────────┘
 ```
 
-## ერთჯერადი setup
+### Layout
 
-### 1. dependencies-ის დაყენება
+```
+src/
+├── common/
+│   ├── config.py          Environment loading
+│   ├── models.py          Car (pydantic)
+│   ├── vin.py             VIN extraction + validation
+│   ├── normalize.py       Phone, price, mileage cleanup
+│   ├── anti_detection.py  Playwright + light stealth
+│   ├── db.py              Postgres helpers (sync psycopg in threads)
+│   ├── storage.py         R2 + local photo storage
+│   └── runtime.py         Windows asyncio glue
+├── parsers/
+│   ├── autopapa.py        Playwright scraper for autopapa.ge
+│   └── myauto.py          api2.myauto.ge JSON client
+├── api/
+│   ├── main.py            FastAPI app
+│   ├── schemas.py         Request/response models
+│   ├── search.py          VIN / phone / free-text endpoint
+│   ├── stats.py           /stats endpoint
+│   └── rate_limit.py      IP-based throttling
+└── scripts/
+    ├── init_db.py         Apply schema.sql
+    ├── migrate_csv.py     Import legacy CSV dumps
+    └── sync_photos.py     Download source photos → R2
 
-```powershell
-# uv-ით (პროექტი ამისთვისაა მორგებული)
+web/
+├── index.html             Frontend (no framework)
+├── config.js              Frontend config (API base URL)
+└── i18n.js                Translations dictionary (ka/en)
+```
+
+### Running locally
+
+You need Python 3.12+, [uv](https://github.com/astral-sh/uv), and a running
+Postgres instance (or use Docker: `docker compose up -d postgres`).
+
+```bash
+# Setup
 uv sync
+uv run playwright install chromium
 
-# ან pip-ით
-pip install -e .
+# Config — copy and fill in real values
+cp .env.example .env
 
-# Playwright-ის ბრაუზერი
-playwright install chromium
+# Initialize the database schema
+uv run python -m src.scripts.init_db
+
+# Scrape autopapa.ge once
+uv run python -m src.parsers.autopapa
+
+# Scrape myauto.ge once
+uv run python -m src.parsers.myauto
+
+# Run the API
+uv run uvicorn src.api.main:app --port 8765 --reload
+
+# Open frontend
+cd web && python -m http.server 5500
+# → http://localhost:5500
 ```
 
-### 2. PostgreSQL — Docker-ით (ყველაზე მარტივი)
+### Deployment
 
-ერთი ბრძანება და გექნება PostgreSQL ცხრილებით:
+This repo runs on free tiers:
+- Frontend: Cloudflare Workers static assets (`wrangler.toml`)
+- Backend: Render web service (`render.yaml`, `Dockerfile`)
+- Scheduled parser: GitHub Actions (`.github/workflows/parse.yml`)
+- DB: Supabase Postgres
+- Photo storage: Cloudflare R2
 
-```powershell
-docker compose up -d
+See `DEPLOY.md` for step-by-step.
+
+### Security notes
+
+See `SECURITY.md`. tl;dr: the search API is intentionally public and
+anonymous; we throttle by IP. Database access is bypass-RLS via the
+postgres role from the backend only.
+
+### Contributing
+
+Open issues and PRs welcome. The code style is intentionally close to
+hand-written — terse comments, no over-engineering.
+
+Contact: [@deme.brn](https://instagram.com/deme.brn)
+
+### License
+
+MIT.
+
+---
+
+## ქართულად
+
+### რა არის ეს
+
+autopapa.ge და myauto.ge საქართველოში მანქანების ორი ყველაზე დიდი საიტია,
+მაგრამ მონაცემები ერთმანეთთან არ აქვთ გაზიარებული. თუ ერთი მანქანა ორივეზე
+დევს, ვერ ეძებ ერთდროულად. თუ ვინმე გირეკავს მანქანის შესათავაზებლად, მისი
+ისტორიის ნახვა ნიშნავს ორ საიტზე ცალცალკე ძიებას.
+
+ეს პროექტი ორივე საიტს დღეში ორჯერ აპარსავს, მონაცემებს ნორმალიზებას უკეთებს
+ერთ Postgres სქემაში და გვერდს უხსნის ერთიან ძიების ენდპოინტს:
+
+- **VIN** — სრული 17 სიმბოლო ან თავსართი
+- **ნომერი** — ნებისმიერი ფორმატი (`+995555555555`, `995555555555`, `555555555`)
+- **თავისუფალი ტექსტი** — trigram-ით აღწერებში
+
+### სად ვის უწევს ფული
+
+ყველაფერი free tier-ზე ჯდება ჯერ-ჯერობით:
+- Frontend: Cloudflare Workers (უფასო)
+- Backend: Render (უფასო, 15წთ-ში იძინებს)
+- DB: Supabase (500MB უფასოდ)
+- R2 photo storage: 10GB უფასოდ
+- GitHub Actions: 2000 წუთი/თვე უფასოდ
+
+თუ პროექტი გაიზრდება, ხარჯი იქნება ~$30-40/თვე (Supabase Pro $25 + Render Starter $7).
+
+### ლოკალურად გაშვება
+
+დააინსტალირე Python 3.12+, [uv](https://github.com/astral-sh/uv),
+და Postgres (ან Docker გამოიყენე):
+
+```bash
+uv sync
+uv run playwright install chromium
+
+cp .env.example .env
+# შეავსე .env-ში DATABASE_URL, R2_* keys
+
+uv run python -m src.scripts.init_db
+
+uv run python -m src.parsers.autopapa     # ერთხელ ჩამოწიე autopapa
+uv run python -m src.parsers.myauto       # ერთხელ ჩამოწიე myauto
+
+uv run uvicorn src.api.main:app --port 8765 --reload
+cd web && python -m http.server 5500       # → http://localhost:5500
 ```
 
-თუ Docker არ გაქვს, დააინსტალირე ლოკალურად Postgres და გაუშვი:
+### სტრუქტურა
 
-```powershell
-python -m src.scripts.init_db
-```
+ფაილების სქემა იხილე ზემოთ ინგლისურ ვერსიაში. სამი მთავარი ნაწილია:
 
-### 3. .env ფაილის შექმნა
+1. **`src/parsers/`** — ცალცალკე scraper-ი თითო წყაროზე. AutoPapa-სთვის
+   Playwright-ი (HTML scraping + VIN-ის ღილაკით გახსნა), MyAuto-სთვის
+   პირდაპირ JSON API (`api2.myauto.ge`, რომ font-obfuscation აიცილოს).
+2. **`src/api/`** — FastAPI backend ერთი `/search` endpoint-ით.
+   მონაცემთა ბაზიდან კითხულობს, IP-ით ჭრის ლიმიტს (30/საათში).
+3. **`web/`** — სტატიკური HTML + JS + Tailwind. ფრეიმვორქი არ აქვს —
+   მინიმალურია სიჩქარისთვის.
 
-```powershell
-copy .env.example .env
-```
+### კონტრიბუცია
 
-გახსენი `.env` და შეცვალე:
+Issue-ები და PR-ები მისასალმებელია.
 
-- `DATABASE_URL` — საჭიროა, თუ Docker-ის ნაცვლად სხვაგან გაქვს Postgres
-- `R2_*` ცვლადები — როცა Cloudflare R2 account გექნება (აქ ჯერ შეიძლება ცარიელი დარჩეს)
-- `PROXY_URL` — თუ პროქსი გექნება (არასავალდებულო)
+კონტაქტი: [@deme.brn](https://instagram.com/deme.brn)
 
-### 4. Cloudflare R2-ის შექმნა (როცა მზად იქნები)
+### ლიცენზია
 
-1. გახსენი https://dash.cloudflare.com → R2
-2. შექმენი ახალი bucket: `cars-photos`
-3. „Manage R2 API tokens" → „Create API token" → Read & Write
-4. დააკოპირე `Account ID`, `Access Key ID`, `Secret Access Key`
-5. ჩაწერე `.env`-ში
-6. bucket-ის Settings → „Public access" → დაამატე custom domain ან გამოიყენე `pub-xxx.r2.dev` URL
-7. `R2_PUBLIC_URL` ცვლადს მიენიჭე ეს URL
-
-## ყოველდღიური გამოყენება
-
-### პარსერის გაშვება
-
-```powershell
-python -m src.parsers.autopapa
-```
-
-რა ხდება:
-
-1. იხსნება headless ბრაუზერი stealth-ის რეჟიმში
-2. იღებს ყველა საძიებო გვერდის ლინკებს
-3. ბაზაში ამოწმებს რომელია უკვე — ეგენი გამოტოვებს
-4. ერთდროულად ხსნის რამდენიმე ფურცელს და ამოწერს ყველაფერს
-5. ბაზაში ჩაწერა batch-ად — სიჩქარისთვის
-
-დაჯდინება: `.env`-ში `CONCURRENT_PAGES` — დააფიხსირე რამდენ ფურცელს ხსნის ერთად.
-
-### ფოტოების სინქი
-
-```powershell
-# ყველა მანქანის ფოტოები (რომელთა ჯერ არ მოგვიტანია)
-python -m src.scripts.sync_photos
-
-# მხოლოდ autopapa-დან, 100 ცალი
-python -m src.scripts.sync_photos --source autopapa --limit 100
-
-# მხოლოდ ლოკალურად, R2-ში ნუ ატვირთავ
-python -m src.scripts.sync_photos --local-only
-```
-
-ფაილების სტრუქტურა:
-```
-photos/
-├── autopapa/
-│   └── 905889/
-│       ├── 1.jpg
-│       ├── 2.jpg
-│       └── ...
-└── myauto/
-    └── 121480968/
-        ├── 1.jpg
-        └── ...
-```
-
-R2-ში იგივე გასაღებებითაა.
-
-### ძველი CSV-დან მიგრაცია
-
-გვაქვს ორი ფაილი (AutoPapa.csv და MyAuto.csv) — გადავიყვანოთ ბაზაში:
-
-```powershell
-python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
-python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
-```
-
-შემდეგ ფოტოები:
-
-```powershell
-python -m src.scripts.sync_photos
-```
-
-და ბოლოს — ცოცხალი პარსერი დარჩენილი/ახალი მონაცემებისთვის:
-
-```powershell
-python -m src.parsers.autopapa
-```
-
-## ნიუანსები
-
-### VIN-ის ლოგიკა
-
-- ჯერ ცდილობს ღილაკით (autopapa-ს popup-ი)
-- მერე — აღწერაში (regex-ით, case-insensitive)
-- ბოლოს — AJAX endpoint-ით
-- მასკირებული ვინი (KMHL34*****) — გამოტოვებულია
-- ბაზაში ყოველთვის დიდი ასოებით ინახება
-- თუ ვერ ვიპოვით — დარჩება ცარიელი (და ეს ნორმალურია)
-
-### ნომრების ფორმატი
-
-- ყოველთვის `+`-ით იწყება
-- ქართული 9-ციფრიანი ნომერი → `+995` ემატება ავტომატურად
-- რუსული 11-ციფრიანი 7-ით იწყება → `+` ემატება წინ
-
-### განბაჟება
-
-ბაზაში PostgreSQL boolean-ად ინახება (`true`/`false`/`null`).
-
-### Resume
-
-თუ შუა გზაზე ჩავარდა — უბრალოდ ხელახლა გაუშვი. ID-ით ვამოწმებთ ბაზაში
-უკვე არსებულ მანქანებს და მათ გამოვტოვებთ.
-
-## უსაფრთხოება (ვებსაიტისთვის — მომავალში)
-
-> ⚠️ მნიშვნელოვანი: „აბსოლუტურად დაცული ყველა გატეხვისგან" — შეუძლებელია.
-> ნებისმიერი სისტემა შეიძლება გაიტეხოს. რეალურად ვითხოვთ „გონივრულად დაცული"
-> და ხშირი audit-ი.
-
-რა გავაკეთებთ ვებსაიტისთვის როცა იქამდე მივალთ:
-
-1. **SQL injection** — psycopg-ით პარამეტრიზებული queries ვიყენებთ (უკვე).
-2. **HTTPS** — Cloudflare-ით (Let's Encrypt-ით უფასოა).
-3. **Rate limiting** — Cloudflare WAF + application-level rate limit.
-4. **Secrets** — `.env`-ში, არასოდეს კოდში, არასოდეს git-ში.
-5. **CSRF** — POST endpoints-ისთვის CSRF token.
-6. **Input validation** — Pydantic schemas-ით ყველა user input.
-7. **Logging** — წარუმატებელი login-ები, საეჭვო search-ები.
-8. **DB user-ის უფლებები** — ვებსაიტის user-ი მხოლოდ SELECT + INSERT searches-ში.
-9. **Payment-ის ვერიფიკაცია** — payment status სერვერ-სერვერ webhook-ით (არ ვენდობით client-ს).
-10. **Audit ლოგი** — ვისი როდის როგორი ძიება, რა შედეგი.
-
-## პრობლემები რომ შეგხვდეს
-
-**autopapa CSV-ში ნომრები გადადგა `9.96E+11` ფორმაში** — Excel-მა გადააქცია
-სამეცნიერო ნოტაციად. რომ ეს არ მოხდეს, CSV-ს არ ხსნი Excel-ში — გამოიყენე
-LibreOffice ან VS Code. ბაზაში text-ად ვინახავთ — ეს ფაქტი არ მოგვაშავა.
-
-**Playwright-ი ვერ ხსნის ბრაუზერს** — `playwright install chromium`
-
-**PostgreSQL უარს ამბობს კავშირზე** — შეამოწმე `docker ps`, კონტეინერი მუშაობს?
-ან შეცვალე `DATABASE_URL` `.env`-ში.
-
-**„VIN ცარიელია" ბევრ მანქანაზე** — ეს ნორმალურია. ბევრი გამყიდველი VIN-ს არ
-აქვეყნებს. ჩვენი ლოგიკა ცდილობს მაქსიმუმს, მაგრამ თუ ვერ იპოვი — ცარიელი
-რჩება.
+MIT.
