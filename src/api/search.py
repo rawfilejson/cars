@@ -63,13 +63,28 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
             "phone",
         )
     if req.free_text:
+        text = req.free_text.strip()
+        # Reject obvious one-word brand searches like "Toyota" — they'd return
+        # thousands of rows and serve nobody. Frontend has the same guard.
+        words = [w for w in text.split() if w]
+        has_digit = any(c.isdigit() for c in text)
+        too_generic = (
+            len(text) < 5
+            or (len(words) == 1 and not has_digit and len(text) < 8)
+        )
+        if too_generic:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Search too broad — add year, city, or model trim "
+                       "(e.g. \"Toyota Camry 2020 თბილისი\").",
+            )
         return (
             """
             SELECT *, similarity(description, %s) AS score FROM cars
             WHERE description %% %s
             ORDER BY score DESC, updated_at DESC LIMIT 30
             """,
-            (req.free_text, req.free_text),
+            (text, text),
             "free_text",
         )
     raise HTTPException(

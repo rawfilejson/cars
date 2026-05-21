@@ -96,6 +96,12 @@ def _to_int(value) -> int | None:
         return None
 
 
+def _to_positive_int(value) -> int | None:
+    """Like _to_int but treats 0 as missing (myauto returns 0 for unknown)."""
+    result = _to_int(value)
+    return result if result and result > 0 else None
+
+
 def _engine_volume_to_liters(cc: int | None) -> float | None:
     if cc is None or cc <= 0:
         return None
@@ -195,8 +201,8 @@ def item_to_car(item: dict) -> Car | None:
         price_currency=CURRENCY_MAP.get(item.get("currency_id"), ""),
         engine_volume_l=_engine_volume_to_liters(_to_int(item.get("engine_volume"))),
         engine_type=FUEL_MAP.get(item.get("fuel_type_id"), ""),
-        cylinders=_to_int(item.get("cylinders")),
-        power_hp=_to_int(item.get("hp")),
+        cylinders=_to_positive_int(item.get("cylinders")),
+        power_hp=_to_positive_int(item.get("hp")),
         has_turbo=bool(item.get("has_turbo")),
         gearbox=GEARBOX_MAP.get(item.get("gear_type_id"), ""),
         drive_wheels=DRIVE_MAP.get(item.get("drive_type_id"), ""),

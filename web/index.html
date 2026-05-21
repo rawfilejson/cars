@@ -3,12 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>car — VIN / phone / free-text search across autopapa.ge and myauto.ge</title>
-    <meta name="description" content="Aggregated listings from autopapa.ge and myauto.ge. Free, no signup.">
+    <title>Carba — VIN / phone / free-text car search</title>
+    <meta name="description" content="Aggregated car listings from autopapa.ge and myauto.ge. Free, no signup.">
+    <meta name="theme-color" content="#0f172a">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="config.js"></script>
     <script src="i18n.js"></script>
+
+    <!-- Cloudflare Web Analytics — privacy-first, no cookies, free.
+         To enable: Cloudflare dashboard → Web Analytics → Add a site,
+         then paste your token into web/config.js as window.CF_ANALYTICS_TOKEN. -->
+    <script>
+        if (window.CF_ANALYTICS_TOKEN) {
+            const s = document.createElement('script');
+            s.defer = true;
+            s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+            s.dataset.cfBeacon = JSON.stringify({ token: window.CF_ANALYTICS_TOKEN });
+            document.head.appendChild(s);
+        }
+    </script>
 
     <style>
         body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -19,8 +33,8 @@
 
 <header class="gradient-bg text-white py-5 shadow-lg">
     <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-4">
-        <h1 class="text-xl md:text-2xl font-bold tracking-wide">
-            🚗 car
+        <h1 class="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
+            <span class="text-blue-400">●</span> Carba
         </h1>
         <div class="flex items-center gap-4 text-sm">
             <div id="stats-line" class="text-slate-300 hidden">
@@ -42,8 +56,12 @@
         <p class="text-slate-600 max-w-2xl mx-auto" data-i18n-html="hero_desc_html"></p>
     </div>
 
-    <div class="max-w-2xl mx-auto mb-10 px-4 py-3 bg-amber-50 border-l-4 border-amber-400 rounded text-sm text-amber-900"
+    <div class="max-w-2xl mx-auto mb-4 px-4 py-3 bg-amber-50 border-l-4 border-amber-400 rounded text-sm text-amber-900"
          data-i18n-html="notice_date_html"></div>
+
+    <div id="notice-slow"
+         class="max-w-2xl mx-auto mb-10 px-4 py-3 bg-slate-100 border-l-4 border-slate-400 rounded text-sm text-slate-700 hidden"
+         data-i18n-html="notice_slow_html"></div>
 
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex gap-2 mb-4 flex-wrap">
@@ -81,8 +99,9 @@
 
 <script>
     const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
+    let currentTab = 'vin';
+    let lastResponse = null;
 
-    // ----- Stats -----
     async function loadStats() {
         try {
             const resp = await fetch(`${API_BASE}/stats`);
@@ -91,35 +110,26 @@
             const n = data.total_cars.toLocaleString();
             document.getElementById('nav-listings-count').textContent = t('nav_listings_count', { n });
             document.getElementById('stats-line').classList.remove('hidden');
-        } catch (e) {
-            // silent
-        }
+        } catch (e) { /* silent */ }
     }
 
-    // ----- Language switch -----
+    function updateTabPlaceholder() {
+        const key = { vin: 'ph_vin', phone: 'ph_phone', free_text: 'ph_text' }[currentTab];
+        document.getElementById('search-input').placeholder = t(key);
+        // Show the "search may be slow" notice only on free-text tab
+        const notice = document.getElementById('notice-slow');
+        notice.classList.toggle('hidden', currentTab !== 'free_text');
+    }
+
     document.querySelectorAll('.lang-btn').forEach((btn) => {
         btn.onclick = () => setLang(btn.dataset.lang);
     });
 
     document.addEventListener('langchange', () => {
-        loadStats();                                  // refresh count translation
+        loadStats();
         updateTabPlaceholder();
-        // re-render last results if any
         if (lastResponse) renderResults(lastResponse);
     });
-
-    // ----- Tabs -----
-    let currentTab = 'vin';
-    let lastResponse = null;
-
-    function updateTabPlaceholder() {
-        const placeholderKey = {
-            vin: 'ph_vin',
-            phone: 'ph_phone',
-            free_text: 'ph_text',
-        }[currentTab];
-        document.getElementById('search-input').placeholder = t(placeholderKey);
-    }
 
     document.querySelectorAll('.search-tab').forEach((btn) => {
         btn.onclick = () => {
@@ -134,7 +144,18 @@
         };
     });
 
-    // ----- Search -----
+    // Reject obviously too-broad free-text queries client-side. Server has
+    // the same check — this just avoids the round-trip.
+    function isTooGeneric(text) {
+        const trimmed = text.trim();
+        if (trimmed.length < 5) return true;
+        const words = trimmed.split(/\s+/).filter(Boolean);
+        const hasDigit = /\d/.test(trimmed);
+        // Single word with no digit and < 8 chars → too vague (e.g. "Toyota")
+        if (words.length === 1 && !hasDigit && trimmed.length < 8) return true;
+        return false;
+    }
+
     async function doSearch() {
         const value = document.getElementById('search-input').value.trim();
         if (!value) return;
@@ -144,23 +165,29 @@
         const results = document.getElementById('results');
         const empty = document.getElementById('empty-state');
 
+        if (currentTab === 'free_text' && isTooGeneric(value)) {
+            meta.innerHTML = `<span class="text-orange-600">${t('err_too_generic')}</span>`;
+            results.innerHTML = '';
+            empty.classList.add('hidden');
+            return;
+        }
+
         btn.disabled = true;
         btn.textContent = t('btn_searching');
         meta.textContent = '';
         empty.classList.add('hidden');
 
-        const body = { [currentTab]: value };
-
         try {
             const resp = await fetch(`${API_BASE}/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ [currentTab]: value }),
             });
 
             if (!resp.ok) {
                 const err = await resp.json();
-                meta.innerHTML = `<span class="${resp.status === 429 ? 'text-orange-600' : 'text-red-600'}">${err.detail}</span>`;
+                const color = resp.status === 429 ? 'text-orange-600' : 'text-red-600';
+                meta.innerHTML = `<span class="${color}">${err.detail}</span>`;
                 results.innerHTML = '';
                 lastResponse = null;
                 return;
@@ -181,7 +208,6 @@
         if (e.key === 'Enter') doSearch();
     });
 
-    // ----- Results render -----
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
@@ -267,7 +293,6 @@
         return div.innerHTML;
     }
 
-    // Initial load
     loadStats();
     updateTabPlaceholder();
 </script>

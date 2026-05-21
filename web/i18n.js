@@ -3,30 +3,32 @@
 
 const TRANSLATIONS = {
     ka: {
-        nav_listings_count: "ბაზაში: {n} განცხადება",
-        hero_title: "იპოვე განცხადება VIN კოდით",
+        nav_listings_count: "{n} განცხადება",
+        hero_title: "მანქანის ისტორია — ერთი ძიებით",
         hero_desc_html:
-            "ერთ ვებგვერდზე გავყავი <strong>autopapa.ge</strong> და " +
-            "<strong>myauto.ge</strong>-ის ყველა განცხადება. ეძებე VIN კოდით, " +
-            "ნომრით ან სხვა ინფორმაციით — <strong class=\"text-green-700\">" +
-            "სრულიად უფასოდ, რეგისტრაციის გარეშე</strong>.",
+            "<strong>autopapa.ge</strong> და <strong>myauto.ge</strong>-ის " +
+            "განცხადებები ერთად. ეძებე VIN-ით, ნომრით, ან კონკრეტული აღწერით " +
+            "(მაგ. <em>Toyota Camry 2020 თბილისი</em>).",
         notice_date_html:
-            "📅 <strong>გაითვალისწინე:</strong> მონაცემთა ბაზის შენახვა " +
-            "დავიწყეთ <strong>2026 წლის 10 მაისიდან</strong>. ამ თარიღამდე " +
-            "გამოქვეყნებული განცხადებები ბაზაში არ გვექნება.",
-        tab_vin: "VIN კოდი",
+            "📅 მონაცემთა შენახვა დავიწყეთ <strong>2026 წლის 10 მაისიდან</strong> — " +
+            "ამაზე ადრინდელი განცხადებები ბაზაში არ არის.",
+        notice_slow_html:
+            "⏱ <strong>თავისუფალი ტექსტი</strong> ხანდახან რამდენიმე წამს " +
+            "მოითხოვს — ვამოწმებთ ბაზის ყველა აღწერას.",
+        tab_vin: "VIN",
         tab_phone: "ნომერი",
         tab_text: "სხვა ინფორმაცია",
-        ph_vin: "შეიყვანე VIN კოდი (17 სიმბოლო)",
-        ph_phone: "შეიყვანე ნომერი (555555555 ან +995555555555)",
-        ph_text: "მაგალითად: Toyota Camry 2020 თბილისი",
+        ph_vin: "შეიყვანე VIN (17 სიმბოლო)",
+        ph_phone: "შეიყვანე ნომერი (მაგ. 555555555)",
+        ph_text: "მაგ. Toyota Camry 2020 თბილისი",
         btn_search: "ძიება",
         btn_searching: "ძიება...",
-        empty_state: "ჯერ ძიება არ გაგიკეთებიათ",
+        empty_state: "შეიყვანე ძიების მონაცემები ზემოთ",
         results_count: "{n} შედეგი",
         results_remaining: " · ამ საათში დარჩა {n} ცდა",
-        no_results: "ვერაფერი ვიპოვე ამ მოთხოვნით 🤷‍♂️",
+        no_results: "ვერაფერი ვიპოვე 🤷‍♂️",
         err_fetch: "შეცდომა: {msg}",
+        err_too_generic: "ძიება ძალიან ზოგადია — დაამატე წელი, ქალაქი ან მოდელის ვერსია (მაგ. Toyota Camry 2020 თბილისი).",
         cleared: "განბაჟებული",
         not_cleared: "განუბაჟებელი",
         more_photos: "+{n} ფოტო",
@@ -35,30 +37,32 @@ const TRANSLATIONS = {
         footer_contact: "კონტაქტი:",
     },
     en: {
-        nav_listings_count: "In DB: {n} listings",
-        hero_title: "Find a listing by VIN",
+        nav_listings_count: "{n} listings",
+        hero_title: "Car history — in one search",
         hero_desc_html:
-            "Aggregated listings from <strong>autopapa.ge</strong> and " +
-            "<strong>myauto.ge</strong>. Search by VIN, phone number, or " +
-            "free text — <strong class=\"text-green-700\">free, no signup " +
-            "required</strong>.",
+            "Listings from <strong>autopapa.ge</strong> and " +
+            "<strong>myauto.ge</strong>, in one place. Search by VIN, phone " +
+            "number, or a specific description (e.g. <em>Toyota Camry 2020 Tbilisi</em>).",
         notice_date_html:
-            "📅 <strong>Note:</strong> We started collecting data on " +
-            "<strong>May 10, 2026</strong>. Listings published before that " +
-            "date are not in the database.",
+            "📅 We started collecting on <strong>May 10, 2026</strong> — " +
+            "older listings are not in the database.",
+        notice_slow_html:
+            "⏱ <strong>Free-text</strong> queries can take a few seconds — " +
+            "we scan every description.",
         tab_vin: "VIN",
         tab_phone: "Phone",
         tab_text: "Free text",
         ph_vin: "Enter VIN (17 characters)",
-        ph_phone: "Enter phone (555555555 or +995555555555)",
-        ph_text: "e.g.: Toyota Camry 2020 Tbilisi",
+        ph_phone: "Enter phone (e.g. 555555555)",
+        ph_text: "e.g. Toyota Camry 2020 Tbilisi",
         btn_search: "Search",
         btn_searching: "Searching...",
-        empty_state: "No search yet",
+        empty_state: "Enter your search query above",
         results_count: "{n} results",
         results_remaining: " · {n} searches left this hour",
-        no_results: "Nothing found for this query 🤷‍♂️",
+        no_results: "Nothing found 🤷‍♂️",
         err_fetch: "Error: {msg}",
+        err_too_generic: "Search is too broad — add the year, city, or trim (e.g. Toyota Camry 2020 Tbilisi).",
         cleared: "Customs cleared",
         not_cleared: "Not cleared",
         more_photos: "+{n} photos",
