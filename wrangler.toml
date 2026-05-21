@@ -1,0 +1,13 @@
+# Cloudflare Workers config — serves the static frontend in web/ as a Worker.
+# No Worker script needed; we use the [assets] block which makes Cloudflare
+# treat the worker as a pure static site host (same as Pages, just packaged
+# under the Workers umbrella in the new unified UI).
+#
+# Docs: https://developers.cloudflare.com/workers/static-assets/
+
+name = "cars"
+compatibility_date = "2024-09-25"
+
+[assets]
+directory = "./web"
+not_found_handling = "single-page-application"
