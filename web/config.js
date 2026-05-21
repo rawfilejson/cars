@@ -1,8 +1,8 @@
 // =====================================================================
-// Frontend კონფიგი — production-ში API_BASE-ი შენი backend-ის URL-ად შეცვალე
+// Frontend კონფიგი — backend-ის URL.
 //
-// ლოკალურად: http://127.0.0.1:8765
-// production: https://your-backend.fly.dev (deploy-ის შემდეგ)
+// Production: https://cars-api-w7pz.onrender.com
+// Local dev:  http://127.0.0.1:8765
 // =====================================================================
 
-window.API_BASE = 'http://127.0.0.1:8765';
+window.API_BASE = 'https://cars-api-w7pz.onrender.com';
