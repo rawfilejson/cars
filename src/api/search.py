@@ -23,13 +23,16 @@ router = APIRouter(prefix="/search", tags=["search"])
 def _normalize_phone_query(raw: str) -> str:
     """ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური).
 
-    შენიშვნა: ბაზაში ნომრები ყოველთვის +-ით იწყება (მაგ: +995555555555).
-    მომხმარებელმა შეიძლება ჩაწეროს:
-      "555555555"         → suffix "555555555" → მოძებნავს `LIKE '%555555555'`
-      "+995555555555"     → digits "995555555555" → suffix "555555555"
-      "995 555 555 555"   → იგივე
-      "555-55-55-55"      → digits "5555555555" → suffix "555555555" (10 ციფრის შემთხვევაში ბოლო 9)
-    ყველა ვარიანტი ერთსა და იმავე ნომერს მოძებნავს.
+    ბაზაში ნომრები ლამაზად ინახება ("+995 595 515 141"), ძიება კი ხდება
+    `regexp_replace(phone, '\\D', '', 'g') LIKE %s` -ით, ანუ ციფრებზე.
+
+    მომხმარებელმა შეიძლება ჩაწეროს ნებისმიერი ფორმატით:
+      "595515141"         → "595515141"
+      "+995 595 51 51 41" → "595515141"
+      "5-9-5-5-1-5-1-4-1" → "595515141"
+      "(595) 515 141"     → "595515141"
+      "abc595515141xyz"   → "595515141"
+    ყველა იპოვის იმავე ნომერს.
     """
     digits = re.sub(r"\D", "", raw)
     return digits[-9:] if len(digits) > 9 else digits
@@ -58,8 +61,9 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
                 detail="ნომერი მინიმუმ 4 ციფრი უნდა იყოს",
             )
         return (
-            "SELECT * FROM cars WHERE phone LIKE %s ORDER BY updated_at DESC LIMIT 50",
-            ("%" + suffix,),                            # match by trailing digits
+            "SELECT * FROM cars WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
+            "ORDER BY updated_at DESC LIMIT 50",
+            ("%" + suffix,),                            # ციფრებზე match
             "phone",
         )
     if req.free_text:

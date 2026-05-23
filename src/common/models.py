@@ -53,7 +53,7 @@ class Car(BaseModel):
     # Contact
     location: str = ""
     seller_name: str = ""
-    phone: str = ""                                 # E.164 with leading +
+    phone: str = ""                                 # "+995 595 515 141" display format
 
     # Meta
     posted_date: str = ""

@@ -19,6 +19,7 @@ from playwright.async_api import BrowserContext, Page, async_playwright
 
 from src.common.anti_detection import block_heavy_resources, create_stealth_context
 from src.common.config import CONCURRENT_PAGES, PAGE_TIMEOUT_MS, RETRY_PER_CAR
+from src.common.csv_export import append_cars_to_csv
 from src.common.db import get_existing_ids, upsert_cars
 from src.common.models import Car
 from src.common.normalize import (
@@ -28,8 +29,10 @@ from src.common.normalize import (
     format_phone,
     normalize_steering,
     parse_customs,
+    sane_int,
     split_price,
 )
+from src.common.validators import validate_car
 from src.common.vin import best_vin
 
 
@@ -92,15 +95,24 @@ def has_keyword(text: str | None, *keywords: str) -> bool:
     return bool(text) and any(kw in text for kw in keywords)
 
 
-async def collect_listing_links(page: Page) -> list[str]:
-    """Paginate through search results, return all detail-page URLs."""
+async def collect_listing_links(page: Page, max_pages: int | None = None) -> list[str]:
+    """Paginate through search results, return all detail-page URLs.
+
+    max_pages caps the number of pages walked (None = until pagination runs out).
+    Useful for smoke runs.
+    """
     links: list[str] = []
+    pages_seen = 0
 
     while True:
         for anchor in await page.query_selector_all("a.with_hash2"):
             href = await anchor.get_attribute("href")
             if href:
                 links.append(HOST + href)
+
+        pages_seen += 1
+        if max_pages is not None and pages_seen >= max_pages:
+            break
 
         next_btn = await page.query_selector("a[rel=next]")
         if not next_btn:
@@ -320,8 +332,8 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
         price_with_customs=price_with_customs,
         engine_volume_l=clean_engine_volume(params.get("ძრავის მოცულობა")),
         engine_type=params.get("ძრავის ტიპი", ""),
-        cylinders=first_int(params.get("ცილინდრების რაოდენობა")),
-        power_hp=first_int(params.get("სიმძლავრე")),
+        cylinders=sane_int(params.get("ცილინდრების რაოდენობა"), 1, 16),
+        power_hp=sane_int(params.get("სიმძლავრე"), 1, 2000),
         has_turbo=has_keyword(features_text, "ტურბო"),
         gearbox=params.get("გადაცემათა კოლოფი", ""),
         drive_wheels=params.get("წამყვანი თვლები", ""),
@@ -346,10 +358,15 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
     )
 
 
-async def run() -> None:
-    print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES})")
+async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
+    """Full parser.
 
-    already_saved = await get_existing_ids(SOURCE)
+    max_pages: cap on listing pagination (None = all). Smoke runs use 1.
+    refresh_all: if True, re-scrape rows we already have (default skips them).
+    """
+    print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES}, max_pages={max_pages})")
+
+    already_saved = await get_existing_ids(SOURCE) if not refresh_all else set()
     print(f"  In DB: {len(already_saved)} listings")
 
     start_time = time.time()
@@ -361,7 +378,7 @@ async def run() -> None:
             await page.route("**/*", block_heavy_resources)
             await page.goto(START_URL, wait_until="domcontentloaded")
             await page.wait_for_selector("div.boxCatalog2")
-            all_links = await collect_listing_links(page)
+            all_links = await collect_listing_links(page, max_pages=max_pages)
             await page.close()
 
             new_links = [link for link in all_links if extract_id(link) not in already_saved]
@@ -396,10 +413,15 @@ async def _scrape_all(context: BrowserContext, urls: list[str], start_time: floa
             print(f"[{done}/{total}] FAIL")
             continue
 
+        issues = validate_car(car)
+        if issues:
+            print(f"  [warn] {car.source_id}: {', '.join(issues[:3])}")
+
         buffer.append(car)
 
         if len(buffer) >= CONCURRENT_PAGES * 2:
             saved += await upsert_cars(buffer)
+            append_cars_to_csv(buffer, SOURCE)
             buffer.clear()
 
         if done % 5 == 0 or done == total:
@@ -414,9 +436,18 @@ async def _scrape_all(context: BrowserContext, urls: list[str], start_time: floa
 
     if buffer:
         saved += await upsert_cars(buffer)
+        append_cars_to_csv(buffer, SOURCE)
 
 
 if __name__ == "__main__":
+    import sys
+
     from src.common.runtime import run as _run_async
 
-    _run_async(run())
+    args = sys.argv[1:]
+    refresh = "--refresh" in args
+    args = [a for a in args if a != "--refresh"]
+    if args and args[0] == "test" and len(args) > 1:
+        _run_async(run(max_pages=int(args[1]), refresh_all=refresh))
+    else:
+        _run_async(run(refresh_all=refresh))
