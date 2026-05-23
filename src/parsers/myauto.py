@@ -33,7 +33,9 @@ from src.common.normalize import (
     clean_text,
     format_phone,
     parse_bool_yes_no,
+    sane_int,
 )
+from src.common.validators import validate_car
 from src.common.vin import find_vin, is_valid_vin
 
 
@@ -80,8 +82,15 @@ SPEC_TO_FIELD = {
     "სიმძლავრე":            "power_hp",
 }
 
-# რომელი ფილდები int უნდა იყოს (ძრავის გარდა)
-_INT_FIELDS = {"year", "mileage_km", "cylinders", "doors", "seats", "power_hp"}
+# int ფილდები + დაშვებული დიაპაზონები. sane_int დანარჩენს ჩააგდებს.
+_INT_RANGES = {
+    "year":       (1900, 2030),
+    "mileage_km": (0, 2_000_000),
+    "cylinders":  (1, 16),
+    "doors":      (1, 8),
+    "seats":      (1, 50),
+    "power_hp":   (1, 2000),
+}
 _BOOL_FIELDS = {"tech_inspection", "has_catalyst"}
 
 
@@ -91,9 +100,11 @@ def _convert_spec_value(field: str, raw: str) -> object:
         return clean_engine_volume(raw)
     if field == "doors":
         # "4/5" → 4
-        return clean_int(raw.split("/")[0]) if raw else None
-    if field in _INT_FIELDS:
-        return clean_int(raw)
+        first = raw.split("/")[0] if raw else ""
+        return sane_int(first, *_INT_RANGES["doors"])
+    if field in _INT_RANGES:
+        lo, hi = _INT_RANGES[field]
+        return sane_int(raw, lo, hi)
     if field in _BOOL_FIELDS:
         return parse_bool_yes_no(raw)
     if field == "steering":
@@ -354,12 +365,30 @@ async def extract_seller_name(page: Page) -> str:
     return ""
 
 
-async def extract_location(spec: dict) -> str:
-    """location ჯერჯერობით სპეცში არ ჩანდა Lexus-ის გვერდზე. სხვა გვერდებზე
-    შესაძლოა იყოს. ფოლბექი ცარიელია."""
+# myauto ქალაქებს page title-ში წერს: "იყიდება Subaru Forester 2017 თბილისი | ...".
+# spec ცხრილში ჩვეულებრივ ლოკაცია არ არის — title-ი უფრო საიმედო წყაროა.
+GE_CITIES = (
+    "თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ფოთი", "ზუგდიდი",
+    "ხაშური", "სამტრედია", "სენაკი", "ოზურგეთი", "მცხეთა", "ახალციხე",
+    "მარნეული", "თელავი", "ბორჯომი", "ქობულეთი", "გარდაბანი", "კასპი",
+    "წყალტუბო", "ჭიათურა", "ზესტაფონი", "ქარელი", "ცხინვალი", "ახალქალაქი",
+    "ხონი", "ლანჩხუთი", "მესტია", "სიღნაღი", "ლაგოდეხი", "გურჯაანი",
+    "დმანისი", "თეთრიწყარო", "ბოლნისი", "წალკა", "თიანეთი", "დუშეთი",
+    "ცაგერი", "მარტვილი", "აბაშა", "ჩხოროწყუ", "წალენჯიხა", "ხობი",
+    "ჩხალთა", "ცხაკაია",
+)
+
+
+async def extract_location(page: Page, spec: dict) -> str:
+    """spec ცხრილში თუ არ არის, page title-დან ვცდით ქალაქის ამოღებას."""
     for key in ("ადგილმდებარეობა", "ლოკაცია", "მდებარეობა", "ქალაქი"):
         if key in spec:
             return spec[key]
+
+    title = await page.evaluate("() => document.title")
+    for city in GE_CITIES:
+        if city in title:
+            return city
     return ""
 
 
@@ -386,12 +415,21 @@ async def scrape_one(
             try:
                 await page.route("**/*", block_heavy_resources)
                 await page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
-                # ვუცადოთ რომ React component-ი ჩაიტვირთოს
-                await page.wait_for_selector('div[class*="py-[4px]"]', timeout=8_000)
+                try:
+                    await page.wait_for_selector('div[class*="py-[4px]"]', timeout=10_000)
+                except Exception:
+                    # წაშლილ listing-ზე myauto ან ცარიელ body-ს ბრუნდება, ან
+                    # SPA generic homepage-ს — title-ი ცხადყოფს რომელია.
+                    title = await page.evaluate("() => document.title")
+                    body_len = await page.evaluate("() => (document.body.innerText || '').length")
+                    is_homepage = title.startswith("ახალი და მეორადი")
+                    if is_homepage or body_len < 200:
+                        return None                  # gone, skip silently
+                    raise                            # genuine slow-load, retry
                 return await _build_car_from_page(page, url)
             except Exception as exc:
                 if attempt == RETRY_PER_CAR - 1:
-                    print(f"[FAIL] {url} — {exc}")
+                    print(f"  [skip] {url.rsplit('/', 2)[-2]}: {type(exc).__name__}")
                     return None
                 await asyncio.sleep(1)
             finally:
@@ -412,7 +450,7 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
     price_amount, price_currency = await extract_price(page)
     phone = await extract_phone(page)
     seller_name = await extract_seller_name(page)
-    location = await extract_location(spec)
+    location = await extract_location(page, spec)
     vin = await extract_vin(page, description)
     if vin and not is_valid_vin(vin):
         # find_vin-ი უკვე ფილტრავს, მაგრამ რომ უცეცხლო ნაგვი არ შემოგვერივა
@@ -492,12 +530,20 @@ MYAUTO_UA = (
 
 
 async def _warmup(context: BrowserContext) -> None:
-    """myauto.ge-ს ვხსნით, Cloudflare cookies-ი მოვიდეს."""
+    """myauto.ge-ს ვხსნით, Cloudflare cookies-ი მოვიდეს.
+
+    SPA-ის სრულ ჰიდრატაციას არ ვუცდით — `commit` wait-ით ვაგროვებთ პასუხს,
+    შემდეგ მცირე pause cookies-ის დასაყენებლად. domcontentloaded ხანდახან
+    25s-ში ვერ ხდება.
+    """
     page = await context.new_page()
     try:
         await page.route("**/*", block_heavy_resources)
-        await page.goto(HOST, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
-        await asyncio.sleep(2)
+        try:
+            await page.goto(HOST, wait_until="commit", timeout=15_000)
+        except Exception:
+            pass                                    # CF challenge ხანდახან ჯიქურია
+        await asyncio.sleep(3)
     finally:
         await page.close()
 
@@ -625,6 +671,10 @@ async def _scrape_all(
 
         if car is None:
             continue
+
+        issues = validate_car(car)
+        if issues:
+            print(f"  [warn] {car.source_id}: {', '.join(issues[:3])}")
 
         buffer.append(car)
 
