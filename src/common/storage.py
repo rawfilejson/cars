@@ -87,7 +87,9 @@ async def download_to_local(
             resp.raise_for_status()
             path.write_bytes(resp.content)
             return True
-        except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
+        except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+            # httpx.RequestError covers timeouts, network, protocol errors,
+            # mid-stream truncation (RemoteProtocolError), etc.
             last_exc = exc
             if attempt < len(_RETRY_DELAYS):
                 await asyncio.sleep(delay)

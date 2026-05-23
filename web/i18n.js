@@ -1,78 +1,150 @@
-// Translations dictionary. Default language is Georgian.
-// Switch persists in localStorage.
+// Two-language dictionary. KA is the default — Georgian users come first.
+// Switch persists via localStorage.
 
 const TRANSLATIONS = {
     ka: {
+        brand_name: "Car-DB",
+        brand_sub: "მანქანების ბაზა",
         nav_listings_count: "{n} განცხადება",
-        hero_title: "მანქანის ისტორია — ერთი ძიებით",
-        hero_desc_html:
-            "<strong>autopapa.ge</strong> და <strong>myauto.ge</strong>-ის " +
-            "განცხადებები ერთად. ეძებე VIN-ით, ნომრით, ან კონკრეტული აღწერით " +
-            "(მაგ. <em>Toyota Camry 2020 თბილისი</em>).",
-        notice_date_html:
-            "📅 მონაცემთა შენახვა დავიწყეთ <strong>2026 წლის 10 მაისიდან</strong> — " +
-            "ამაზე ადრინდელი განცხადებები ბაზაში არ არის.",
-        notice_slow_html:
-            "⏱ <strong>თავისუფალი ტექსტი</strong> ხანდახან რამდენიმე წამს " +
-            "მოითხოვს — ვამოწმებთ ბაზის ყველა აღწერას.",
-        tab_vin: "VIN",
-        tab_phone: "ნომერი",
-        tab_text: "სხვა ინფორმაცია",
-        ph_vin: "შეიყვანე VIN (17 სიმბოლო)",
-        ph_phone: "შეიყვანე ნომერი (მაგ. 555555555)",
-        ph_text: "მაგ. Toyota Camry 2020 თბილისი",
+
+        hero_title: "ერთი ძიება. ყველა განცხადება.",
+        hero_desc:
+            "autopapa.ge და myauto.ge-ის გაერთიანებული ბაზა — VIN-ით, " +
+            "ნომრით, ან კონკრეტული აღწერით.",
+
+        ph_query: "VIN, ნომერი, ბრენდი, მოდელი, წელი, ქალაქი...",
+
+        filters_toggle: "ფილტრები",
+        filter_year:    "წელი",
+        filter_price:   "ფასი (USD)",
+        filter_mileage: "გარბენი (კმ)",
+        filter_from:    "დან",
+        filter_to:      "მდე",
+        filter_sort:    "სორტირება",
+        filter_clear:   "ფილტრების გასუფთავება",
+
+        sort_newest:      "ახალი ბოლოს",
+        sort_price_asc:   "ფასი იაფიდან",
+        sort_price_desc:  "ფასი ძვირიდან",
+        sort_year_desc:   "წელი ახლიდან",
+        sort_year_asc:    "წელი ძველიდან",
+        sort_mileage_asc: "გარბენი ნაკლები",
+
         btn_search: "ძიება",
-        btn_searching: "ძიება...",
-        empty_state: "შეიყვანე ძიების მონაცემები ზემოთ",
+        btn_searching: "ვეძებ...",
+        empty_state: "ძიების შედეგი აქ გამოჩნდება",
         results_count: "{n} შედეგი",
-        results_remaining: " · ამ საათში დარჩა {n} ცდა",
-        no_results: "ვერაფერი ვიპოვე 🤷‍♂️",
+        results_remaining: "ამ საათში დარჩა {n} ცდა",
+        no_results: "ვერაფერი ვიპოვე",
+
+        notice_slow: "ხანდახან 10-15 წამი ჭირდება ინფორმაციის მოძიებას. გთხოვთ მოითმინეთ.",
+
         err_fetch: "შეცდომა: {msg}",
-        err_too_generic: "ძიება ძალიან ზოგადია — დაამატე წელი, ქალაქი ან მოდელის ვერსია (მაგ. Toyota Camry 2020 თბილისი).",
+        err_too_generic:
+            "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — დაამატე წელი, " +
+            "ქალაქი ან მოდელის ვერსია (მაგ. Toyota Camry 2020 თბილისი).",
+
+        spec_year: "წელი",
+        spec_mileage: "გარბენი",
+        spec_engine: "ძრავა",
+        spec_fuel: "საწვავი",
+        spec_gearbox: "კოლოფი",
+        spec_drive: "წამყვანი",
+        spec_color: "ფერი",
+        spec_steering: "საჭე",
+
         cleared: "განბაჟებული",
         not_cleared: "განუბაჟებელი",
-        more_photos: "+{n} ფოტო",
-        view_source: "წყაროზე ნახვა →",
-        footer_about: "მონაცემები autopapa.ge და myauto.ge-დან · ღია წყაროებიდან",
+        seller_phone: "ტელეფონი",
+
+        section_description: "აღწერა",
+        section_vin: "VIN",
+        section_phone: "ტელეფონი",
+
+        posted_on: "გამოქვეყნდა: {date}",
+        scraped_on_label: "ინფორმაცია მოვაგროვეთ:",
+        scraped_on_note:
+            "ვერ მოვიძიეთ ინფორმაცია როდის გამოქვეყნდა, მაგრამ ეს ინფორმაცია მივიღეთ {date}-ს.",
+
+        photo_counter: "{i} / {n}",
+        no_photos: "ფოტო არ არის",
+
+        footer_about: "მონაცემები autopapa.ge და myauto.ge-დან. ღია წყაროები. უფასო.",
         footer_contact: "კონტაქტი:",
     },
     en: {
+        brand_name: "Car-DB",
+        brand_sub: "Georgian car listings",
         nav_listings_count: "{n} listings",
-        hero_title: "Car history — in one search",
-        hero_desc_html:
-            "Listings from <strong>autopapa.ge</strong> and " +
-            "<strong>myauto.ge</strong>, in one place. Search by VIN, phone " +
-            "number, or a specific description (e.g. <em>Toyota Camry 2020 Tbilisi</em>).",
-        notice_date_html:
-            "📅 We started collecting on <strong>May 10, 2026</strong> — " +
-            "older listings are not in the database.",
-        notice_slow_html:
-            "⏱ <strong>Free-text</strong> queries can take a few seconds — " +
-            "we scan every description.",
-        tab_vin: "VIN",
-        tab_phone: "Phone",
-        tab_text: "Free text",
-        ph_vin: "Enter VIN (17 characters)",
-        ph_phone: "Enter phone (e.g. 555555555)",
-        ph_text: "e.g. Toyota Camry 2020 Tbilisi",
+
+        hero_title: "One search. Every listing.",
+        hero_desc:
+            "A combined index of autopapa.ge and myauto.ge — searchable " +
+            "by VIN, phone number, or a specific description.",
+
+        ph_query: "VIN, phone, brand, model, year, city...",
+
+        filters_toggle: "Filters",
+        filter_year:    "Year",
+        filter_price:   "Price (USD)",
+        filter_mileage: "Mileage (km)",
+        filter_from:    "from",
+        filter_to:      "to",
+        filter_sort:    "Sort",
+        filter_clear:   "Clear filters",
+
+        sort_newest:      "Newest first",
+        sort_price_asc:   "Cheapest first",
+        sort_price_desc:  "Most expensive",
+        sort_year_desc:   "Newest year",
+        sort_year_asc:    "Oldest year",
+        sort_mileage_asc: "Lowest mileage",
+
         btn_search: "Search",
         btn_searching: "Searching...",
-        empty_state: "Enter your search query above",
+        empty_state: "Search results will appear here",
         results_count: "{n} results",
-        results_remaining: " · {n} searches left this hour",
-        no_results: "Nothing found 🤷‍♂️",
+        results_remaining: "{n} searches left this hour",
+        no_results: "Nothing found",
+
+        notice_slow: "Searches can take 10-15 seconds. Please be patient.",
+
         err_fetch: "Error: {msg}",
-        err_too_generic: "Search is too broad — add the year, city, or trim (e.g. Toyota Camry 2020 Tbilisi).",
+        err_too_generic:
+            "Please be more specific — add the year, city, or trim " +
+            "(e.g. Toyota Camry 2020 Tbilisi).",
+
+        spec_year: "Year",
+        spec_mileage: "Mileage",
+        spec_engine: "Engine",
+        spec_fuel: "Fuel",
+        spec_gearbox: "Gearbox",
+        spec_drive: "Drive",
+        spec_color: "Color",
+        spec_steering: "Steering",
+
         cleared: "Customs cleared",
         not_cleared: "Not cleared",
-        more_photos: "+{n} photos",
-        view_source: "View source →",
-        footer_about: "Data from autopapa.ge and myauto.ge · open sources",
+        seller_phone: "Phone",
+
+        section_description: "Description",
+        section_vin: "VIN",
+        section_phone: "Phone",
+
+        posted_on: "Posted: {date}",
+        scraped_on_label: "Scraped:",
+        scraped_on_note:
+            "Original posting date is unknown. We collected this information on {date}.",
+
+        photo_counter: "{i} / {n}",
+        no_photos: "no photo",
+
+        footer_about: "Data from autopapa.ge and myauto.ge. Open sources. Free.",
         footer_contact: "Contact:",
     },
 };
 
-const LANG_KEY = "car_lang";
+const LANG_KEY = "cardb_lang";
 const DEFAULT_LANG = "ka";
 
 function getLang() {
@@ -82,7 +154,6 @@ function getLang() {
 function setLang(lang) {
     localStorage.setItem(LANG_KEY, lang);
     applyTranslations();
-    // Notify any listeners (e.g. re-render search results)
     document.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
 }
 
@@ -96,30 +167,22 @@ function applyTranslations() {
     const lang = getLang();
     document.documentElement.lang = lang;
 
-    // Text content elements
     document.querySelectorAll("[data-i18n]").forEach((el) => {
         el.textContent = t(el.dataset.i18n);
     });
-
-    // HTML elements (contain markup)
     document.querySelectorAll("[data-i18n-html]").forEach((el) => {
         el.innerHTML = t(el.dataset.i18nHtml);
     });
-
-    // Placeholders
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
     });
 
-    // Active state on language switcher
     document.querySelectorAll(".lang-btn").forEach((btn) => {
-        btn.classList.toggle("font-bold", btn.dataset.lang === lang);
-        btn.classList.toggle("text-white", btn.dataset.lang === lang);
-        btn.classList.toggle("text-slate-400", btn.dataset.lang !== lang);
+        const active = btn.dataset.lang === lang;
+        btn.classList.toggle("is-active", active);
     });
 }
 
-// Apply on initial load
 document.addEventListener("DOMContentLoaded", applyTranslations);
 
 window.t = t;

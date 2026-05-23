@@ -71,22 +71,26 @@ async def process_car(
     image_urls: list[str],
     upload_to_cloud: bool,
 ) -> int:
-    """ერთი მანქანის ყველა ფოტოს ჩატვირთვა.
-
-    აბრუნებს წარმატებით ჩატვირთული ფოტოების რაოდენობას.
-    """
+    """ერთი მანქანის ყველა ფოტოს ჩატვირთვა — never raises, always returns int."""
     async with semaphore:
         keys: list[str] = []
         for index, url in enumerate(image_urls, start=1):
-            key = await fetch_and_store(
-                http_client, url, source, source_id, index,
-                upload_to_cloud=upload_to_cloud,
-            )
+            try:
+                key = await fetch_and_store(
+                    http_client, url, source, source_id, index,
+                    upload_to_cloud=upload_to_cloud,
+                )
+            except Exception as exc:                    # never let one bad photo kill the batch
+                print(f"  [skip photo] {source}/{source_id}/{index}: {type(exc).__name__}")
+                key = None
             if key:
                 keys.append(key)
 
         if keys:
-            await update_image_keys(car_db_id, keys)
+            try:
+                await update_image_keys(car_db_id, keys)
+            except Exception as exc:
+                print(f"  [skip DB update] {source}/{source_id}: {type(exc).__name__}")
         return len(keys)
 
 

@@ -2,18 +2,42 @@
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carba — VIN / phone / free-text car search</title>
-    <meta name="description" content="Aggregated car listings from autopapa.ge and myauto.ge. Free, no signup.">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Car-DB — Georgian car listings</title>
+    <meta name="description" content="One search across autopapa.ge and myauto.ge. Free, no signup.">
+    <meta name="theme-color" content="#1A1A1A">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Georgian:wght@400;500;600&family=Noto+Serif+Georgian:wght@500;600;700&display=swap">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#FAF7F2',
+                        ink: '#1A1A1A',
+                        muted: '#6B6258',
+                        line: '#E5DFD3',
+                        accent: '#C2410C',
+                        'accent-soft': '#FEE7D6',
+                        price: '#15803D',
+                    },
+                    fontFamily: {
+                        serif: ['Fraunces', 'Noto Serif Georgian', 'Georgia', 'serif'],
+                        sans: ['Inter Tight', 'Noto Sans Georgian', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+                    },
+                },
+            },
+        };
+    </script>
     <script src="config.js"></script>
     <script src="i18n.js"></script>
 
-    <!-- Cloudflare Web Analytics — privacy-first, no cookies, free.
-         To enable: Cloudflare dashboard → Web Analytics → Add a site,
-         then paste your token into web/config.js as window.CF_ANALYTICS_TOKEN. -->
     <script>
         if (window.CF_ANALYTICS_TOKEN) {
             const s = document.createElement('script');
@@ -25,81 +49,349 @@
     </script>
 
     <style>
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #1e293b, #0f172a); }
+        html, body { background: #FAF7F2; color: #1A1A1A; }
+        html { -webkit-text-size-adjust: 100%; }
+        body { font-family: 'Inter Tight', 'Noto Sans Georgian', system-ui, sans-serif; }
+        /* prevent horizontal scroll from any rogue element */
+        body { overflow-x: hidden; }
+
+        /* the thin top rule that gives the page an editorial feel */
+        .top-rule { height: 3px; background: #C2410C; }
+
+        /* language switch: pill that turns dark when active */
+        .lang-btn { color: #6B6258; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
+        .lang-btn.is-active { color: #1A1A1A; font-weight: 600; }
+
+        /* tab pills for search type */
+        .tab { padding: 8px 16px; font-size: 14px; color: #6B6258; border: 1px solid transparent; border-radius: 999px; cursor: pointer; }
+        .tab:hover { color: #1A1A1A; }
+        .tab.is-active { background: #1A1A1A; color: #FAF7F2; }
+
+        /* the search input — flat, just a bottom border in the input area.
+           font-size 16px+ stops iOS Safari from zooming on focus */
+        .search-input {
+            background: transparent; border: 0; outline: 0;
+            font-size: 16px; flex: 1; padding: 12px 0;
+            min-width: 0;
+            font-family: 'Inter Tight', 'Noto Sans Georgian', sans-serif;
+        }
+        @media (min-width: 640px) { .search-input { font-size: 18px; } }
+        .search-input.is-vin {
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* filter row */
+        .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+        .filter-label { font-size: 11px; color: #6B6258; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+        .filter-input {
+            background: transparent; border: 1px solid #E5DFD3; color: #1A1A1A;
+            padding: 8px; font-size: 16px;       /* 16px stops iOS zoom on focus */
+            font-family: 'JetBrains Mono', monospace;
+            width: 80px; text-align: center;
+            -moz-appearance: textfield;
+        }
+        @media (min-width: 640px) { .filter-input { font-size: 13px; padding: 6px 8px; } }
+        .filter-input::-webkit-outer-spin-button,
+        .filter-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .filter-input:focus { border-color: #1A1A1A; outline: 0; }
+        .filter-select {
+            background: white; border: 1px solid #E5DFD3; color: #1A1A1A;
+            padding: 8px 28px 8px 10px; font-size: 16px;
+            font-family: inherit; cursor: pointer;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231A1A1A' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 8px center;
+        }
+        @media (min-width: 640px) { .filter-select { font-size: 13px; padding: 6px 28px 6px 10px; } }
+        .filter-select:focus { border-color: #1A1A1A; outline: 0; }
+        .filter-dash { color: #B0A795; }
+        .filter-clear {
+            background: transparent; border: 0; padding: 0;
+            font-size: 12px; color: #6B6258; cursor: pointer;
+            text-decoration: underline; text-decoration-color: #E5DFD3;
+        }
+        .filter-clear:hover { color: #C2410C; text-decoration-color: #C2410C; }
+
+        /* result card spec rows: tabular feel */
+        .spec-grid { display: grid; grid-template-columns: max-content 1fr; column-gap: 16px; row-gap: 6px; }
+        .spec-label { color: #6B6258; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .spec-value { color: #1A1A1A; font-size: 14px; }
+
+        /* the listing count pill in the header — monospace digits feel like data */
+        .count-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 4px 10px; border: 1px solid #E5DFD3; border-radius: 4px;
+            background: white;
+        }
+        .count-pill .num {
+            font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 14px;
+            color: #1A1A1A;
+        }
+
+        /* source badge — small block, NOT a pill, NOT a gradient */
+        .source-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500;
+            padding: 3px 8px; border: 1px solid;
+        }
+        .source-autopapa { color: #C2410C; border-color: #C2410C; background: #FEE7D6; }
+        .source-myauto   { color: #1D4ED8; border-color: #1D4ED8; background: #DBE8FF; }
+
+        /* customs status — green frame for cleared, red for not */
+        .customs-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
+            padding: 3px 10px; border: 1px solid; white-space: nowrap;
+        }
+        .customs-yes { color: #15803D; border-color: #15803D; background: #DCFCE7; }
+        .customs-no  { color: #B91C1C; border-color: #B91C1C; background: #FEE2E2; }
+
+        /* card hover — subtle, just darkens the border */
+        .card { border: 1px solid #E5DFD3; background: white; transition: border-color 150ms; }
+        .card:hover { border-color: #1A1A1A; }
+
+        /* serif headline */
+        .serif-display {
+            font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* image placeholder when no photo */
+        .no-photo {
+            background: #F2EDE3;
+            display: flex; align-items: center; justify-content: center;
+            color: #B0A795;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        }
+
+        /* main photo: fixed 4:3 aspect so wide car photos don't get
+           vertically-stretched into "zoomed in" crops */
+        .carousel { position: relative; background: #1A1A1A; overflow: hidden; aspect-ratio: 4 / 3; cursor: zoom-in; }
+        .carousel-stage { position: absolute; inset: 0; }
+        .carousel-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .carousel-stage iframe { width: 100%; height: 100%; border: 0; display: block; cursor: default; }
+        .carousel-counter {
+            position: absolute; bottom: 8px; right: 8px;
+            background: rgba(26,26,26,0.75); color: #FAF7F2;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            padding: 2px 8px; border-radius: 3px;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+        }
+
+        /* thumbnail strip under the main photo */
+        .thumb-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
+        .thumb {
+            aspect-ratio: 4 / 3; overflow: hidden; background: #F2EDE3;
+            border: 2px solid transparent; padding: 0; cursor: pointer;
+            transition: border-color 100ms, opacity 100ms; opacity: 0.85;
+        }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .thumb:hover { opacity: 1; }
+        .thumb.is-active { border-color: #1A1A1A; opacity: 1; }
+        .thumb.is-video {
+            position: relative;
+        }
+        .thumb.is-video::after {
+            content: "▶"; position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #FAF7F2; font-size: 16px;
+            background: rgba(26,26,26,0.4); pointer-events: none;
+        }
+
+        /* lightbox overlay */
+        .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(15,12,8,0.96); display: flex; flex-direction: column; padding: 16px; }
+        .lightbox.hidden { display: none; }
+        .lightbox-stage {
+            flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .lightbox-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .lightbox-stage iframe { width: min(90vw, 1280px); height: min(80vh, 720px); border: 0; }
+        .lightbox-prev, .lightbox-next {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(250,247,242,0.08); color: #FAF7F2;
+            width: 56px; height: 56px; border: 0; cursor: pointer;
+            font-size: 22px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 100ms;
+        }
+        .lightbox-prev:hover, .lightbox-next:hover, .lightbox-prev:active, .lightbox-next:active { background: rgba(250,247,242,0.22); }
+        .lightbox-prev { left: 8px; }
+        .lightbox-next { right: 8px; }
+        .lightbox-close {
+            position: absolute; top: 12px; right: 12px;
+            background: rgba(250,247,242,0.18); color: #FAF7F2;
+            width: 48px; height: 48px; border: 0; cursor: pointer;
+            font-size: 22px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 100ms;
+            z-index: 3;
+        }
+        .lightbox-close:hover, .lightbox-close:active { background: rgba(250,247,242,0.35); }
+        .lightbox-counter {
+            position: absolute; top: 20px; left: 20px;
+            color: #FAF7F2; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+            letter-spacing: 0.06em;
+        }
+        .lightbox-thumbs {
+            display: flex; gap: 6px; padding-top: 12px; justify-content: center;
+            overflow-x: auto; flex-shrink: 0;
+            scrollbar-width: thin; scrollbar-color: #555 transparent;
+        }
+        .lightbox-thumb {
+            width: 64px; height: 48px; flex-shrink: 0;
+            overflow: hidden; cursor: pointer;
+            border: 2px solid transparent; opacity: 0.55;
+            transition: opacity 100ms, border-color 100ms;
+            background: #1A1A1A; padding: 0;
+        }
+        @media (min-width: 640px) { .lightbox-thumb { width: 84px; height: 63px; } }
+        .lightbox-thumb:hover { opacity: 0.9; }
+        .lightbox-thumb.is-active { border-color: #C2410C; opacity: 1; }
+        .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* description text — multi-line, with internal whitespace preserved */
+        .description {
+            color: #1A1A1A; font-size: 14px; line-height: 1.55;
+            white-space: pre-wrap; word-break: break-word;
+        }
+
+        /* the small footer line under each card with scrape/post date */
+        .meta-line { color: #6B6258; font-size: 12px; font-style: italic; }
+
+        /* notice when posted date unknown */
+        .meta-note { color: #6B6258; font-size: 12px; }
+
+        /* phone list — one phone per line, monospace */
+        .phone-list { display: flex; flex-direction: column; gap: 4px; }
+        .phone-list a { font-family: 'JetBrains Mono', monospace; color: #1A1A1A; text-decoration: none; font-size: 14px; }
+        .phone-list a:hover { color: #C2410C; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="min-h-screen flex flex-col">
 
-<header class="gradient-bg text-white py-5 shadow-lg">
-    <div class="max-w-5xl mx-auto px-4 flex items-center justify-between gap-4">
-        <h1 class="text-xl md:text-2xl font-bold tracking-wide flex items-center gap-2">
-            <span class="text-blue-400">●</span> Carba
-        </h1>
-        <div class="flex items-center gap-4 text-sm">
-            <div id="stats-line" class="text-slate-300 hidden">
-                <span id="nav-listings-count">—</span>
+<div class="top-rule"></div>
+
+<header class="border-b border-line">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 py-5 md:py-6 flex items-start justify-between gap-3 md:gap-6">
+        <div class="min-w-0">
+            <a href="/" class="block">
+                <h1 class="serif-display text-2xl md:text-4xl text-ink leading-none" data-i18n="brand_name">Car-DB</h1>
+                <p class="text-xs md:text-sm text-muted mt-1 tracking-wide truncate" data-i18n="brand_sub"></p>
+            </a>
+        </div>
+        <div class="flex items-center gap-3 md:gap-6 pt-1 md:pt-2 flex-shrink-0">
+            <div id="count-pill" class="count-pill hidden">
+                <span class="num" id="nav-listings-count">—</span>
             </div>
-            <div class="flex gap-1 border-l border-slate-600 pl-4">
-                <button class="lang-btn px-2 py-1 hover:text-white" data-lang="ka">KA</button>
-                <span class="text-slate-600">/</span>
-                <button class="lang-btn px-2 py-1 hover:text-white" data-lang="en">EN</button>
+            <div class="flex items-center gap-1">
+                <button class="lang-btn" data-lang="ka">KA</button>
+                <span class="text-line">·</span>
+                <button class="lang-btn" data-lang="en">EN</button>
             </div>
         </div>
     </div>
 </header>
 
-<main class="max-w-5xl mx-auto px-4 py-10">
+<main class="flex-1">
 
-    <div class="text-center mb-6">
-        <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-3" data-i18n="hero_title"></h2>
-        <p class="text-slate-600 max-w-2xl mx-auto" data-i18n-html="hero_desc_html"></p>
-    </div>
+    <section class="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8 md:pb-10">
+        <h2 class="serif-display text-3xl md:text-5xl text-ink max-w-3xl leading-tight" data-i18n="hero_title"></h2>
+        <p class="text-muted text-base md:text-lg max-w-2xl mt-3 md:mt-4" data-i18n="hero_desc"></p>
+    </section>
 
-    <div class="max-w-2xl mx-auto mb-4 px-4 py-3 bg-amber-50 border-l-4 border-amber-400 rounded text-sm text-amber-900"
-         data-i18n-html="notice_date_html"></div>
+    <section class="max-w-6xl mx-auto px-4 md:px-6 pb-8 md:pb-10">
+        <div class="card p-4 md:p-6">
+            <div class="flex items-end gap-4 border-b border-ink pb-1">
+                <input id="search-input" type="text" class="search-input"
+                       data-i18n-placeholder="ph_query" autocomplete="off">
+                <button id="btn-search"
+                        class="bg-ink text-bg px-6 py-3 text-sm uppercase tracking-wider font-medium hover:bg-accent transition disabled:opacity-50"
+                        data-i18n="btn_search"></button>
+            </div>
 
-    <div id="notice-slow"
-         class="max-w-2xl mx-auto mb-10 px-4 py-3 bg-slate-100 border-l-4 border-slate-400 rounded text-sm text-slate-700 hidden"
-         data-i18n-html="notice_slow_html"></div>
+            <!-- filters row -->
+            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <div class="filter-group">
+                    <span class="filter-label" data-i18n="filter_year"></span>
+                    <input class="filter-input" type="number" id="f-year-from"
+                           data-i18n-placeholder="filter_from" min="1900" max="2030">
+                    <span class="filter-dash">–</span>
+                    <input class="filter-input" type="number" id="f-year-to"
+                           data-i18n-placeholder="filter_to" min="1900" max="2030">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label" data-i18n="filter_price"></span>
+                    <input class="filter-input" type="number" id="f-price-from"
+                           data-i18n-placeholder="filter_from" min="0">
+                    <span class="filter-dash">–</span>
+                    <input class="filter-input" type="number" id="f-price-to"
+                           data-i18n-placeholder="filter_to" min="0">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label" data-i18n="filter_mileage"></span>
+                    <input class="filter-input" type="number" id="f-mileage-from"
+                           data-i18n-placeholder="filter_from" min="0">
+                    <span class="filter-dash">–</span>
+                    <input class="filter-input" type="number" id="f-mileage-to"
+                           data-i18n-placeholder="filter_to" min="0">
+                </div>
+                <div class="filter-group md:ml-auto">
+                    <span class="filter-label" data-i18n="filter_sort"></span>
+                    <select class="filter-select" id="f-sort">
+                        <option value="newest"      data-i18n="sort_newest"></option>
+                        <option value="price_asc"   data-i18n="sort_price_asc"></option>
+                        <option value="price_desc"  data-i18n="sort_price_desc"></option>
+                        <option value="year_desc"   data-i18n="sort_year_desc"></option>
+                        <option value="year_asc"    data-i18n="sort_year_asc"></option>
+                        <option value="mileage_asc" data-i18n="sort_mileage_asc"></option>
+                    </select>
+                </div>
+                <button class="filter-clear" onclick="clearFilters()" data-i18n="filter_clear"></button>
+            </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div class="flex gap-2 mb-4 flex-wrap">
-            <button class="search-tab px-4 py-2 bg-blue-500 text-white rounded" data-tab="vin" data-i18n="tab_vin"></button>
-            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="phone" data-i18n="tab_phone"></button>
-            <button class="search-tab px-4 py-2 bg-slate-200 rounded" data-tab="free_text" data-i18n="tab_text"></button>
+            <p class="mt-3 text-xs text-muted" data-i18n="notice_slow"></p>
+            <p id="search-meta" class="mt-4 text-sm"></p>
         </div>
+    </section>
 
-        <div class="flex gap-2">
-            <input id="search-input" type="text"
-                   data-i18n-placeholder="ph_vin"
-                   class="flex-1 px-4 py-3 border border-slate-300 rounded focus:border-blue-500 focus:outline-none">
-            <button id="btn-search"
-                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded font-semibold disabled:bg-slate-400"
-                    data-i18n="btn_search"></button>
-        </div>
-
-        <p id="search-meta" class="mt-3 text-sm text-slate-500"></p>
-    </div>
-
-    <div id="results"></div>
-
-    <div id="empty-state" class="text-center py-16 text-slate-400" data-i18n="empty_state"></div>
+    <section class="max-w-6xl mx-auto px-4 md:px-6 pb-16 md:pb-20">
+        <div id="results"></div>
+        <div id="empty-state" class="py-16 md:py-20 text-center text-muted text-sm" data-i18n="empty_state"></div>
+    </section>
 
 </main>
 
-<footer class="mt-20 py-8 text-center text-sm text-slate-500 border-t">
-    <p data-i18n="footer_about"></p>
-    <p class="mt-2">
-        <span data-i18n="footer_contact"></span>
-        <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener"
-           class="font-semibold underline hover:text-blue-700">@deme.brn</a>
-    </p>
+<!-- lightbox lives at body root so it overlays everything -->
+<!-- onclick on the wrapper closes only if user clicked the empty bg (not a child) -->
+<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true"
+     onclick="if (event.target === this) closeLightbox()">
+    <div class="lightbox-counter" id="lightbox-counter">— / —</div>
+    <button class="lightbox-close" onclick="closeLightbox()" aria-label="close">✕</button>
+    <div class="lightbox-stage" id="lightbox-stage"
+         onclick="if (event.target === this) closeLightbox()"></div>
+    <button class="lightbox-prev" onclick="lightboxGo(-1)" aria-label="prev">◀</button>
+    <button class="lightbox-next" onclick="lightboxGo(1)" aria-label="next">▶</button>
+    <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
+</div>
+
+<footer class="border-t border-line">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-sm text-muted">
+        <p data-i18n="footer_about"></p>
+        <p>
+            <span data-i18n="footer_contact"></span>
+            <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener"
+               class="text-ink underline decoration-line hover:decoration-accent">@deme.brn</a>
+        </p>
+    </div>
 </footer>
 
 <script>
     const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
-    let currentTab = 'vin';
     let lastResponse = null;
 
     async function loadStats() {
@@ -109,16 +401,8 @@
             const data = await resp.json();
             const n = data.total_cars.toLocaleString();
             document.getElementById('nav-listings-count').textContent = t('nav_listings_count', { n });
-            document.getElementById('stats-line').classList.remove('hidden');
-        } catch (e) { /* silent */ }
-    }
-
-    function updateTabPlaceholder() {
-        const key = { vin: 'ph_vin', phone: 'ph_phone', free_text: 'ph_text' }[currentTab];
-        document.getElementById('search-input').placeholder = t(key);
-        // Show the "search may be slow" notice only on free-text tab
-        const notice = document.getElementById('notice-slow');
-        notice.classList.toggle('hidden', currentTab !== 'free_text');
+            document.getElementById('count-pill').classList.remove('hidden');
+        } catch (_) { /* silent */ }
     }
 
     document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -127,50 +411,51 @@
 
     document.addEventListener('langchange', () => {
         loadStats();
-        updateTabPlaceholder();
         if (lastResponse) renderResults(lastResponse);
     });
 
-    document.querySelectorAll('.search-tab').forEach((btn) => {
-        btn.onclick = () => {
-            document.querySelectorAll('.search-tab').forEach((b) => {
-                b.classList.remove('bg-blue-500', 'text-white');
-                b.classList.add('bg-slate-200');
-            });
-            btn.classList.add('bg-blue-500', 'text-white');
-            btn.classList.remove('bg-slate-200');
-            currentTab = btn.dataset.tab;
-            updateTabPlaceholder();
-        };
-    });
+    // ranges: input id suffix → API field
+    const _FILTER_FIELDS = {
+        'year-from':    'year_from',
+        'year-to':      'year_to',
+        'price-from':   'price_from',
+        'price-to':     'price_to',
+        'mileage-from': 'mileage_from',
+        'mileage-to':   'mileage_to',
+    };
 
-    // Reject obviously too-broad free-text queries client-side. Server has
-    // the same check — this just avoids the round-trip.
-    function isTooGeneric(text) {
-        const trimmed = text.trim();
-        if (trimmed.length < 5) return true;
-        const words = trimmed.split(/\s+/).filter(Boolean);
-        const hasDigit = /\d/.test(trimmed);
-        // Single word with no digit and < 8 chars → too vague (e.g. "Toyota")
-        if (words.length === 1 && !hasDigit && trimmed.length < 8) return true;
-        return false;
+    function buildSearchPayload() {
+        const payload = {};
+        const q = document.getElementById('search-input').value.trim();
+        if (q) payload.query = q;
+
+        for (const [id, key] of Object.entries(_FILTER_FIELDS)) {
+            const raw = document.getElementById('f-' + id).value;
+            const n = parseInt(raw, 10);
+            if (!Number.isNaN(n)) payload[key] = n;
+        }
+
+        const sort = document.getElementById('f-sort').value;
+        if (sort && sort !== 'newest') payload.sort = sort;
+
+        return payload;
     }
 
+    window.clearFilters = function () {
+        for (const id of Object.keys(_FILTER_FIELDS)) {
+            document.getElementById('f-' + id).value = '';
+        }
+        document.getElementById('f-sort').value = 'newest';
+    };
+
     async function doSearch() {
-        const value = document.getElementById('search-input').value.trim();
-        if (!value) return;
+        const payload = buildSearchPayload();
+        if (Object.keys(payload).length === 0) return;     // nothing to do
 
         const btn = document.getElementById('btn-search');
         const meta = document.getElementById('search-meta');
-        const results = document.getElementById('results');
         const empty = document.getElementById('empty-state');
-
-        if (currentTab === 'free_text' && isTooGeneric(value)) {
-            meta.innerHTML = `<span class="text-orange-600">${t('err_too_generic')}</span>`;
-            results.innerHTML = '';
-            empty.classList.add('hidden');
-            return;
-        }
+        const results = document.getElementById('results');
 
         btn.disabled = true;
         btn.textContent = t('btn_searching');
@@ -181,13 +466,12 @@
             const resp = await fetch(`${API_BASE}/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ [currentTab]: value }),
+                body: JSON.stringify(payload),
             });
 
             if (!resp.ok) {
                 const err = await resp.json();
-                const color = resp.status === 429 ? 'text-orange-600' : 'text-red-600';
-                meta.innerHTML = `<span class="${color}">${err.detail}</span>`;
+                meta.innerHTML = `<span class="text-accent">${err.detail}</span>`;
                 results.innerHTML = '';
                 lastResponse = null;
                 return;
@@ -196,7 +480,7 @@
             lastResponse = await resp.json();
             renderResults(lastResponse);
         } catch (e) {
-            meta.innerHTML = `<span class="text-red-600">${t('err_fetch', { msg: e.message })}</span>`;
+            meta.innerHTML = `<span class="text-accent">${t('err_fetch', { msg: e.message })}</span>`;
         } finally {
             btn.disabled = false;
             btn.textContent = t('btn_search');
@@ -204,88 +488,15 @@
     }
 
     document.getElementById('btn-search').onclick = doSearch;
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') doSearch();
+
+    // Enter in any filter input or the search input triggers search
+    document.querySelectorAll('#search-input, .filter-input, #f-sort').forEach((el) => {
+        el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
     });
-
-    function renderResults(data) {
-        const meta = document.getElementById('search-meta');
-        const results = document.getElementById('results');
-
-        let metaText = `<strong>${t('results_count', { n: data.results_count })}</strong>`;
-        if (data.remaining_free_searches !== null && data.remaining_free_searches !== undefined) {
-            metaText += t('results_remaining', { n: data.remaining_free_searches });
-        }
-        meta.innerHTML = metaText;
-
-        if (data.results.length === 0) {
-            results.innerHTML = `<div class="text-center py-10 text-slate-500">${t('no_results')}</div>`;
-            return;
-        }
-
-        const sourceBadge = (src) => {
-            const colors = {
-                autopapa: 'bg-orange-100 text-orange-700 border-orange-300',
-                myauto:   'bg-blue-100 text-blue-700 border-blue-300',
-            };
-            const cls = colors[src] || 'bg-slate-100 text-slate-700 border-slate-300';
-            return `<span class="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${cls}">${escapeHtml(src)}</span>`;
-        };
-
-        const cleared = t('cleared');
-        const notCleared = t('not_cleared');
-
-        results.innerHTML = data.results.map((car) => `
-            <div class="bg-white rounded-lg shadow-md mb-4 overflow-hidden hover:shadow-lg transition relative">
-                <div class="absolute top-2 right-2 z-10">${sourceBadge(car.source)}</div>
-                <div class="flex flex-col md:flex-row">
-                    <div class="md:w-64 flex-shrink-0">
-                        ${car.image_urls && car.image_urls.length > 0
-                            ? `<img src="${car.image_urls[0]}" class="w-full h-48 object-cover" onerror="this.style.display='none'">`
-                            : `<div class="w-full h-48 bg-slate-200 flex items-center justify-center text-slate-400">📷</div>`}
-                    </div>
-                    <div class="p-4 flex-1">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <h3 class="font-bold text-lg text-slate-800">
-                                    ${escapeHtml(car.manufacturer)} ${escapeHtml(car.model)} ${car.year || ''}
-                                </h3>
-                                <p class="text-sm text-slate-500">${escapeHtml(car.location || '')}</p>
-                            </div>
-                            <div class="text-right mr-20">
-                                <p class="font-bold text-lg text-green-600">
-                                    ${car.price_amount ? car.price_amount.toLocaleString() : '—'} ${car.price_currency || ''}
-                                </p>
-                                <p class="text-xs text-slate-500">${car.customs_cleared === true ? cleared : car.customs_cleared === false ? notCleared : ''}</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-sm text-slate-600">
-                            ${car.mileage_km ? `<div>📊 ${car.mileage_km.toLocaleString()} km</div>` : ''}
-                            ${car.engine_volume_l ? `<div>⚙️ ${car.engine_volume_l}L</div>` : ''}
-                            ${car.engine_type ? `<div>⛽ ${escapeHtml(car.engine_type)}</div>` : ''}
-                            ${car.gearbox ? `<div>🔧 ${escapeHtml(car.gearbox)}</div>` : ''}
-                        </div>
-                        ${car.vin ? `
-                            <div class="mt-3 p-2 bg-blue-50 rounded text-sm">
-                                <strong>VIN:</strong> <code class="font-mono">${escapeHtml(car.vin)}</code>
-                            </div>` : ''}
-                        ${car.phone ? `
-                            <div class="mt-2 text-sm">
-                                <strong>📞</strong> <a href="tel:${escapeHtml(car.phone)}" class="text-blue-600">${escapeHtml(car.phone)}</a>
-                                ${car.seller_name ? ` · ${escapeHtml(car.seller_name)}` : ''}
-                            </div>` : ''}
-                        <div class="mt-3 flex gap-2">
-                            <a href="${car.url}" target="_blank" rel="noopener"
-                               class="text-sm text-blue-600 hover:underline">${t('view_source')}</a>
-                            ${car.image_urls && car.image_urls.length > 1
-                                ? `<span class="text-sm text-slate-400">${t('more_photos', { n: car.image_urls.length - 1 })}</span>`
-                                : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
+    // Sort change re-runs the current search
+    document.getElementById('f-sort').addEventListener('change', () => {
+        if (lastResponse) doSearch();
+    });
 
     function escapeHtml(text) {
         const div = document.createElement('div');
@@ -293,8 +504,285 @@
         return div.innerHTML;
     }
 
+    function specRow(label, value) {
+        return `<div class="spec-label">${escapeHtml(label)}</div><div class="spec-value">${escapeHtml(value)}</div>`;
+    }
+
+    // Sellers sometimes paste 2+ phones into one field — backend stores the
+    // concatenation. Split on 12-digit "+995xxxxxxxxx" boundaries for display.
+    function splitPhones(phone) {
+        if (!phone) return [];
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length <= 12) return [phone];
+
+        const chunks = digits.match(/.{1,12}/g) || [];
+        return chunks.map((c) => {
+            if (c.length === 12 && c.startsWith('995')) {
+                const m = c.substring(3);
+                return `+995 ${m.substring(0, 3)} ${m.substring(3, 6)} ${m.substring(6)}`;
+            }
+            if (c.length === 9 && /^[573]/.test(c)) {
+                return `+995 ${c.substring(0, 3)} ${c.substring(3, 6)} ${c.substring(6)}`;
+            }
+            return '+' + c;
+        });
+    }
+
+    // Extract YouTube ID from various URL shapes
+    function youtubeId(url) {
+        if (!url) return null;
+        const m = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+        return m ? m[1] : null;
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const locale = getLang() === 'ka' ? 'ka-GE' : 'en-GB';
+        return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ---- per-card photo block: main image + thumb strip + lightbox trigger ----
+
+    // global slide registry, keyed by card id
+    const _slidesByCard = {};
+
+    function slideStage(slide) {
+        if (slide.type === 'video') {
+            return `<iframe src="${escapeHtml(slide.src)}" allowfullscreen></iframe>`;
+        }
+        return `<img src="${escapeHtml(slide.src)}" alt="" onerror="this.style.opacity=0.2">`;
+    }
+
+    function thumbSrc(slide) {
+        if (slide.type === 'video') {
+            const id = (slide.src.match(/embed\/([\w-]+)/) || [])[1];
+            return id ? `https://img.youtube.com/vi/${id}/default.jpg` : '';
+        }
+        return slide.src;
+    }
+
+    function photoBlockHtml(cardId, slides) {
+        if (slides.length === 0) {
+            return `<div class="no-photo w-full" style="aspect-ratio: 4 / 3;">${t('no_photos')}</div>`;
+        }
+
+        const counter = slides.length > 1
+            ? `<div class="carousel-counter" id="${cardId}-counter">${t('photo_counter', { i: 1, n: slides.length })}</div>`
+            : '';
+
+        const main = `
+            <div class="carousel w-full" id="${cardId}" data-index="0" onclick="openCardLightbox('${cardId}')">
+                <div class="carousel-stage" id="${cardId}-stage">${slideStage(slides[0])}</div>
+                ${counter}
+            </div>
+        `;
+
+        if (slides.length === 1) return main;
+
+        // up to 8 thumbnails in two rows
+        const visible = slides.slice(0, 8);
+        const thumbsHtml = visible.map((s, i) => `
+            <button class="thumb ${i === 0 ? 'is-active' : ''} ${s.type === 'video' ? 'is-video' : ''}"
+                    onclick="event.stopPropagation(); switchCardSlide('${cardId}', ${i})">
+                <img src="${escapeHtml(thumbSrc(s))}" alt="" onerror="this.style.opacity=0.2">
+            </button>
+        `).join('');
+
+        return main + `<div class="thumb-strip">${thumbsHtml}</div>`;
+    }
+
+    window.switchCardSlide = function (cardId, idx) {
+        const slides = _slidesByCard[cardId];
+        if (!slides || !slides[idx]) return;
+        const carousel = document.getElementById(cardId);
+        carousel.dataset.index = idx;
+        document.getElementById(cardId + '-stage').innerHTML = slideStage(slides[idx]);
+        const counter = document.getElementById(cardId + '-counter');
+        if (counter) counter.textContent = t('photo_counter', { i: idx + 1, n: slides.length });
+        // sync thumb active state
+        const thumbs = carousel.parentElement.querySelectorAll('.thumb');
+        thumbs.forEach((el, i) => el.classList.toggle('is-active', i === idx));
+    };
+
+    window.openCardLightbox = function (cardId) {
+        const slides = _slidesByCard[cardId];
+        if (!slides || !slides.length) return;
+        const carousel = document.getElementById(cardId);
+        const idx = parseInt(carousel.dataset.index, 10) || 0;
+        openLightbox(slides, idx);
+    };
+
+    // ---- lightbox ----
+
+    let _lightbox = null;
+
+    window.openLightbox = function (slides, startIdx) {
+        _lightbox = { slides, idx: Math.max(0, Math.min(startIdx || 0, slides.length - 1)) };
+        document.body.style.overflow = 'hidden';
+        renderLightbox();
+        document.getElementById('lightbox').classList.remove('hidden');
+    };
+
+    window.closeLightbox = function () {
+        document.getElementById('lightbox').classList.add('hidden');
+        document.getElementById('lightbox-stage').innerHTML = '';   // stop any playing video
+        document.body.style.overflow = '';
+        _lightbox = null;
+    };
+
+    window.lightboxGo = function (delta) {
+        if (!_lightbox) return;
+        let idx = _lightbox.idx + delta;
+        if (idx < 0) idx = _lightbox.slides.length - 1;
+        if (idx >= _lightbox.slides.length) idx = 0;
+        _lightbox.idx = idx;
+        renderLightbox();
+    };
+
+    window.lightboxJump = function (idx) {
+        if (!_lightbox) return;
+        _lightbox.idx = idx;
+        renderLightbox();
+    };
+
+    function renderLightbox() {
+        const { slides, idx } = _lightbox;
+        document.getElementById('lightbox-stage').innerHTML = slideStage(slides[idx]);
+        document.getElementById('lightbox-counter').textContent = t('photo_counter', { i: idx + 1, n: slides.length });
+
+        const thumbs = document.getElementById('lightbox-thumbs');
+        thumbs.innerHTML = slides.map((s, i) => `
+            <button class="lightbox-thumb ${i === idx ? 'is-active' : ''}" onclick="lightboxJump(${i})">
+                <img src="${escapeHtml(thumbSrc(s))}" alt="">
+            </button>
+        `).join('');
+
+        // scroll active thumb into view
+        const active = thumbs.querySelector('.lightbox-thumb.is-active');
+        if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (!_lightbox) return;
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowLeft') lightboxGo(-1);
+        else if (e.key === 'ArrowRight') lightboxGo(1);
+    });
+
+    function renderResults(data) {
+        const meta = document.getElementById('search-meta');
+        const results = document.getElementById('results');
+
+        let metaText = `<strong class="text-ink">${t('results_count', { n: data.results_count })}</strong>`;
+        if (data.remaining_free_searches != null) {
+            metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_free_searches })}</span>`;
+        }
+        meta.innerHTML = metaText;
+
+        if (data.results.length === 0) {
+            results.innerHTML = `<div class="py-16 text-center text-muted">${t('no_results')}</div>`;
+            return;
+        }
+
+        // Reset per-card carousel state on each render
+        for (const k in _slidesByCard) delete _slidesByCard[k];
+
+        results.innerHTML = data.results.map((car, i) => {
+            const cardId = `c${i}`;
+            const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
+
+            // Build slides — video first if YouTube, then all images
+            const slides = [];
+            const ytId = youtubeId(car.video_url);
+            if (ytId) {
+                slides.push({ type: 'video', src: `https://www.youtube.com/embed/${ytId}` });
+            }
+            if (car.image_urls && car.image_urls.length) {
+                for (const url of car.image_urls) slides.push({ type: 'image', src: url });
+            }
+            _slidesByCard[cardId] = slides;
+
+            const specs = [];
+            if (car.mileage_km)        specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
+            if (car.engine_volume_l)   specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
+            if (car.engine_type)       specs.push(specRow(t('spec_fuel'),    car.engine_type));
+            if (car.gearbox)           specs.push(specRow(t('spec_gearbox'), car.gearbox));
+            if (car.drive_wheels)      specs.push(specRow(t('spec_drive'),   car.drive_wheels));
+            if (car.color)             specs.push(specRow(t('spec_color'),   car.color));
+            if (car.steering)          specs.push(specRow(t('spec_steering'), car.steering));
+
+            const customsBadge = car.customs_cleared === true
+                ? `<span class="customs-badge customs-yes ml-auto">${t('cleared')}</span>`
+                : car.customs_cleared === false
+                ? `<span class="customs-badge customs-no ml-auto">${t('not_cleared')}</span>`
+                : '';
+
+            const phones = splitPhones(car.phone || '');
+            const phoneBlock = phones.length ? `
+                <div class="border-t border-line pt-4 mb-4">
+                  <div class="spec-label mb-2">${t('section_phone')}</div>
+                  <div class="phone-list">
+                    ${phones.map(p => `<a href="tel:${escapeHtml(p.replace(/\s/g, ''))}">${escapeHtml(p)}</a>`).join('')}
+                  </div>
+                  ${car.seller_name ? `<div class="text-muted text-xs mt-2">${escapeHtml(car.seller_name)}</div>` : ''}
+                </div>` : '';
+
+            // posted_date is verbatim from source (e.g. "10 May 2026"); if blank, fall back to created_at
+            const hasPostedDate = car.posted_date && car.posted_date.trim();
+            const dateBlock = hasPostedDate
+                ? `<div class="meta-line">${t('posted_on', { date: escapeHtml(car.posted_date.trim()) })}</div>`
+                : `<div class="meta-note">${t('scraped_on_note', { date: formatDate(car.created_at) })}</div>`;
+
+            return `
+                <article class="card mb-4">
+                  <div class="flex flex-col md:flex-row md:items-start">
+                    <div class="md:w-96 flex-shrink-0 p-2 md:p-3">
+                      ${photoBlockHtml(cardId, slides)}
+                    </div>
+                    <div class="p-4 md:p-6 flex-1 min-w-0">
+                      <div class="flex items-start justify-between gap-4 mb-3">
+                        <div class="min-w-0">
+                          <h3 class="serif-display text-2xl text-ink leading-tight">${escapeHtml(title)}</h3>
+                          ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(car.location)}</p>` : ''}
+                        </div>
+                        <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
+                      </div>
+
+                      <div class="flex items-baseline gap-3 mb-5">
+                        <span class="font-mono text-2xl font-medium text-price">
+                          ${car.price_amount ? car.price_amount.toLocaleString() : '—'}
+                        </span>
+                        <span class="text-muted text-sm uppercase tracking-wider">${escapeHtml(car.price_currency || '')}</span>
+                        ${customsBadge}
+                      </div>
+
+                      ${specs.length ? `<div class="spec-grid mb-5">${specs.join('')}</div>` : ''}
+
+                      ${car.description ? `
+                        <div class="border-t border-line pt-4 mb-4">
+                          <div class="spec-label mb-2">${t('section_description')}</div>
+                          <div class="description">${escapeHtml(car.description)}</div>
+                        </div>` : ''}
+
+                      ${car.vin ? `
+                        <div class="border-t border-line pt-4 mb-4">
+                          <div class="spec-label mb-2">${t('section_vin')}</div>
+                          <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code>
+                        </div>` : ''}
+
+                      ${phoneBlock}
+
+                      <div class="border-t border-line pt-4">
+                        ${dateBlock}
+                      </div>
+                    </div>
+                  </div>
+                </article>`;
+        }).join('');
+    }
+
     loadStats();
-    updateTabPlaceholder();
 </script>
 
 </body>

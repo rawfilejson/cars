@@ -1,5 +1,8 @@
 """
-ძიების endpoints — VIN, ნომერი, თავისუფალი ტექსტი.
+ძიების endpoint — ერთიანი smart search + legacy ცალკეული ფილდები.
+
+ახალი ფრონტი: `query` ერთად, backend ცნობს რა ტიპისაა (VIN/phone/ტექსტი).
+ძველი ფრონტი (Carba): vin/phone/free_text ცალკე ფილდები. deprecated.
 
 სრულიად უფასო, ანონიმური — მხოლოდ IP-ით ლიმიტი.
 """
@@ -20,26 +23,192 @@ from src.common.config import DATABASE_URL, R2_PUBLIC_URL
 router = APIRouter(prefix="/search", tags=["search"])
 
 
+# Searchable text — everything user might type to find a car concatenated.
+# Used both for ILIKE (Ctrl-F substring) and similarity (typo tolerance).
+_SEARCH_BLOB = (
+    "COALESCE(manufacturer,'') || ' ' || "
+    "COALESCE(model,'') || ' ' || "
+    "COALESCE(description,'') || ' ' || "
+    "COALESCE(location,'') || ' ' || "
+    "COALESCE(color,'') || ' ' || "
+    "COALESCE(body_type,'') || ' ' || "
+    "COALESCE(engine_type,'') || ' ' || "
+    "COALESCE(gearbox,'') || ' ' || "
+    "COALESCE(CAST(year AS TEXT),'') || ' ' || "
+    "COALESCE(vin,'')"
+)
+
+
+_VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
+
+# rough USD-equivalent for sorting across currencies
+_PRICE_IN_USD = (
+    "(CASE price_currency "
+    "WHEN 'USD' THEN price_amount::float "
+    "WHEN 'EUR' THEN price_amount::float * 1.08 "
+    "WHEN 'GEL' THEN price_amount::float * 0.37 "
+    "END)"
+)
+
+_SORT_CLAUSES = {
+    "newest":      "updated_at DESC",
+    "price_asc":   f"{_PRICE_IN_USD} ASC NULLS LAST, updated_at DESC",
+    "price_desc":  f"{_PRICE_IN_USD} DESC NULLS LAST, updated_at DESC",
+    "year_desc":   "year DESC NULLS LAST, updated_at DESC",
+    "year_asc":    "year ASC NULLS LAST, updated_at DESC",
+    "mileage_asc": "mileage_km ASC NULLS LAST, updated_at DESC",
+}
+
+
 def _normalize_phone_query(raw: str) -> str:
-    """ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური).
-
-    ბაზაში ნომრები ლამაზად ინახება ("+995 595 515 141"), ძიება კი ხდება
-    `regexp_replace(phone, '\\D', '', 'g') LIKE %s` -ით, ანუ ციფრებზე.
-
-    მომხმარებელმა შეიძლება ჩაწეროს ნებისმიერი ფორმატით:
-      "595515141"         → "595515141"
-      "+995 595 51 51 41" → "595515141"
-      "5-9-5-5-1-5-1-4-1" → "595515141"
-      "(595) 515 141"     → "595515141"
-      "abc595515141xyz"   → "595515141"
-    ყველა იპოვის იმავე ნომერს.
-    """
+    """ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური)."""
     digits = re.sub(r"\D", "", raw)
     return digits[-9:] if len(digits) > 9 else digits
 
 
+def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
+    """Filter SQL fragments + their parameter values."""
+    fragments: list[str] = []
+    params: list = []
+    if req.year_from is not None:
+        fragments.append("year >= %s")
+        params.append(req.year_from)
+    if req.year_to is not None:
+        fragments.append("year <= %s")
+        params.append(req.year_to)
+    if req.price_from is not None:
+        fragments.append(f"{_PRICE_IN_USD} >= %s")
+        params.append(req.price_from)
+    if req.price_to is not None:
+        fragments.append(f"{_PRICE_IN_USD} <= %s")
+        params.append(req.price_to)
+    if req.mileage_from is not None:
+        fragments.append("mileage_km >= %s")
+        params.append(req.mileage_from)
+    if req.mileage_to is not None:
+        fragments.append("mileage_km <= %s")
+        params.append(req.mileage_to)
+    return fragments, params
+
+
+def _sort_clause(sort: str | None) -> str:
+    """ORDER BY tail string. Default = newest."""
+    return _SORT_CLAUSES.get(sort or "newest", _SORT_CLAUSES["newest"])
+
+
+def _has_any_filter(req: SearchRequest) -> bool:
+    return any(
+        getattr(req, k) is not None
+        for k in ("year_from", "year_to", "price_from", "price_to", "mileage_from", "mileage_to")
+    )
+
+
+_PHONE_CHARS_RE = re.compile(r"[\d\s+()\-.]+")
+
+
+def _looks_like_phone(text: str) -> bool:
+    """7+ ციფრი + ფონის სიმბოლოები (digits, spaces, +, -, parens, dots)."""
+    digits = re.sub(r"\D", "", text)
+    if len(digits) < 7:
+        return False
+    # All chars are phone-shaped → definitely a phone
+    if _PHONE_CHARS_RE.fullmatch(text):
+        return True
+    # Mixed junk but mostly digits → probably a phone
+    return len(digits) / len(text) > 0.5
+
+
+def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
+    """Auto-detect VIN / phone / freeform text. Applies filters + sort to
+    freeform path (VIN/phone are exact lookups — filters don't make sense)."""
+    text = text.strip()
+    if not text:
+        # browse mode — no text, just filters
+        return _browse_query(req)
+
+    upper = text.upper()
+    if _VIN_RE.match(upper):
+        return (
+            "SELECT * FROM cars WHERE vin = %s ORDER BY updated_at DESC LIMIT 50",
+            (upper,),
+            "vin",
+        )
+
+    if _looks_like_phone(text):
+        suffix = _normalize_phone_query(text)
+        return (
+            "SELECT * FROM cars WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
+            "ORDER BY updated_at DESC LIMIT 50",
+            ("%" + suffix,),
+            "phone",
+        )
+
+    # Freeform — Ctrl-F across all fields, similarity for ranking, plus filters
+    words = [w for w in text.split() if w]
+    if not words or len(text) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — "
+                   "დაამატე წელი, ქალაქი ან მოდელის ვერსია "
+                   "(მაგ. Toyota Camry 2020 თბილისი).",
+        )
+
+    word_clauses = " AND ".join([f"({_SEARCH_BLOB}) ILIKE %s"] * len(words))
+    patterns = [f"%{w}%" for w in words]
+
+    filter_frags, filter_params = _filter_clauses(req)
+    extra_where = (" AND " + " AND ".join(filter_frags)) if filter_frags else ""
+
+    # When user sorted explicitly, similarity drops out of ORDER BY
+    if req.sort:
+        order_by = _sort_clause(req.sort)
+        sql = f"""
+            SELECT *
+            FROM cars
+            WHERE {word_clauses}{extra_where}
+            ORDER BY {order_by}
+            LIMIT 50
+        """
+        params = (*patterns, *filter_params)
+    else:
+        sql = f"""
+            SELECT *, similarity({_SEARCH_BLOB}, %s) AS score
+            FROM cars
+            WHERE {word_clauses}{extra_where}
+            ORDER BY score DESC NULLS LAST, updated_at DESC
+            LIMIT 50
+        """
+        params = (text, *patterns, *filter_params)
+
+    return (sql, params, "search")
+
+
+def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
+    """No text — just filters + sort. e.g. all 2018-2022 cars under $20k."""
+    if not _has_any_filter(req):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის ან გამოიყენე ფილტრები",
+        )
+    filter_frags, filter_params = _filter_clauses(req)
+    where = " AND ".join(filter_frags)
+    order_by = _sort_clause(req.sort)
+    sql = f"""
+        SELECT *
+        FROM cars
+        WHERE {where}
+        ORDER BY {order_by}
+        LIMIT 50
+    """
+    return (sql, tuple(filter_params), "browse")
+
+
 def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
-    """SQL + params + query_type — VIN > Phone > Free text პრიორიტეტი."""
+    """Routes to smart-search if `query` set, otherwise legacy logic, otherwise browse."""
+    if req.query:
+        return _smart_route(req, req.query)
+
+    # ----- Legacy path (deprecated, used by old Carba frontend) -----
     if req.vin and len(req.vin) == 17:
         return (
             "SELECT * FROM cars WHERE vin = %s ORDER BY updated_at DESC LIMIT 50",
@@ -53,7 +222,6 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
             "vin",
         )
     if req.phone:
-        # ნომრის გასუფთავება — მომხმარებლისგან მოსული ფორმატი არ აქვს მნიშვნელობა
         suffix = _normalize_phone_query(req.phone)
         if len(suffix) < 4:
             raise HTTPException(
@@ -63,37 +231,19 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
         return (
             "SELECT * FROM cars WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
             "ORDER BY updated_at DESC LIMIT 50",
-            ("%" + suffix,),                            # ციფრებზე match
+            ("%" + suffix,),
             "phone",
         )
     if req.free_text:
-        text = req.free_text.strip()
-        # Reject obvious one-word brand searches like "Toyota" — they'd return
-        # thousands of rows and serve nobody. Frontend has the same guard.
-        words = [w for w in text.split() if w]
-        has_digit = any(c.isdigit() for c in text)
-        too_generic = (
-            len(text) < 5
-            or (len(words) == 1 and not has_digit and len(text) < 8)
-        )
-        if too_generic:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Search too broad — add year, city, or model trim "
-                       "(e.g. \"Toyota Camry 2020 თბილისი\").",
-            )
-        return (
-            """
-            SELECT *, similarity(description, %s) AS score FROM cars
-            WHERE description %% %s
-            ORDER BY score DESC, updated_at DESC LIMIT 30
-            """,
-            (text, text),
-            "free_text",
-        )
+        return _smart_route(req, req.free_text)
+
+    # No text and no legacy fields — try browse mode (filters only)
+    if _has_any_filter(req):
+        return _browse_query(req)
+
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="მინიმუმ ერთი ფილდი უნდა შეავსოთ (vin / phone / free_text)",
+        detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის",
     )
 
 
@@ -160,7 +310,7 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
     results_count = len(results)
 
     # log
-    query_repr = req.vin or req.phone or req.free_text or ""
+    query_repr = req.query or req.vin or req.phone or req.free_text or ""
     log_search(request, query_repr, query_type, results_count)
 
     return SearchResponse(
