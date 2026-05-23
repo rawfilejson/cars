@@ -35,6 +35,16 @@ log = logging.getLogger(__name__)
 
 _EXT_RE = re.compile(r"\.(jpg|jpeg|png|webp|gif)(?:\?|$)", re.IGNORECASE)
 
+# CDN-ებს ხშირად Referer-ი ნდია, თორემ 403. წყაროს მიხედვით ვაბრუნებთ.
+_REFERERS = {
+    "autopapa": "https://autopapa.ge/",
+    "myauto":   "https://www.myauto.ge/",
+}
+
+
+def referer_for(source: str) -> str:
+    return _REFERERS.get(source, "")
+
 
 def _guess_extension(url: str) -> str:
     match = _EXT_RE.search(url)
@@ -49,21 +59,41 @@ def local_path(key: str) -> Path:
     return PHOTOS_DIR / key
 
 
-async def download_to_local(client: httpx.AsyncClient, url: str, key: str) -> bool:
+_RETRY_DELAYS = (1.0, 2.0, 4.0)               # exponential backoff
+
+
+async def download_to_local(
+    client: httpx.AsyncClient, url: str, key: str, source: str = ""
+) -> bool:
+    """Download URL → local file. Skips if already present.
+
+    Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx → no retry.
+    """
     path = local_path(key)
     if path.exists() and path.stat().st_size > 0:
         return True
 
     path.parent.mkdir(parents=True, exist_ok=True)
+    headers = {"Referer": referer_for(source)} if source else {}
 
-    try:
-        resp = await client.get(url, timeout=30.0)
-        resp.raise_for_status()
-        path.write_bytes(resp.content)
-        return True
-    except Exception as exc:
-        log.warning("download failed %s — %s", url, exc)
-        return False
+    last_exc: Exception | None = None
+    for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
+        try:
+            resp = await client.get(url, timeout=30.0, headers=headers)
+            # 4xx — permanent, no point retrying
+            if 400 <= resp.status_code < 500:
+                log.warning("download %s — HTTP %d (no retry)", url, resp.status_code)
+                return False
+            resp.raise_for_status()
+            path.write_bytes(resp.content)
+            return True
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
+            last_exc = exc
+            if attempt < len(_RETRY_DELAYS):
+                await asyncio.sleep(delay)
+
+    log.warning("download failed %s after %d tries — %s", url, len(_RETRY_DELAYS), last_exc)
+    return False
 
 
 _r2_client: "S3Client | None" = None
@@ -100,11 +130,27 @@ def _content_type(key: str) -> str:
     }.get(ext, "image/jpeg")
 
 
+def _r2_object_exists(client, key: str) -> bool:
+    """HeadObject — sphenecan სწრაფი check (Class B operation, ~10x იაფი
+    Class A upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
+    """
+    from botocore.exceptions import ClientError
+    try:
+        client.head_object(Bucket=R2_BUCKET, Key=key)
+        return True
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
+            return False
+        raise
+
+
 def upload_to_r2_sync(local_file: Path, key: str) -> bool:
     client = get_r2_client()
     if client is None:
         return False
     try:
+        if _r2_object_exists(client, key):
+            return True                          # idempotent skip
         client.upload_file(
             str(local_file),
             R2_BUCKET,
@@ -138,7 +184,7 @@ async def fetch_and_store(
     """Returns the storage key on success, None on failure."""
     key = make_image_key(source, source_id, index, url)
 
-    if not await download_to_local(client, url, key):
+    if not await download_to_local(client, url, key, source=source):
         return None
 
     if upload_to_cloud and r2_is_configured():

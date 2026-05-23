@@ -117,10 +117,10 @@ async def main() -> None:
     start = time.time()
     semaphore = asyncio.Semaphore(args.concurrent)
 
+    # Referer-ი per-request დაიდება storage.referer_for-ის მიხედვით (autopapa vs myauto)
     async with httpx.AsyncClient(
         headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": "https://autopapa.ge/",
         },
         follow_redirects=True,
     ) as client:
