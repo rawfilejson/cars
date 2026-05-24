@@ -42,6 +42,7 @@ from src.common.vin import find_vin, is_valid_vin
 SOURCE = "myauto"
 HOST = "https://www.myauto.ge"
 DETAIL_URL_TEMPLATE = "https://www.myauto.ge/ka/pr/{car_id}/sale"
+IMAGE_URL_TEMPLATE = "https://static.my.ge/myauto/photos/{photo}/large/{car_id}_{n}.jpg"
 
 _ID_FROM_URL_RE = re.compile(r"/pr/(\d+)(?:/|$)")
 
@@ -50,6 +51,179 @@ def extract_id(url: str) -> str:
     """URL-დან car_id. `.../pr/120183626/sale` → `"120183626"`."""
     match = _ID_FROM_URL_RE.search(url)
     return match.group(1) if match else ""
+
+
+# ---------------------------------------------------------------------------
+# API-fast mode: full car data per API page (no per-car Playwright detail).
+# These lookup tables come from myauto's /appdata enums — stable enough to
+# hard-code.
+# ---------------------------------------------------------------------------
+
+CURRENCY_MAP = {1: "USD", 2: "EUR", 3: "GEL"}
+FUEL_MAP = {
+    1: "ჰიბრიდი", 2: "ბენზინი", 3: "დიზელი", 4: "ელექტრო",
+    5: "ბენზინი/გაზი", 6: "ჰიბრიდი", 7: "დატენვადი ჰიბრიდი",
+}
+GEARBOX_MAP = {1: "მექანიკა", 2: "ავტომატიკა", 3: "ტიპტრონიკი", 4: "ვარიატორი"}
+DRIVE_MAP = {1: "წინა", 2: "უკანა", 3: "4x4"}
+DOORS_MAP = {1: 3, 2: 5, 3: 6}
+MATERIAL_MAP = {1: "ტყავი", 2: "ნაჭერი", 3: "ველვეტი", 4: "კომბინირებული", 5: "სხვა"}
+COLOR_MAP = {
+    1: "თეთრი", 2: "შავი", 3: "წითელი", 4: "მწვანე", 5: "ლურჯი",
+    6: "ვერცხლისფერი", 7: "ყვითელი", 8: "ნარინჯისფერი", 9: "ყავისფერი",
+    10: "ოქროსფერი", 11: "ბორდოსფერი", 12: "რუხი", 13: "შავი მეტალიკი",
+    14: "რუხი მეტალიკი", 15: "მუქი ლურჯი", 16: "ვერცხლისფერი მეტალიკი",
+    17: "ბეჟი", 18: "მწვანე მეტალიკი", 19: "სხვა",
+}
+LOCATION_MAP = {
+    1: "საქართველო", 2: "თბილისი", 3: "ბათუმი", 4: "ქუთაისი", 5: "რუსთავი",
+    6: "გორი", 7: "ფოთი", 8: "ზუგდიდი", 9: "ხაშური", 10: "სამტრედია",
+    11: "სენაკი", 12: "ოზურგეთი", 13: "მცხეთა", 14: "ახალციხე", 15: "მარნეული",
+    16: "თელავი", 17: "ბორჯომი", 18: "ქობულეთი", 19: "გარდაბანი", 20: "კასპი",
+}
+CATEGORY_MAP = {
+    1: "სედანი", 2: "ჰეტჩბეკი", 3: "უნივერსალი", 4: "კუპე", 5: "ჯიპი",
+    6: "პიკაპი", 7: "კაბრიოლეტი", 8: "მინივენი", 9: "მიკროავტობუსი",
+    10: "ლიმუზინი", 11: "ფურგონი", 12: "სატვირთო", 66: "კროსოვერი",
+}
+FEATURE_FLAGS = {
+    "abs": "ABS", "esd": "ESP", "el_windows": "ელ. შუშები",
+    "conditioner": "კონდინციონერი", "climat_control": "კლიმატკონტროლი",
+    "leather": "ტყავის სალონი", "disks": "ალუმინის დისკები",
+    "nav_system": "ნავიგაცია", "central_lock": "ცენტრალური საკეტი",
+    "hatch": "ლუქი", "alarm": "სიგნალიზაცია", "board_comp": "ბორტკომპიუტერი",
+    "hydraulics": "ჰიდრო", "chair_warming": "სავარძლების გათბობა",
+    "obstacle_indicator": "პარკტრონიკი", "back_camera": "უკანა კამერა",
+    "start_stop": "Start/Stop", "has_turbo": "ტურბო",
+    "tech_inspection": "ტექდათვალიერება",
+}
+
+
+def _to_int(value) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def _positive_int(value) -> int | None:
+    """0 → None. myauto uses 0 for unknown numeric fields."""
+    n = _to_int(value)
+    return n if n and n > 0 else None
+
+
+def _cc_to_liters(cc: int | None) -> float | None:
+    if cc is None or cc <= 0:
+        return None
+    return round(cc / 1000, 2)
+
+
+def _build_image_urls(item: dict, max_images: int = 20) -> list[str]:
+    car_id = item.get("car_id")
+    photo = item.get("photo")
+    pic_count = _to_int(item.get("pic_number")) or 0
+    if not (car_id and photo and pic_count):
+        return []
+    photo_ver = item.get("photo_ver") or ""
+    urls: list[str] = []
+    for i in range(1, min(pic_count, max_images) + 1):
+        url = IMAGE_URL_TEMPLATE.format(photo=photo, car_id=car_id, n=i)
+        if photo_ver:
+            url += f"?v={photo_ver}"
+        urls.append(url)
+    return urls
+
+
+def _build_description_from_api(item: dict) -> str:
+    parts: list[str] = []
+    raw = clean_text(item.get("car_desc") or "")
+    if raw:
+        parts.append(raw)
+    flags = [label for key, label in FEATURE_FLAGS.items() if item.get(key)]
+    if flags:
+        parts.append("ფიჩერები: " + ", ".join(flags))
+    if item.get("airbags"):
+        parts.append(f"აირბაგები: {item['airbags']}")
+    return "\n\n".join(parts)
+
+
+def _build_phone_from_api(item: dict) -> str:
+    """Listings endpoint returns phone masked ('995557607***'). Masked → ''."""
+    raw = item.get("client_phone")
+    if raw is None:
+        return ""
+    raw_str = str(raw)
+    if "*" in raw_str:
+        return ""
+    return format_phone(raw_str)
+
+
+def _build_vin_from_api(item: dict) -> str:
+    raw = (item.get("vin") or "").strip()
+    if raw and "*" not in raw:
+        return raw.upper()
+    in_desc = find_vin(item.get("car_desc") or "")
+    if in_desc:
+        return in_desc
+    return ""
+
+
+def _build_model_from_api(item: dict) -> str:
+    name = (item.get("model_name") or "").strip()
+    extra = (item.get("car_model") or "").strip()
+    if not extra:
+        return name
+    if extra.lower() in name.lower():
+        return name
+    return f"{name} {extra}".strip()
+
+
+def item_to_car(item: dict) -> Car | None:
+    """Convert one API item → Car. Returns None if missing required fields."""
+    car_id = item.get("car_id")
+    if not car_id:
+        return None
+
+    has_catalyst = item.get("has_catalyst")
+    return Car(
+        source=SOURCE,
+        source_id=str(car_id),
+        url=DETAIL_URL_TEMPLATE.format(car_id=car_id),
+        manufacturer=(item.get("man_name") or "").strip(),
+        model=_build_model_from_api(item),
+        year=_to_int(item.get("prod_year")),
+        body_type=CATEGORY_MAP.get(item.get("category_id"), ""),
+        price_amount=_to_int(item.get("price")),
+        price_currency=CURRENCY_MAP.get(item.get("currency_id"), ""),
+        engine_volume_l=_cc_to_liters(_to_int(item.get("engine_volume"))),
+        engine_type=FUEL_MAP.get(item.get("fuel_type_id"), ""),
+        cylinders=_positive_int(item.get("cylinders")),
+        power_hp=_positive_int(item.get("hp")),
+        has_turbo=bool(item.get("has_turbo")),
+        gearbox=GEARBOX_MAP.get(item.get("gear_type_id"), ""),
+        drive_wheels=DRIVE_MAP.get(item.get("drive_type_id"), ""),
+        mileage_km=_to_int(item.get("car_run_km") or item.get("car_run")),
+        color=COLOR_MAP.get(item.get("color_id"), ""),
+        doors=DOORS_MAP.get(item.get("door_type_id")),
+        interior_color=COLOR_MAP.get(item.get("saloon_color_id"), ""),
+        interior_material=MATERIAL_MAP.get(item.get("saloon_material_id"), ""),
+        steering="მარჯვენა" if item.get("right_wheel") else "მარცხენა",
+        customs_cleared=bool(item.get("customs_passed")),
+        has_catalyst=(True if has_catalyst == 1 else False if has_catalyst == 2 else None),
+        tech_inspection=bool(item.get("tech_inspection")) if item.get("tech_inspection") is not None else None,
+        vin=_build_vin_from_api(item),
+        license_plate=(item.get("license_number") or "").strip(),
+        location=LOCATION_MAP.get(item.get("location_id"), ""),
+        seller_name=(item.get("client_name") or "").strip(),
+        phone=_build_phone_from_api(item),
+        posted_date=(item.get("order_date") or "").strip(),
+        views=_to_int(item.get("views")),
+        description=_build_description_from_api(item),
+        video_url=(item.get("video_url") or "").strip(),
+        image_urls=_build_image_urls(item),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -548,8 +722,8 @@ async def _warmup(context: BrowserContext) -> None:
         await page.close()
 
 
-async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[str], int]:
-    """Returns (car_ids, last_page). მხოლოდ car_id ვიღებთ, სხვა ფილდები არ გვჭირდება."""
+async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[dict], int]:
+    """Returns (items, last_page). items have FULL car data, not just IDs."""
     headers = {
         "Accept": "*/*",
         "Accept-Language": "ka",
@@ -565,14 +739,21 @@ async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[
         "Page": page_num,
     }
     try:
-        response = await context.request.get(
-            f"{API_BASE}/ka/products", params=params, headers=headers
-        )
-        if not response.ok:
+        async def _fetch():
+            response = await context.request.get(
+                f"{API_BASE}/ka/products",
+                params=params,
+                headers=headers,
+                timeout=20_000,
+            )
+            if not response.ok:
+                return None
+            return await response.json()
+        data = await asyncio.wait_for(_fetch(), timeout=25.0)
+        if data is None:
             return [], 0
-        data = await response.json()
-    except Exception as exc:
-        print(f"  API page {page_num} error: {exc}")
+    except (asyncio.TimeoutError, Exception) as exc:
+        print(f"  API page {page_num} error: {type(exc).__name__}: {str(exc)[:80]}", flush=True)
         return [], 0
 
     if data.get("statusCode") != 1:
@@ -580,8 +761,14 @@ async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[
 
     payload = data.get("data") or {}
     items = payload.get("items") or []
-    ids = [str(item["car_id"]) for item in items if item.get("car_id")]
     last_page = (payload.get("meta") or {}).get("last_page", 0)
+    return items, last_page
+
+
+async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[str], int]:
+    """Returns (car_ids, last_page). Legacy — kept for the HTML scrape path."""
+    items, last_page = await _fetch_page_raw(context, page_num)
+    ids = [str(item["car_id"]) for item in items if item.get("car_id")]
     return ids, last_page
 
 
@@ -612,8 +799,8 @@ async def collect_all_ids(
                 continue
             seen.add(car_id)
             all_ids.append(car_id)
-        if page_num % 50 == 0:
-            print(f"  [API {page_num}/{last_page}] collected:{len(all_ids)}")
+        if page_num % 25 == 0 or page_num == last_page:
+            print(f"  [API {page_num}/{last_page}] collected:{len(all_ids)}", flush=True)
 
     return all_ids
 
@@ -623,10 +810,136 @@ async def collect_all_ids(
 # ---------------------------------------------------------------------------
 
 
-async def run(max_pages: int | None = None) -> None:
-    """პარსერი მთლიანად — API-ით ID-ები, HTML-ით detail-ები.
+# ID cache — Phase 1 collection takes ~80 min via API. If Phase 2 (HTML
+# detail scrape) crashes, we don't want to redo Phase 1. Save to JSON,
+# load on next run. Delete the file to force a fresh ID fetch.
+import json
+from pathlib import Path
 
-    max_pages=None → ყველა გვერდი. ცდისთვის: max_pages=2 → ~60 მანქანა.
+IDS_CACHE_PATH = Path(__file__).resolve().parents[2] / "exports" / "myauto-ids.json"
+
+
+def _load_cached_ids() -> list[str] | None:
+    if not IDS_CACHE_PATH.exists():
+        return None
+    try:
+        data = json.loads(IDS_CACHE_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return data
+    except Exception as exc:
+        print(f"  [warn] failed to load IDs cache ({exc}); refetching")
+    return None
+
+
+def _save_cached_ids(ids: list[str]) -> None:
+    IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    IDS_CACHE_PATH.write_text(json.dumps(ids), encoding="utf-8")
+    print(f"  Cached {len(ids)} IDs → {IDS_CACHE_PATH}")
+
+
+async def run(max_pages: int | None = None) -> None:
+    """API-fast mode: each /products page returns full car data, not just IDs.
+    Single pass: fetch → parse → upsert. No per-car Playwright detail scrape.
+
+    Speed: ~5-10 min for full ~50k cars. Tradeoffs:
+      - Phones are masked in the listing endpoint (we store '') — same as HTML
+      - Photo URLs are built from item.photo / item.pic_number (deterministic)
+      - Description = car_desc + feature flags
+
+    To use the slower HTML scrape per car instead, call run_html().
+    """
+    print(f"MyAuto parser (API-fast mode, page-concurrency={CONCURRENT_PAGES})")
+
+    already_saved = await get_existing_ids(SOURCE)
+    print(f"  In DB: {len(already_saved)} listings")
+
+    start_time = time.time()
+
+    async with async_playwright() as playwright:
+        browser, context = await create_stealth_context(playwright)
+        try:
+            print("  Warming up (visiting myauto.ge for CF cookies)...")
+            await _warmup(context)
+
+            print("  Fetching page 1 for total count...")
+            first_items, last_page = await _fetch_page_raw(context, 1)
+            if not last_page:
+                print("  Failed to reach API")
+                return
+            if max_pages:
+                last_page = min(last_page, max_pages)
+            print(f"  Total: {last_page} pages × 30 = ~{last_page * 30} listings (with dedup ~half)")
+
+            buffer: list[Car] = []
+            saved = 0
+            seen_ids: set[str] = set(already_saved)
+
+            def _consume(items: list[dict]) -> int:
+                added = 0
+                for item in items:
+                    cid = str(item.get("car_id") or "")
+                    if not cid or cid in seen_ids:
+                        continue
+                    seen_ids.add(cid)
+                    try:
+                        car = item_to_car(item)
+                    except Exception as exc:
+                        print(f"  [parse error] {cid}: {exc}", flush=True)
+                        continue
+                    if car:
+                        buffer.append(car)
+                        added += 1
+                return added
+
+            _consume(first_items)
+
+            # Fetch remaining pages in concurrent batches
+            sem = asyncio.Semaphore(CONCURRENT_PAGES)
+
+            async def _bounded_fetch(p):
+                async with sem:
+                    items, _ = await _fetch_page_raw(context, p)
+                    return p, items
+
+            tasks = [_bounded_fetch(p) for p in range(2, last_page + 1)]
+            done_pages = 1
+
+            for coro in asyncio.as_completed(tasks):
+                p, items = await coro
+                _consume(items)
+                done_pages += 1
+
+                # Batch upsert every 250 cars
+                if len(buffer) >= 250:
+                    saved += await upsert_cars(buffer)
+                    append_cars_to_csv(buffer, SOURCE)
+                    buffer.clear()
+
+                if done_pages % 25 == 0 or done_pages == last_page:
+                    elapsed = time.time() - start_time
+                    rate = done_pages / elapsed if elapsed else 0
+                    eta = (last_page - done_pages) / rate if rate else 0
+                    print(
+                        f"  [{done_pages}/{last_page} pages] "
+                        f"saved:{saved} buffer:{len(buffer)} "
+                        f"rate:{rate:.1f} p/s ETA:{eta:.0f}s",
+                        flush=True,
+                    )
+
+            if buffer:
+                saved += await upsert_cars(buffer)
+                append_cars_to_csv(buffer, SOURCE)
+        finally:
+            await context.close()
+            await browser.close()
+
+    print(f"\nDone in {time.time() - start_time:.0f}s. Saved: {saved} new cars.")
+
+
+async def run_html(max_pages: int | None = None) -> None:
+    """Slower HTML-detail scrape path (one Playwright page per car).
+
+    Kept for reference / debugging. The API-fast `run()` is preferred.
     """
     print(f"MyAuto parser (HTML scrape mode, concurrency={CONCURRENT_PAGES})")
 
@@ -638,7 +951,15 @@ async def run(max_pages: int | None = None) -> None:
     async with async_playwright() as playwright:
         browser, context = await create_stealth_context(playwright)
         try:
-            all_ids = await collect_all_ids(context, max_pages=max_pages)
+            cached = _load_cached_ids() if max_pages is None else None
+            if cached is not None:
+                print(f"  Loaded {len(cached)} IDs from cache (delete {IDS_CACHE_PATH.name} to refresh)")
+                all_ids = cached
+            else:
+                all_ids = await collect_all_ids(context, max_pages=max_pages)
+                if max_pages is None:
+                    _save_cached_ids(all_ids)
+
             new_ids = [cid for cid in all_ids if cid not in already_saved]
             print(f"  Found: {len(all_ids)} | New: {len(new_ids)} | "
                   f"Skipping: {len(all_ids) - len(new_ids)}")
