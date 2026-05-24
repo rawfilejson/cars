@@ -11,13 +11,12 @@ from __future__ import annotations
 
 import re
 
-import psycopg
 from fastapi import APIRouter, Request, status, HTTPException
-from psycopg.rows import dict_row
 
+from src.api.db_pool import connection
 from src.api.rate_limit import check_rate_limit, log_search
 from src.api.schemas import CarPublic, SearchRequest, SearchResponse
-from src.common.config import DATABASE_URL, R2_PUBLIC_URL
+from src.common.config import R2_PUBLIC_URL
 
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -25,20 +24,11 @@ router = APIRouter(prefix="/search", tags=["search"])
 PAGE_SIZE = 25
 
 
-# WHERE clause haystack — match anywhere in the row (Ctrl-F style).
-# Wide net: description + features + everything textual.
-_SEARCH_BLOB = (
-    "COALESCE(manufacturer,'') || ' ' || "
-    "COALESCE(model,'') || ' ' || "
-    "COALESCE(description,'') || ' ' || "
-    "COALESCE(location,'') || ' ' || "
-    "COALESCE(color,'') || ' ' || "
-    "COALESCE(body_type,'') || ' ' || "
-    "COALESCE(engine_type,'') || ' ' || "
-    "COALESCE(gearbox,'') || ' ' || "
-    "COALESCE(CAST(year AS TEXT),'') || ' ' || "
-    "COALESCE(vin,'')"
-)
+# WHERE clause haystack — `search_blob` is a STORED generated column that
+# concatenates and lowercases all searchable fields. It has a gin_trgm
+# index, so ILIKE '%word%' against it is fast (was a full seq scan over
+# 150k rows before).
+_SEARCH_BLOB = "search_blob"
 
 # Ranking haystack — short, identity-relevant fields only. Without this
 # narrow blob, similarity over the long description text dominates and a
@@ -172,8 +162,10 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
                    "(მაგ. Toyota Camry 2020 თბილისი).",
         )
 
-    word_clauses = " AND ".join([f"({_SEARCH_BLOB}) ILIKE %s"] * len(words))
-    patterns = [f"%{w}%" for w in words]
+    # search_blob is lowercased — use LIKE (case-sensitive) on lowered
+    # patterns to let Postgres use the gin_trgm index efficiently.
+    word_clauses = " AND ".join([f"{_SEARCH_BLOB} LIKE %s"] * len(words))
+    patterns = [f"%{w.lower()}%" for w in words]
 
     filter_frags, filter_params = _filter_clauses(req)
     extra_where = (" AND " + " AND ".join(filter_frags)) if filter_frags else ""
@@ -313,7 +305,7 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
 
     sql, params, query_type = _build_query(req)
 
-    with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+    with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()

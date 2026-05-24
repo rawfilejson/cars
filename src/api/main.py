@@ -16,7 +16,6 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-import psycopg
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -24,7 +23,7 @@ from fastapi.responses import JSONResponse
 from src.api.schemas import HealthCheck
 from src.api.search import router as search_router
 from src.api.stats import router as stats_router
-from src.common.config import DATABASE_URL, r2_is_configured
+from src.common.config import r2_is_configured
 
 
 # Production რეჟიმის ცნობა — Fly.io ან Render
@@ -40,8 +39,13 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("API starting up...")
+    # Warm the pool on startup so the first user request doesn't pay the
+    # connection setup cost (~2s on Supabase)
+    from src.api.db_pool import get_pool, close_pool
+    get_pool()
     yield
     log.info("API shutting down...")
+    close_pool()
 
 
 app = FastAPI(
@@ -95,9 +99,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/healthz", response_model=HealthCheck)
 def health_check() -> HealthCheck:
     """Health check — DB და R2 ხელმისაწვდომია?"""
+    from src.api.db_pool import connection
+
     db_ok = False
     try:
-        with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
+        with connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
                 cur.fetchone()

@@ -538,7 +538,7 @@
     window.goToPage = function (page) {
         currentPage = page;
         doSearch({ resetPage: false });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo(0, 0);            // instant jump beats smooth here
     };
 
     function escapeHtml(text) {

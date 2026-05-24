@@ -4,11 +4,10 @@
 
 from __future__ import annotations
 
-import psycopg
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from src.common.config import DATABASE_URL
+from src.api.db_pool import connection
 
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -25,7 +24,7 @@ class Stats(BaseModel):
 
 def _get_stats_sync() -> Stats:
     """ერთი query — ყველაფერი."""
-    with psycopg.connect(DATABASE_URL) as conn:
+    with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -37,16 +36,17 @@ def _get_stats_sync() -> Stats:
                 FROM cars
                 """
             )
-            total, with_vin, with_photos = cur.fetchone()
+            row = cur.fetchone()
+            total, with_vin, with_photos = row["total"], row["with_vin"], row["with_photos"]
 
             cur.execute(
-                "SELECT source, COUNT(*) FROM cars GROUP BY source ORDER BY source"
+                "SELECT source, COUNT(*) AS c FROM cars GROUP BY source ORDER BY source"
             )
-            by_source = dict(cur.fetchall())
+            by_source = {r["source"]: int(r["c"]) for r in cur.fetchall()}
 
     return Stats(
         total_cars=total,
-        by_source={k: int(v) for k, v in by_source.items()},
+        by_source=by_source,
         with_vin=with_vin,
         with_photos=with_photos,
     )

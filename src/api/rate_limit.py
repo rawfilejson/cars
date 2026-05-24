@@ -14,12 +14,11 @@ Rate limiting — მხოლოდ IP-ის მიხედვით.
 
 from __future__ import annotations
 
-import psycopg
 from fastapi import HTTPException, Request, status
 
+from src.api.db_pool import connection
 from src.common.config import (
     CONTACT_INSTAGRAM,
-    DATABASE_URL,
     SEARCH_COOLDOWN_SECONDS,
     SEARCH_LIMIT_PER_HOUR,
 )
@@ -46,7 +45,7 @@ def check_rate_limit(request: Request) -> int:
     """
     ip = client_ip(request)
 
-    with psycopg.connect(DATABASE_URL) as conn:
+    with connection() as conn:
         with conn.cursor() as cur:
             # ერთ query-ში ვიღებთ ორივეს:
             #   ბოლო ცდიდან რამდენი წამი გავიდა (DB-ის NOW()-ით)
@@ -64,8 +63,9 @@ def check_rate_limit(request: Request) -> int:
             )
             row = cur.fetchone()
 
-    sec_since_last = row[0] if row and row[0] is not None else None
-    count_last_hour = int(row[1] or 0) if row else 0
+    # row_factory=dict_row in the pool — extract by column name
+    sec_since_last = row["sec_since_last"] if row and row["sec_since_last"] is not None else None
+    count_last_hour = int(row["count_last_hour"] or 0) if row else 0
 
     # Cooldown
     if sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
@@ -100,7 +100,7 @@ def log_search(
     ip = client_ip(request)
     user_agent = request.headers.get("user-agent", "")[:500]
 
-    with psycopg.connect(DATABASE_URL) as conn:
+    with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """

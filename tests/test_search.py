@@ -81,25 +81,25 @@ def test_smart_route_short_text_ok():
     """Single-word brand search is fine — Ctrl-F semantics."""
     sql, params, qtype = _build_query(SearchRequest(query="Toyota"))
     assert qtype == "search"
-    assert "ILIKE" in sql
+    assert "search_blob LIKE" in sql
     assert "similarity" in sql
 
 
 def test_smart_route_multi_word_AND():
-    """Each word gets its own ILIKE clause joined with AND."""
+    """Each word gets its own LIKE clause joined with AND."""
     sql, params, qtype = _build_query(SearchRequest(query="Toyota Camry 2020"))
     assert qtype == "search"
-    # 3 ILIKE clauses for 3 words
-    assert sql.count("ILIKE") == 3
-    # similarity arg first (matches SQL order), then patterns
-    assert params == ("Toyota Camry 2020", "%Toyota%", "%Camry%", "%2020%")
+    # 3 LIKE clauses for 3 words
+    assert sql.count("search_blob LIKE") == 3
+    # similarity arg first (matches SQL order), then lowercased patterns
+    assert params == ("Toyota Camry 2020", "%toyota%", "%camry%", "%2020%")
 
 
 def test_smart_route_georgian_query():
-    """Georgian text works as a search term."""
+    """Georgian text works as a search term. Georgian has no case so
+    .lower() is a no-op for these chars."""
     sql, params, qtype = _build_query(SearchRequest(query="თბილისი"))
     assert qtype == "search"
-    # params: (text for similarity, then patterns)
     assert params == ("თბილისი", "%თბილისი%")
 
 
