@@ -36,6 +36,9 @@ const TRANSLATIONS = {
         empty_state: "ძიების შედეგი აქ გამოჩნდება",
         results_count: "{n} შედეგი",
         results_remaining: "ამ საათში დარჩა {n} ცდა",
+        page_of: "გვერდი {p} / {n}",
+        page_prev: "← წინა",
+        page_next: "შემდეგი →",
         no_results: "ვერაფერი ვიპოვე",
 
         notice_slow: "ხანდახან 10-15 წამი ჭირდება ინფორმაციის მოძიებას. გთხოვთ მოითმინეთ.",
@@ -106,6 +109,9 @@ const TRANSLATIONS = {
         empty_state: "Search results will appear here",
         results_count: "{n} results",
         results_remaining: "{n} searches left this hour",
+        page_of: "Page {p} / {n}",
+        page_prev: "← Prev",
+        page_next: "Next →",
         no_results: "Nothing found",
 
         notice_slow: "Searches can take 10-15 seconds. Please be patient.",

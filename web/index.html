@@ -114,6 +114,25 @@
         }
         .filter-clear:hover { color: #C2410C; text-decoration-color: #C2410C; }
 
+        /* pagination */
+        .pager {
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; margin-top: 32px; padding-top: 24px;
+            border-top: 1px solid #E5DFD3;
+        }
+        .pager-btn {
+            background: transparent; border: 1px solid #E5DFD3;
+            color: #1A1A1A; font-size: 14px; font-weight: 500;
+            padding: 10px 20px; cursor: pointer;
+            transition: border-color 100ms, color 100ms;
+        }
+        .pager-btn:hover:not(:disabled) { border-color: #1A1A1A; color: #C2410C; }
+        .pager-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .pager-info {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px;
+            color: #6B6258;
+        }
+
         /* result card spec rows: tabular feel */
         .spec-grid { display: grid; grid-template-columns: max-content 1fr; column-gap: 16px; row-gap: 6px; }
         .spec-label { color: #6B6258; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -391,6 +410,7 @@
 <script>
     const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
     let lastResponse = null;
+    let currentPage = 1;
 
     async function loadStats() {
         try {
@@ -423,7 +443,7 @@
     };
 
     function buildSearchPayload() {
-        const payload = {};
+        const payload = { page: currentPage };
         const q = document.getElementById('search-input').value.trim();
         if (q) payload.query = q;
 
@@ -460,9 +480,14 @@
         document.getElementById('f-sort').value = '';
     };
 
-    async function doSearch() {
+    async function doSearch(opts = {}) {
+        // resetPage: true when user starts a fresh search (typed something,
+        // changed filters, hit Search). false when paginating.
+        if (opts.resetPage !== false) currentPage = 1;
+
         const payload = buildSearchPayload();
-        if (Object.keys(payload).length === 0) return;     // nothing to do
+        // page is always present now, so a "do-nothing" check needs other keys
+        if (Object.keys(payload).filter(k => k !== 'page').length === 0) return;
 
         const btn = document.getElementById('btn-search');
         const meta = document.getElementById('search-meta');
@@ -499,16 +524,22 @@
         }
     }
 
-    document.getElementById('btn-search').onclick = doSearch;
+    document.getElementById('btn-search').onclick = () => doSearch();
 
-    // Enter in any filter input or the search input triggers search
-    document.querySelectorAll('#search-input, .filter-input, #f-sort').forEach((el) => {
+    // Enter in any input triggers a fresh search (resets to page 1)
+    document.querySelectorAll('#search-input, .filter-input, .filter-select').forEach((el) => {
         el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
     });
-    // Sort change re-runs the current search
+    // Sort change re-runs (back to page 1)
     document.getElementById('f-sort').addEventListener('change', () => {
         if (lastResponse) doSearch();
     });
+
+    window.goToPage = function (page) {
+        currentPage = page;
+        doSearch({ resetPage: false });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     function escapeHtml(text) {
         const div = document.createElement('div');
@@ -682,11 +713,28 @@
         else if (e.key === 'ArrowRight') lightboxGo(1);
     });
 
+    function paginationHtml(data) {
+        const totalPages = Math.max(1, Math.ceil(data.total_count / data.page_size));
+        if (totalPages <= 1) return '';
+        const prevDisabled = data.page <= 1 ? 'disabled' : '';
+        const nextDisabled = data.page >= totalPages ? 'disabled' : '';
+        return `
+            <div class="pager">
+                <button class="pager-btn" ${prevDisabled}
+                        onclick="goToPage(${data.page - 1})">${t('page_prev')}</button>
+                <span class="pager-info">${t('page_of', { p: data.page, n: totalPages })}</span>
+                <button class="pager-btn" ${nextDisabled}
+                        onclick="goToPage(${data.page + 1})">${t('page_next')}</button>
+            </div>
+        `;
+    }
+
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
 
-        let metaText = `<strong class="text-ink">${t('results_count', { n: data.results_count })}</strong>`;
+        // Show TOTAL across pages, not just rows on this page
+        let metaText = `<strong class="text-ink">${t('results_count', { n: data.total_count })}</strong>`;
         if (data.remaining_free_searches != null) {
             metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_free_searches })}</span>`;
         }
@@ -791,7 +839,7 @@
                     </div>
                   </div>
                 </article>`;
-        }).join('');
+        }).join('') + paginationHtml(data);
     }
 
     loadStats();

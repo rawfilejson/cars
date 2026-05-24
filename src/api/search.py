@@ -22,9 +22,11 @@ from src.common.config import DATABASE_URL, R2_PUBLIC_URL
 
 router = APIRouter(prefix="/search", tags=["search"])
 
+PAGE_SIZE = 25
 
-# Searchable text — everything user might type to find a car concatenated.
-# Used both for ILIKE (Ctrl-F substring) and similarity (typo tolerance).
+
+# WHERE clause haystack — match anywhere in the row (Ctrl-F style).
+# Wide net: description + features + everything textual.
 _SEARCH_BLOB = (
     "COALESCE(manufacturer,'') || ' ' || "
     "COALESCE(model,'') || ' ' || "
@@ -36,6 +38,16 @@ _SEARCH_BLOB = (
     "COALESCE(gearbox,'') || ' ' || "
     "COALESCE(CAST(year AS TEXT),'') || ' ' || "
     "COALESCE(vin,'')"
+)
+
+# Ranking haystack — short, identity-relevant fields only. Without this
+# narrow blob, similarity over the long description text dominates and a
+# search for "Toyota Camry" can rank a Land Cruiser above an actual Camry.
+_TITLE_BLOB = (
+    "COALESCE(manufacturer,'') || ' ' || "
+    "COALESCE(model,'') || ' ' || "
+    "COALESCE(CAST(year AS TEXT),'') || ' ' || "
+    "COALESCE(location,'')"
 )
 
 
@@ -119,30 +131,36 @@ def _looks_like_phone(text: str) -> bool:
     return len(digits) / len(text) > 0.5
 
 
+def _paginate(sql_core: str, params: tuple, page: int) -> tuple[str, tuple]:
+    """Wrap a SELECT with COUNT(*) OVER () + LIMIT/OFFSET pagination."""
+    # `sql_core` must already contain ORDER BY. We splice COUNT(*) into the
+    # SELECT list and append LIMIT/OFFSET.
+    offset = (page - 1) * PAGE_SIZE
+    sql_paginated = sql_core + f" LIMIT {PAGE_SIZE} OFFSET {offset}"
+    # Caller can wrap the SELECT however it likes — we just append paging.
+    return sql_paginated, params
+
+
 def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
-    """Auto-detect VIN / phone / freeform text. Applies filters + sort to
-    freeform path (VIN/phone are exact lookups — filters don't make sense)."""
+    """Auto-detect VIN / phone / freeform text. Filters + sort apply to
+    freeform/browse (VIN/phone are exact lookups — filters don't make sense)."""
     text = text.strip()
     if not text:
-        # browse mode — no text, just filters
         return _browse_query(req)
 
     upper = text.upper()
     if _VIN_RE.match(upper):
-        return (
-            "SELECT * FROM cars WHERE vin = %s ORDER BY updated_at DESC LIMIT 50",
-            (upper,),
-            "vin",
-        )
+        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin = %s ORDER BY updated_at DESC"
+        return _paginate(sql, (upper,), req.page) + ("vin",)
 
     if _looks_like_phone(text):
         suffix = _normalize_phone_query(text)
-        return (
-            "SELECT * FROM cars WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
-            "ORDER BY updated_at DESC LIMIT 50",
-            ("%" + suffix,),
-            "phone",
+        sql = (
+            "SELECT *, COUNT(*) OVER () AS _total FROM cars "
+            "WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
+            "ORDER BY updated_at DESC"
         )
+        return _paginate(sql, ("%" + suffix,), req.page) + ("phone",)
 
     # Freeform — Ctrl-F across all fields, similarity for ranking, plus filters
     words = [w for w in text.split() if w]
@@ -160,28 +178,29 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
     filter_frags, filter_params = _filter_clauses(req)
     extra_where = (" AND " + " AND ".join(filter_frags)) if filter_frags else ""
 
-    # When user sorted explicitly, similarity drops out of ORDER BY
     if req.sort:
         order_by = _sort_clause(req.sort)
         sql = f"""
-            SELECT *
+            SELECT *, COUNT(*) OVER () AS _total
             FROM cars
             WHERE {word_clauses}{extra_where}
             ORDER BY {order_by}
-            LIMIT 50
         """
         params = (*patterns, *filter_params)
     else:
+        # Score on TITLE_BLOB (manufacturer+model+year+location) — short
+        # identity-fields-only. This prevents long descriptions from drowning
+        # the actual title relevance ("Toyota Camry" → real Camrys first).
         sql = f"""
-            SELECT *, similarity({_SEARCH_BLOB}, %s) AS score
+            SELECT *, COUNT(*) OVER () AS _total,
+                similarity({_TITLE_BLOB}, %s) AS score
             FROM cars
             WHERE {word_clauses}{extra_where}
             ORDER BY score DESC NULLS LAST, updated_at DESC
-            LIMIT 50
         """
         params = (text, *patterns, *filter_params)
 
-    return (sql, params, "search")
+    return _paginate(sql, tuple(params), req.page) + ("search",)
 
 
 def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
@@ -195,13 +214,12 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
     where = " AND ".join(filter_frags)
     order_by = _sort_clause(req.sort)
     sql = f"""
-        SELECT *
+        SELECT *, COUNT(*) OVER () AS _total
         FROM cars
         WHERE {where}
         ORDER BY {order_by}
-        LIMIT 50
     """
-    return (sql, tuple(filter_params), "browse")
+    return _paginate(sql, tuple(filter_params), req.page) + ("browse",)
 
 
 def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
@@ -209,19 +227,13 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
     if req.query:
         return _smart_route(req, req.query)
 
-    # ----- Legacy path (deprecated, used by old Carba frontend) -----
+    # ----- Legacy path (kept for old Carba frontend) -----
     if req.vin and len(req.vin) == 17:
-        return (
-            "SELECT * FROM cars WHERE vin = %s ORDER BY updated_at DESC LIMIT 50",
-            (req.vin.upper(),),
-            "vin",
-        )
+        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin = %s ORDER BY updated_at DESC"
+        return _paginate(sql, (req.vin.upper(),), req.page) + ("vin",)
     if req.vin:
-        return (
-            "SELECT * FROM cars WHERE vin LIKE %s ORDER BY updated_at DESC LIMIT 50",
-            (req.vin.upper() + "%",),
-            "vin",
-        )
+        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin LIKE %s ORDER BY updated_at DESC"
+        return _paginate(sql, (req.vin.upper() + "%",), req.page) + ("vin",)
     if req.phone:
         suffix = _normalize_phone_query(req.phone)
         if len(suffix) < 4:
@@ -229,16 +241,15 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="ნომერი მინიმუმ 4 ციფრი უნდა იყოს",
             )
-        return (
-            "SELECT * FROM cars WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
-            "ORDER BY updated_at DESC LIMIT 50",
-            ("%" + suffix,),
-            "phone",
+        sql = (
+            "SELECT *, COUNT(*) OVER () AS _total FROM cars "
+            "WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
+            "ORDER BY updated_at DESC"
         )
+        return _paginate(sql, ("%" + suffix,), req.page) + ("phone",)
     if req.free_text:
         return _smart_route(req, req.free_text)
 
-    # No text and no legacy fields — try browse mode (filters only)
     if _has_any_filter(req):
         return _browse_query(req)
 
@@ -297,7 +308,7 @@ def _row_to_public(row: dict) -> CarPublic:
 def search(req: SearchRequest, request: Request) -> SearchResponse:
     """ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო."""
 
-    # IP-ით rate limit
+    # IP-ით rate limit — every page request counts as a separate search
     remaining = check_rate_limit(request)
 
     sql, params, query_type = _build_query(req)
@@ -307,10 +318,12 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
             cur.execute(sql, params)
             rows = cur.fetchall()
 
+    # _total comes from COUNT(*) OVER () in the SQL; same value on every row.
+    total_count = int(rows[0]["_total"]) if rows else 0
+
     results = [_row_to_public(row) for row in rows]
     results_count = len(results)
 
-    # log
     query_repr = req.query or req.vin or req.phone or req.free_text or ""
     log_search(request, query_repr, query_type, results_count)
 
@@ -318,6 +331,9 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
         query_type=query_type,
         results=results,
         results_count=results_count,
+        total_count=total_count,
+        page=req.page,
+        page_size=PAGE_SIZE,
         charged=False,
         remaining_free_searches=remaining,
     )
