@@ -318,11 +318,9 @@
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="filter-group">
                     <span class="filter-label" data-i18n="filter_year"></span>
-                    <input class="filter-input" type="number" id="f-year-from"
-                           data-i18n-placeholder="filter_from" min="1900" max="2030">
+                    <select class="filter-select filter-year" id="f-year-from"></select>
                     <span class="filter-dash">–</span>
-                    <input class="filter-input" type="number" id="f-year-to"
-                           data-i18n-placeholder="filter_to" min="1900" max="2030">
+                    <select class="filter-select filter-year" id="f-year-to"></select>
                 </div>
                 <div class="filter-group">
                     <span class="filter-label" data-i18n="filter_price"></span>
@@ -341,14 +339,14 @@
                            data-i18n-placeholder="filter_to" min="0">
                 </div>
                 <div class="filter-group md:ml-auto">
-                    <span class="filter-label" data-i18n="filter_sort"></span>
                     <select class="filter-select" id="f-sort">
-                        <option value="newest"      data-i18n="sort_newest"></option>
-                        <option value="price_asc"   data-i18n="sort_price_asc"></option>
-                        <option value="price_desc"  data-i18n="sort_price_desc"></option>
-                        <option value="year_desc"   data-i18n="sort_year_desc"></option>
-                        <option value="year_asc"    data-i18n="sort_year_asc"></option>
-                        <option value="mileage_asc" data-i18n="sort_mileage_asc"></option>
+                        <option value=""             data-i18n="sort_default"></option>
+                        <option value="price_desc"   data-i18n="sort_price_desc"></option>
+                        <option value="price_asc"    data-i18n="sort_price_asc"></option>
+                        <option value="year_desc"    data-i18n="sort_year_desc"></option>
+                        <option value="year_asc"     data-i18n="sort_year_asc"></option>
+                        <option value="mileage_desc" data-i18n="sort_mileage_desc"></option>
+                        <option value="mileage_asc"  data-i18n="sort_mileage_asc"></option>
                     </select>
                 </div>
                 <button class="filter-clear" onclick="clearFilters()" data-i18n="filter_clear"></button>
@@ -436,16 +434,30 @@
         }
 
         const sort = document.getElementById('f-sort').value;
-        if (sort && sort !== 'newest') payload.sort = sort;
+        if (sort) payload.sort = sort;
 
         return payload;
     }
+
+    // Populate year dropdowns 1900-current. Done once at load.
+    (function populateYears() {
+        const now = new Date().getFullYear();
+        const yFrom = document.getElementById('f-year-from');
+        const yTo   = document.getElementById('f-year-to');
+        const opts = ['<option value=""></option>']; // placeholder
+        for (let y = now; y >= 1900; y--) {
+            opts.push(`<option value="${y}">${y}</option>`);
+        }
+        const html = opts.join('');
+        yFrom.innerHTML = html;
+        yTo.innerHTML = html;
+    })();
 
     window.clearFilters = function () {
         for (const id of Object.keys(_FILTER_FIELDS)) {
             document.getElementById('f-' + id).value = '';
         }
-        document.getElementById('f-sort').value = 'newest';
+        document.getElementById('f-sort').value = '';
     };
 
     async function doSearch() {

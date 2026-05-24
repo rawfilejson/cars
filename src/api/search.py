@@ -51,12 +51,13 @@ _PRICE_IN_USD = (
 )
 
 _SORT_CLAUSES = {
-    "newest":      "updated_at DESC",
-    "price_asc":   f"{_PRICE_IN_USD} ASC NULLS LAST, updated_at DESC",
-    "price_desc":  f"{_PRICE_IN_USD} DESC NULLS LAST, updated_at DESC",
-    "year_desc":   "year DESC NULLS LAST, updated_at DESC",
-    "year_asc":    "year ASC NULLS LAST, updated_at DESC",
-    "mileage_asc": "mileage_km ASC NULLS LAST, updated_at DESC",
+    "newest":       "updated_at DESC",
+    "price_asc":    f"{_PRICE_IN_USD} ASC NULLS LAST, updated_at DESC",
+    "price_desc":   f"{_PRICE_IN_USD} DESC NULLS LAST, updated_at DESC",
+    "year_desc":    "year DESC NULLS LAST, updated_at DESC",
+    "year_asc":     "year ASC NULLS LAST, updated_at DESC",
+    "mileage_asc":  "mileage_km ASC NULLS LAST, updated_at DESC",
+    "mileage_desc": "mileage_km DESC NULLS LAST, updated_at DESC",
 }
 
 

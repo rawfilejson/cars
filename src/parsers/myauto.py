@@ -143,7 +143,7 @@ def _build_description_from_api(item: dict) -> str:
         parts.append(raw)
     flags = [label for key, label in FEATURE_FLAGS.items() if item.get(key)]
     if flags:
-        parts.append("ფიჩერები: " + ", ".join(flags))
+        parts.append("ოპციები: " + ", ".join(flags))
     if item.get("airbags"):
         parts.append(f"აირბაგები: {item['airbags']}")
     return "\n\n".join(parts)
@@ -643,10 +643,10 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
     model = spec_fields.get("model") or model_t or ""
     year = spec_fields.get("year") or year_t
 
-    # ფიჩერების ტექსტური ვერსია description-ის ბოლოს
+    # ოპციების ტექსტური ვერსია description-ის ბოლოს
     desc_parts = [description] if description else []
     if features:
-        desc_parts.append("ფიჩერები: " + ", ".join(features))
+        desc_parts.append("ოპციები: " + ", ".join(features))
     full_description = "\n\n".join(desc_parts)
 
     return Car(

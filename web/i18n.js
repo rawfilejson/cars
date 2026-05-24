@@ -9,8 +9,8 @@ const TRANSLATIONS = {
 
         hero_title: "ერთი ძიება. ყველა განცხადება.",
         hero_desc:
-            "autopapa.ge და myauto.ge-ის გაერთიანებული ბაზა — VIN-ით, " +
-            "ნომრით, ან კონკრეტული აღწერით.",
+            "ქართული მანქანების სრული ბაზა — ეძებე VIN-ით, ნომრით " +
+            "ან კონკრეტული აღწერით.",
 
         ph_query: "VIN, ნომერი, ბრენდი, მოდელი, წელი, ქალაქი...",
 
@@ -23,12 +23,13 @@ const TRANSLATIONS = {
         filter_sort:    "სორტირება",
         filter_clear:   "ფილტრების გასუფთავება",
 
-        sort_newest:      "ახალი ბოლოს",
-        sort_price_asc:   "ფასი იაფიდან",
-        sort_price_desc:  "ფასი ძვირიდან",
-        sort_year_desc:   "წელი ახლიდან",
-        sort_year_asc:    "წელი ძველიდან",
-        sort_mileage_asc: "გარბენი ნაკლები",
+        sort_default:     "სორტირება",
+        sort_price_desc:  "ფასი: კლებადობით",
+        sort_price_asc:   "ფასი: ზრდადობით",
+        sort_year_desc:   "წელი: ახლები პირველი",
+        sort_year_asc:    "წელი: ძველები პირველი",
+        sort_mileage_desc:"გარბენი: კლებადობით",
+        sort_mileage_asc: "გარბენი: ზრდადობით",
 
         btn_search: "ძიება",
         btn_searching: "ვეძებ...",
@@ -62,9 +63,8 @@ const TRANSLATIONS = {
         section_phone: "ტელეფონი",
 
         posted_on: "გამოქვეყნდა: {date}",
-        scraped_on_label: "ინფორმაცია მოვაგროვეთ:",
-        scraped_on_note:
-            "ვერ მოვიძიეთ ინფორმაცია როდის გამოქვეყნდა, მაგრამ ეს ინფორმაცია მივიღეთ {date}-ს.",
+        scraped_on_label: "ინფორმაცია მოვიძიეთ:",
+        scraped_on_note: "ეს ინფორმაცია მოვიძიეთ {date}.",
 
         photo_counter: "{i} / {n}",
         no_photos: "ფოტო არ არის",
@@ -79,8 +79,8 @@ const TRANSLATIONS = {
 
         hero_title: "One search. Every listing.",
         hero_desc:
-            "A combined index of autopapa.ge and myauto.ge — searchable " +
-            "by VIN, phone number, or a specific description.",
+            "A unified index of Georgian car listings — searchable by VIN, " +
+            "phone number, or a specific description.",
 
         ph_query: "VIN, phone, brand, model, year, city...",
 
@@ -93,12 +93,13 @@ const TRANSLATIONS = {
         filter_sort:    "Sort",
         filter_clear:   "Clear filters",
 
-        sort_newest:      "Newest first",
-        sort_price_asc:   "Cheapest first",
-        sort_price_desc:  "Most expensive",
-        sort_year_desc:   "Newest year",
-        sort_year_asc:    "Oldest year",
-        sort_mileage_asc: "Lowest mileage",
+        sort_default:     "Sort",
+        sort_price_desc:  "Price: high to low",
+        sort_price_asc:   "Price: low to high",
+        sort_year_desc:   "Year: newest first",
+        sort_year_asc:    "Year: oldest first",
+        sort_mileage_desc:"Mileage: high to low",
+        sort_mileage_asc: "Mileage: low to high",
 
         btn_search: "Search",
         btn_searching: "Searching...",
@@ -132,9 +133,8 @@ const TRANSLATIONS = {
         section_phone: "Phone",
 
         posted_on: "Posted: {date}",
-        scraped_on_label: "Scraped:",
-        scraped_on_note:
-            "Original posting date is unknown. We collected this information on {date}.",
+        scraped_on_label: "Retrieved:",
+        scraped_on_note: "Information retrieved on {date}.",
 
         photo_counter: "{i} / {n}",
         no_photos: "no photo",
