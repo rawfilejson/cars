@@ -1,0 +1,82 @@
+# =====================================================================
+# Photo backfill — GitHub Actions (cloud-side ingestion)
+# =====================================================================
+# დაგროვილი image_urls-ის ფოტოებს ცლაუდში (R2) ვტვირთავთ — მომხმარებლის
+# PC-ს გარეშე. წყაროს CDN → runner → R2, ხოლო ლოკალური ასლი მაშინვე იშლება
+# (--purge-local), რომ runner-ის ~14 GB დისკი არ აივსოს.
+#
+# ხელით გაშვება:
+#   Actions → Photo Backfill → Run workflow
+#   ან: gh workflow run sync_backfill.yml -f concurrent=8 -f limit=200
+#
+# resumable: sync_photos მხოლოდ pending მანქანებს (image_keys ცარიელი) ირჩევს,
+# ამიტომ timeout-ის შემდეგ უბრალოდ ისევ გავუშვათ — გააგრძელებს იქიდან.
+#
+# საჭირო Secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+#   R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
+# =====================================================================
+
+name: Photo Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrent:
+        description: 'ერთდროული მანქანების რაოდენობა'
+        required: false
+        default: '8'
+      limit:
+        description: 'მაქს. მანქანა (ცარიელი = ყველა pending)'
+        required: false
+        default: ''
+
+# ერთდროულად მხოლოდ ერთი backfill — DB-ში race არ გვინდა
+concurrency:
+  group: photo-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350          # GitHub-ის 6-საათიანი ლიმიტის ქვემოთ
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      # Playwright არ გვჭირდება — sync_photos მხოლოდ httpx-ით მუშაობს
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Backfill photos to R2 (purge local)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          CONCURRENT: ${{ github.event.inputs.concurrent }}
+          LIMIT: ${{ github.event.inputs.limit }}
+        run: |
+          ARGS="--purge-local --concurrent ${CONCURRENT:-8}"
+          if [ -n "$LIMIT" ]; then
+            ARGS="$ARGS --limit $LIMIT"
+          fi
+          echo "Running: sync_photos $ARGS"
+          uv run python -m src.scripts.sync_photos $ARGS
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Backfill failed at $(date -u)" >&2
+          echo "::error::Photo backfill run failed — check logs"

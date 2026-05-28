@@ -70,6 +70,7 @@ async def process_car(
     source_id: str,
     image_urls: list[str],
     upload_to_cloud: bool,
+    keep_local: bool = True,
 ) -> int:
     """ერთი მანქანის ყველა ფოტოს ჩატვირთვა — never raises, always returns int."""
     async with semaphore:
@@ -79,6 +80,7 @@ async def process_car(
                 key = await fetch_and_store(
                     http_client, url, source, source_id, index,
                     upload_to_cloud=upload_to_cloud,
+                    keep_local=keep_local,
                 )
             except Exception as exc:                    # never let one bad photo kill the batch
                 print(f"  [skip photo] {source}/{source_id}/{index}: {type(exc).__name__}")
@@ -106,11 +108,26 @@ async def main() -> None:
         action="store_true",
         help="მხოლოდ ლოკალურად — R2-ში არ ატვირთო",
     )
+    parser.add_argument(
+        "--purge-local",
+        action="store_true",
+        help="R2-ში წარმატებული upload-ის შემდეგ ლოკალური ფაილი წაიშლება "
+             "(disk-constrained backfill — runner-ს დისკი არ ევსება)",
+    )
     args = parser.parse_args()
 
     upload_to_cloud = (not args.local_only) and r2_is_configured()
     if not args.local_only and not r2_is_configured():
         print("R2 არ არის კონფიგურირებული — მხოლოდ ლოკალურად ვინახავთ.")
+
+    # safety: purge-local-ი მხოლოდ მაშინ, როცა ნამდვილად R2-ში ვტვირთავთ —
+    # თორემ ერთადერთ ასლს წავშლიდით backup-ის გარეშე.
+    if args.purge_local and not upload_to_cloud:
+        raise SystemExit(
+            "--purge-local მოითხოვს R2 upload-ს. --local-only-სთან ან "
+            "R2-ის კონფიგურაციის გარეშე უარს ვამბობთ (backup-ის გარეშე წაშლა საშიშია)."
+        )
+    keep_local = not args.purge_local
 
     pending = await fetch_pending(args.source, args.limit)
     print(f"დასამუშავებელი მანქანები: {len(pending)}")
@@ -130,7 +147,8 @@ async def main() -> None:
     ) as client:
         tasks = [
             process_car(
-                client, semaphore, car_id, source, source_id, urls, upload_to_cloud
+                client, semaphore, car_id, source, source_id, urls,
+                upload_to_cloud, keep_local,
             )
             for car_id, source, source_id, urls in pending
         ]

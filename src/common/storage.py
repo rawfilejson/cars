@@ -182,14 +182,29 @@ async def fetch_and_store(
     source_id: str,
     index: int,
     upload_to_cloud: bool = True,
+    keep_local: bool = True,
 ) -> str | None:
-    """Returns the storage key on success, None on failure."""
+    """Returns the storage key on success, None on failure.
+
+    keep_local=False — ლოკალურ ფაილს R2-ში წარმატებული upload-ის შემდეგ წაშლის
+    (disk-constrained backfill: GitHub runner / სავსე დისკი — ფოტოები memory-ში
+    არ გვირჩება). ამ რეჟიმში თუ R2 upload ვერ მოხერხდა, key არ ბრუნდება, რომ
+    მანქანა pending დარჩეს და შემდეგ run-ზე ისევ ვცადოთ.
+    """
     key = make_image_key(source, source_id, index, url)
 
     if not await download_to_local(client, url, key, source=source):
         return None
 
     if upload_to_cloud and r2_is_configured():
-        await upload_to_r2(local_path(key), key)
+        uploaded = await upload_to_r2(local_path(key), key)
+        if not keep_local:
+            if uploaded:
+                try:
+                    local_path(key).unlink(missing_ok=True)
+                except OSError:
+                    pass
+            else:
+                return None                          # R2-ში არ შევიდა — pending დატოვე
 
     return key
