@@ -81,6 +81,24 @@ CREATE TABLE IF NOT EXISTS cars (
     image_urls      TEXT[],                         -- ფოტოების URL-ების მასივი (წყაროზე)
     image_keys      TEXT[],                         -- R2-ში ფოტოების key-ები (uploaded)
 
+    -- ძიების სტრინგი — ყველა საძიებო ველი ერთად, lowercase-ში.
+    -- gin_trgm ინდექსი ქვემოთ ამას უწევს Bitmap Index Scan-ს (~150ms 150k row-ზე,
+    -- 15–50s seq scan-ის ნაცვლად). search.py-ის _SEARCH_BLOB სწორედ ეს არის.
+    search_blob     TEXT GENERATED ALWAYS AS (
+        lower(
+            COALESCE(manufacturer, '') || ' ' ||
+            COALESCE(model, '')        || ' ' ||
+            COALESCE(description, '')  || ' ' ||
+            COALESCE(location, '')     || ' ' ||
+            COALESCE(color, '')        || ' ' ||
+            COALESCE(body_type, '')    || ' ' ||
+            COALESCE(engine_type, '')  || ' ' ||
+            COALESCE(gearbox, '')      || ' ' ||
+            COALESCE(year::text, '')   || ' ' ||
+            COALESCE(vin::text, '')
+        )
+    ) STORED,
+
     -- დროის შტამპები
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -119,10 +137,21 @@ CREATE INDEX IF NOT EXISTS cars_price_idx ON cars(price_amount);
 CREATE INDEX IF NOT EXISTS cars_updated_at_idx ON cars(updated_at DESC);
 
 -- =====================================================================
--- სრულტექსტური ძიება (description-ში)
+-- სრულტექსტური ძიება
 -- =====================================================================
 -- pg_trgm extension — fuzzy/partial match-ისთვის (მაგ: "ბმვ" → BMW)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- მთავარი ძიების ინდექსი — search_blob-ზე (manufacturer+model+desc+...).
+-- search.py: `WHERE search_blob LIKE %s` — ეს ინდექსი იჭერს.
+--
+-- გაფრთხილება: არსებულ ბაზაზე ALTER TABLE ADD COLUMN GENERATED ALWAYS
+-- აკეთებს full table rewrite-ს. 150k row-ზე Supabase-ის default
+-- statement_timeout-ს არ აყოფნის — ჯერ `SET statement_timeout = 0;`
+-- დადე იმავე ტრანზაქციაში. CREATE INDEX-იც დიდია, ~1-2 წუთი.
+CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
+
+-- description-ის ცალკე ინდექსი — fallback / legacy მოთხოვნებისთვის.
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
 -- =====================================================================
