@@ -72,6 +72,15 @@ const TRANSLATIONS = {
         photo_counter: "{i} / {n}",
         no_photos: "ფოტო არ არის",
 
+        // detail view (per-car page)
+        back_to_search:    "← უკან ძიებაში",
+        copy_link:         "ბმულის კოპირება",
+        link_copied:       "კოპირებულია",
+        detail_loading:    "იტვირთება...",
+        detail_not_found:  "ეს განცხადება ვერ მოიძებნა — ალბათ წაშლილია წყაროდან.",
+        detail_open_source:"ნახე წყაროზე",
+        detail_gallery:    "ფოტოები",
+
         footer_about: "მონაცემები autopapa.ge და myauto.ge-დან. ღია წყაროები. უფასო.",
         footer_contact: "კონტაქტი:",
     },
@@ -144,6 +153,15 @@ const TRANSLATIONS = {
 
         photo_counter: "{i} / {n}",
         no_photos: "no photo",
+
+        // detail view (per-car page)
+        back_to_search:    "← Back to search",
+        copy_link:         "Copy link",
+        link_copied:       "Copied",
+        detail_loading:    "Loading...",
+        detail_not_found:  "This listing wasn't found — probably removed from the source.",
+        detail_open_source:"Open on source",
+        detail_gallery:    "Photos",
 
         footer_about: "Data from autopapa.ge and myauto.ge. Open sources. Free.",
         footer_contact: "Contact:",

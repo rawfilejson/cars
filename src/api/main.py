@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.schemas import HealthCheck
-from src.api.search import router as search_router
+from src.api.search import router as search_router, car_router
 from src.api.stats import router as stats_router
 from src.common.config import r2_is_configured
 
@@ -77,6 +77,7 @@ app.add_middleware(
 
 
 app.include_router(search_router)
+app.include_router(car_router)
 app.include_router(stats_router)
 
 
