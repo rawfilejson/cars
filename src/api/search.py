@@ -21,7 +21,13 @@ from src.common.config import R2_PUBLIC_URL
 
 router = APIRouter(prefix="/search", tags=["search"])
 
+# detail-page endpoint lives at /car/{key} — separate router so it's not nested under /search
+car_router = APIRouter(prefix="/car", tags=["car"])
+
 PAGE_SIZE = 25
+
+# {source}-{source_id} permalink key. Both sources use numeric IDs.
+_CAR_KEY_RE = re.compile(r"^(autopapa|myauto)-(\d+)$")
 
 
 # WHERE clause haystack — `search_blob` is a STORED generated column that
@@ -329,3 +335,31 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
         charged=False,
         remaining_free_searches=remaining,
     )
+
+
+@car_router.get("/{key}", response_model=CarPublic)
+def get_car(key: str) -> CarPublic:
+    """ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
+    მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება."""
+    m = _CAR_KEY_RE.match(key)
+    if not m:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="არასწორი მისამართი",
+        )
+    source, source_id = m.group(1), m.group(2)
+
+    with connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM cars WHERE source = %s AND source_id = %s",
+                (source, source_id),
+            )
+            row = cur.fetchone()
+
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="მანქანა ვერ მოიძებნა — ალბათ წაიშალა წყაროდან",
+        )
+    return _row_to_public(row)

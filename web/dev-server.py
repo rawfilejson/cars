@@ -1,0 +1,52 @@
+"""ლოკალური SPA-fallback სტატიკური სერვერი.
+
+Python-ის ჩვეული `http.server` 404-ს აბრუნებს უცნობ path-ზე. Cloudflare
+Workers-ის `not_found_handling = "single-page-application"`-ის ექვივალენტი —
+უცნობი path-ი (და არა-asset) → index.html. ეს ლოკალურად აყენებს deeplink-ებს
+როგორც /car/myauto-121951594.
+
+გაშვება: python web/dev-server.py [PORT]
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+
+WEB_DIR = Path(__file__).resolve().parent
+
+
+class SPAHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(WEB_DIR), **kwargs)
+
+    def do_GET(self):
+        # path-ი ფაილს ემთხვევა → ნორმალური ფაილი
+        # არ ემთხვევა და არ შეიცავს extension-ს → SPA fallback (index.html)
+        rel = self.path.split("?", 1)[0].lstrip("/")
+        target = WEB_DIR / rel
+        if rel and (target.is_file() or target.is_dir()):
+            return super().do_GET()
+        if "." in os.path.basename(rel):
+            # asset-ის მსგავსი (.js, .css, .svg...) → 404-ში დატოვე
+            return super().do_GET()
+        # rewrite to /
+        self.path = "/"
+        return super().do_GET()
+
+
+def main():
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5500
+    server = ThreadingHTTPServer(("127.0.0.1", port), SPAHandler)
+    print(f"SPA dev server on http://127.0.0.1:{port}/  (serving {WEB_DIR})")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()

@@ -6,7 +6,7 @@
     <title>Car-DB — Georgian car listings</title>
     <meta name="description" content="One search across autopapa.ge and myauto.ge. Free, no signup.">
     <meta name="theme-color" content="#1A1A1A">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -289,6 +289,53 @@
         .phone-list { display: flex; flex-direction: column; gap: 4px; }
         .phone-list a { font-family: 'JetBrains Mono', monospace; color: #1A1A1A; text-decoration: none; font-size: 14px; }
         .phone-list a:hover { color: #C2410C; }
+
+        /* card title as link — inherits, only color changes on hover */
+        .card-title-link { color: inherit; text-decoration: none; }
+        .card-title-link:hover { color: #C2410C; }
+
+        /* detail view — per-car page */
+        .detail-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .detail-btn {
+            background: transparent; border: 1px solid #E5DFD3; color: #6B6258;
+            padding: 8px 14px; font-size: 13px; cursor: pointer;
+            font-family: inherit; text-decoration: none;
+            transition: color 100ms, border-color 100ms;
+        }
+        .detail-btn:hover { color: #C2410C; border-color: #C2410C; }
+        .detail-btn.is-copied { color: #15803D; border-color: #15803D; }
+
+        .detail-title { font-size: 32px; line-height: 1.1; }
+        @media (min-width: 640px) { .detail-title { font-size: 40px; } }
+
+        /* gallery — vertical scrollable grid, 1/2/3 cols by viewport */
+        .gallery {
+            display: grid; gap: 8px; grid-template-columns: 1fr;
+            margin: 24px 0;
+        }
+        @media (min-width: 640px) { .gallery { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+        @media (min-width: 900px) { .gallery { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+        .gallery-tile {
+            aspect-ratio: 4/3; overflow: hidden; cursor: pointer;
+            background: #1A1A1A; border: 0; padding: 0;
+        }
+        .gallery-tile img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            transition: transform 200ms;
+        }
+        .gallery-tile:hover img { transform: scale(1.03); }
+        .gallery-tile.is-video {
+            position: relative;
+        }
+        .gallery-tile.is-video::after {
+            content: '▶'; position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #FAF7F2; font-size: 32px;
+            background: rgba(0,0,0,0.25); pointer-events: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -318,12 +365,12 @@
 
 <main class="flex-1">
 
-    <section class="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8 md:pb-10">
+    <section id="hero-section" class="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8 md:pb-10">
         <h2 class="serif-display text-3xl md:text-5xl text-ink max-w-3xl leading-tight" data-i18n="hero_title"></h2>
         <p class="text-muted text-base md:text-lg max-w-2xl mt-3 md:mt-4" data-i18n="hero_desc"></p>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 md:px-6 pb-8 md:pb-10">
+    <section id="search-section" class="max-w-6xl mx-auto px-4 md:px-6 pb-8 md:pb-10">
         <div class="card p-4 md:p-6">
             <div class="flex items-end gap-4 border-b border-ink pb-1">
                 <input id="search-input" type="text" class="search-input"
@@ -751,48 +798,9 @@
         results.innerHTML = data.results.map((car, i) => {
             const cardId = `c${i}`;
             const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
-
-            // Build slides — video first if YouTube, then all images
-            const slides = [];
-            const ytId = youtubeId(car.video_url);
-            if (ytId) {
-                slides.push({ type: 'video', src: `https://www.youtube.com/embed/${ytId}` });
-            }
-            if (car.image_urls && car.image_urls.length) {
-                for (const url of car.image_urls) slides.push({ type: 'image', src: url });
-            }
+            const slides = buildSlides(car);
             _slidesByCard[cardId] = slides;
-
-            const specs = [];
-            if (car.mileage_km)        specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
-            if (car.engine_volume_l)   specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
-            if (car.engine_type)       specs.push(specRow(t('spec_fuel'),    car.engine_type));
-            if (car.gearbox)           specs.push(specRow(t('spec_gearbox'), car.gearbox));
-            if (car.drive_wheels)      specs.push(specRow(t('spec_drive'),   car.drive_wheels));
-            if (car.color)             specs.push(specRow(t('spec_color'),   car.color));
-            if (car.steering)          specs.push(specRow(t('spec_steering'), car.steering));
-
-            const customsBadge = car.customs_cleared === true
-                ? `<span class="customs-badge customs-yes ml-auto">${t('cleared')}</span>`
-                : car.customs_cleared === false
-                ? `<span class="customs-badge customs-no ml-auto">${t('not_cleared')}</span>`
-                : '';
-
-            const phones = splitPhones(car.phone || '');
-            const phoneBlock = phones.length ? `
-                <div class="border-t border-line pt-4 mb-4">
-                  <div class="spec-label mb-2">${t('section_phone')}</div>
-                  <div class="phone-list">
-                    ${phones.map(p => `<a href="tel:${escapeHtml(p.replace(/\s/g, ''))}">${escapeHtml(p)}</a>`).join('')}
-                  </div>
-                  ${car.seller_name ? `<div class="text-muted text-xs mt-2">${escapeHtml(car.seller_name)}</div>` : ''}
-                </div>` : '';
-
-            // posted_date is verbatim from source (e.g. "10 May 2026"); if blank, fall back to created_at
-            const hasPostedDate = car.posted_date && car.posted_date.trim();
-            const dateBlock = hasPostedDate
-                ? `<div class="meta-line">${t('posted_on', { date: escapeHtml(car.posted_date.trim()) })}</div>`
-                : `<div class="meta-note">${t('scraped_on_note', { date: formatDate(car.created_at) })}</div>`;
+            const carKey = `${car.source}-${car.source_id}`;
 
             return `
                 <article class="card mb-4">
@@ -803,44 +811,260 @@
                     <div class="p-4 md:p-6 flex-1 min-w-0">
                       <div class="flex items-start justify-between gap-4 mb-3">
                         <div class="min-w-0">
-                          <h3 class="serif-display text-2xl text-ink leading-tight">${escapeHtml(title)}</h3>
+                          <h3 class="serif-display text-2xl text-ink leading-tight">
+                            <a href="/car/${escapeHtml(carKey)}" class="card-title-link"
+                               onclick="return goToCarDetail('${escapeHtml(carKey)}', event)">${escapeHtml(title)}</a>
+                          </h3>
                           ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(car.location)}</p>` : ''}
                         </div>
                         <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
                       </div>
 
-                      <div class="flex items-baseline gap-3 mb-5">
-                        <span class="font-mono text-2xl font-medium text-price">
-                          ${car.price_amount ? car.price_amount.toLocaleString() : '—'}
-                        </span>
-                        <span class="text-muted text-sm uppercase tracking-wider">${escapeHtml(car.price_currency || '')}</span>
-                        ${customsBadge}
-                      </div>
-
-                      ${specs.length ? `<div class="spec-grid mb-5">${specs.join('')}</div>` : ''}
-
-                      ${car.description ? `
-                        <div class="border-t border-line pt-4 mb-4">
-                          <div class="spec-label mb-2">${t('section_description')}</div>
-                          <div class="description">${escapeHtml(car.description)}</div>
-                        </div>` : ''}
-
-                      ${car.vin ? `
-                        <div class="border-t border-line pt-4 mb-4">
-                          <div class="spec-label mb-2">${t('section_vin')}</div>
-                          <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code>
-                        </div>` : ''}
-
-                      ${phoneBlock}
-
-                      <div class="border-t border-line pt-4">
-                        ${dateBlock}
-                      </div>
+                      ${priceRowHtml(car)}
+                      ${carBodyHtml(car)}
                     </div>
                   </div>
                 </article>`;
         }).join('') + paginationHtml(data);
     }
+
+    // ---- shared bits used by both card and detail render ----
+
+    function buildSlides(car) {
+        // video first if YouTube, then all images
+        const slides = [];
+        const ytId = youtubeId(car.video_url);
+        if (ytId) {
+            slides.push({ type: 'video', src: `https://www.youtube.com/embed/${ytId}` });
+        }
+        if (car.image_urls && car.image_urls.length) {
+            for (const url of car.image_urls) slides.push({ type: 'image', src: url });
+        }
+        return slides;
+    }
+
+    function priceRowHtml(car) {
+        const customsBadge = car.customs_cleared === true
+            ? `<span class="customs-badge customs-yes ml-auto">${t('cleared')}</span>`
+            : car.customs_cleared === false
+            ? `<span class="customs-badge customs-no ml-auto">${t('not_cleared')}</span>`
+            : '';
+        return `
+            <div class="flex items-baseline gap-3 mb-5">
+              <span class="font-mono text-2xl font-medium text-price">
+                ${car.price_amount ? car.price_amount.toLocaleString() : '—'}
+              </span>
+              <span class="text-muted text-sm uppercase tracking-wider">${escapeHtml(car.price_currency || '')}</span>
+              ${customsBadge}
+            </div>`;
+    }
+
+    function carBodyHtml(car) {
+        // Specs grid + description + VIN + phone + date — the bits that look
+        // the same whether shown on a search card or on the per-car page.
+        const specs = [];
+        if (car.mileage_km)      specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
+        if (car.engine_volume_l) specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
+        if (car.engine_type)     specs.push(specRow(t('spec_fuel'),    car.engine_type));
+        if (car.gearbox)         specs.push(specRow(t('spec_gearbox'), car.gearbox));
+        if (car.drive_wheels)    specs.push(specRow(t('spec_drive'),   car.drive_wheels));
+        if (car.color)           specs.push(specRow(t('spec_color'),   car.color));
+        if (car.steering)        specs.push(specRow(t('spec_steering'), car.steering));
+
+        const phones = splitPhones(car.phone || '');
+        const phoneBlock = phones.length ? `
+            <div class="border-t border-line pt-4 mb-4">
+              <div class="spec-label mb-2">${t('section_phone')}</div>
+              <div class="phone-list">
+                ${phones.map(p => `<a href="tel:${escapeHtml(p.replace(/\s/g, ''))}">${escapeHtml(p)}</a>`).join('')}
+              </div>
+              ${car.seller_name ? `<div class="text-muted text-xs mt-2">${escapeHtml(car.seller_name)}</div>` : ''}
+            </div>` : '';
+
+        // posted_date is verbatim from source (e.g. "10 May 2026"); if blank, fall back to created_at
+        const hasPostedDate = car.posted_date && car.posted_date.trim();
+        const dateBlock = hasPostedDate
+            ? `<div class="meta-line">${t('posted_on', { date: escapeHtml(car.posted_date.trim()) })}</div>`
+            : `<div class="meta-note">${t('scraped_on_note', { date: formatDate(car.created_at) })}</div>`;
+
+        return `
+            ${specs.length ? `<div class="spec-grid mb-5">${specs.join('')}</div>` : ''}
+
+            ${car.description ? `
+              <div class="border-t border-line pt-4 mb-4">
+                <div class="spec-label mb-2">${t('section_description')}</div>
+                <div class="description">${escapeHtml(car.description)}</div>
+              </div>` : ''}
+
+            ${car.vin ? `
+              <div class="border-t border-line pt-4 mb-4">
+                <div class="spec-label mb-2">${t('section_vin')}</div>
+                <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code>
+              </div>` : ''}
+
+            ${phoneBlock}
+
+            <div class="border-t border-line pt-4">
+              ${dateBlock}
+            </div>`;
+    }
+
+    // ---- router: /car/{source}-{source_id} or / ----
+
+    const _CAR_KEY_RE = /^\/car\/((?:autopapa|myauto)-\d+)\/?$/;
+
+    function parseRoute(path) {
+        const m = (path || location.pathname).match(_CAR_KEY_RE);
+        return m ? { view: 'detail', key: m[1] } : { view: 'search' };
+    }
+
+    function showSearchView() {
+        document.getElementById('hero-section').classList.remove('hidden');
+        document.getElementById('search-section').classList.remove('hidden');
+        if (lastResponse) {
+            document.getElementById('empty-state').classList.add('hidden');
+            renderResults(lastResponse);
+        } else {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('empty-state').classList.remove('hidden');
+        }
+    }
+
+    function showDetailView(key) {
+        document.getElementById('hero-section').classList.add('hidden');
+        document.getElementById('search-section').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('results').innerHTML =
+            `<div class="py-16 text-center text-muted">${t('detail_loading')}</div>`;
+        fetchCarDetail(key);
+    }
+
+    async function fetchCarDetail(key) {
+        const results = document.getElementById('results');
+        try {
+            const resp = await fetch(`${API_BASE}/car/${key}`);
+            if (resp.status === 404) {
+                results.innerHTML = `
+                    <div class="py-16 text-center text-muted">
+                      <p class="mb-4">${t('detail_not_found')}</p>
+                      <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
+                    </div>`;
+                return;
+            }
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const car = await resp.json();
+            renderDetail(car);
+        } catch (e) {
+            results.innerHTML = `<div class="py-16 text-center text-accent">${t('err_fetch', { msg: e.message })}</div>`;
+        }
+    }
+
+    // detail-page slide registry — separate from card slides so a click in the
+    // gallery opens the lightbox at the right index.
+    let _detailSlides = [];
+
+    function renderDetail(car) {
+        const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
+        const slides = buildSlides(car);
+        _detailSlides = slides;
+
+        const galleryHtml = slides.length
+            ? `<div class="gallery">
+                 ${slides.map((s, i) => `
+                   <button class="gallery-tile ${s.type === 'video' ? 'is-video' : ''}"
+                           onclick="openDetailLightbox(${i})">
+                     <img src="${escapeHtml(thumbSrc(s))}" alt="" onerror="this.style.opacity=0.2">
+                   </button>
+                 `).join('')}
+               </div>`
+            : `<div class="no-photo my-6" style="aspect-ratio: 4 / 3;">${t('no_photos')}</div>`;
+
+        document.getElementById('results').innerHTML = `
+            <article class="card">
+              <div class="p-4 md:p-8">
+                <div class="detail-bar">
+                  <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
+                  <button class="detail-btn" onclick="copyDetailLink(this)">${t('copy_link')}</button>
+                </div>
+
+                <div class="flex items-start justify-between gap-4 mb-3">
+                  <div class="min-w-0">
+                    <h1 class="serif-display detail-title text-ink">${escapeHtml(title)}</h1>
+                    ${car.location ? `<p class="text-muted text-sm mt-2">${escapeHtml(car.location)}</p>` : ''}
+                  </div>
+                  <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
+                </div>
+
+                ${priceRowHtml(car)}
+
+                ${galleryHtml}
+
+                ${carBodyHtml(car)}
+
+                ${car.url ? `
+                  <div class="mt-6">
+                    <a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="detail-btn">
+                      ${t('detail_open_source')} ↗
+                    </a>
+                  </div>` : ''}
+              </div>
+            </article>`;
+    }
+
+    window.openDetailLightbox = function (idx) {
+        if (_detailSlides.length) openLightbox(_detailSlides, idx);
+    };
+
+    window.goToCarDetail = function (key, ev) {
+        if (ev) ev.preventDefault();
+        history.pushState({ view: 'detail', key }, '', `/car/${key}`);
+        showDetailView(key);
+        window.scrollTo(0, 0);
+        return false;
+    };
+
+    window.goToSearch = function (ev) {
+        if (ev) ev.preventDefault();
+        history.pushState({ view: 'search' }, '', '/');
+        showSearchView();
+        window.scrollTo(0, 0);
+        return false;
+    };
+
+    window.copyDetailLink = function (btn) {
+        const url = location.href;
+        const reset = (orig) => setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove('is-copied');
+        }, 1500);
+        const orig = btn.textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                btn.textContent = t('link_copied');
+                btn.classList.add('is-copied');
+                reset(orig);
+            }).catch(() => {
+                // fall through to manual prompt
+                window.prompt('', url);
+            });
+        } else {
+            window.prompt('', url);
+        }
+    };
+
+    window.addEventListener('popstate', () => {
+        const route = parseRoute();
+        if (route.view === 'detail') showDetailView(route.key);
+        else showSearchView();
+    });
+
+    // Initial route — handle deeplinks to /car/{key} on cold load
+    (function bootRoute() {
+        const route = parseRoute();
+        if (route.view === 'detail') {
+            showDetailView(route.key);
+        }
+    })();
 
     loadStats();
 </script>

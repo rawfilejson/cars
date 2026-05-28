@@ -4,7 +4,7 @@
     {
       "name": "frontend",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5500", "--bind", "127.0.0.1", "--directory", "web"],
+      "runtimeArgs": ["web/dev-server.py", "5500"],
       "port": 5500
     }
   ]
