@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import ORJSONResponse
 
 from src.api.schemas import HealthCheck
 from src.api.search import router as search_router, car_router
@@ -53,6 +53,7 @@ app = FastAPI(
     description="ანონიმური, უფასო ძიება ვინ კოდით / ნომრით / ტექსტით",
     version="1.0.0",
     lifespan=lifespan,
+    default_response_class=ORJSONResponse,
 )
 
 
@@ -87,11 +88,11 @@ async def global_exception_handler(request: Request, exc: Exception):
     log.exception("Unhandled exception on %s %s", request.method, request.url.path)
 
     if IS_PRODUCTION:
-        return JSONResponse(
+        return ORJSONResponse(
             status_code=500,
-            content={"detail": "შიდა შეცდომა — ცადე ცოტა ხანში"},
+            content={"detail": {"code": "server_error"}},
         )
-    return JSONResponse(
+    return ORJSONResponse(
         status_code=500,
         content={"detail": f"{type(exc).__name__}: {exc}"},
     )

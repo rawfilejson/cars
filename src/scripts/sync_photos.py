@@ -62,9 +62,32 @@ async def fetch_pending(
     return await asyncio.to_thread(fetch_pending_sync, source, limit)
 
 
+async def _fetch_one(
+    http_client: httpx.AsyncClient,
+    photo_sem: asyncio.Semaphore,
+    source: str,
+    source_id: str,
+    index: int,
+    url: str,
+    upload_to_cloud: bool,
+    keep_local: bool,
+) -> str | None:
+    """ერთი ფოტო — never raises. photo_sem ზღუდავს ერთდროულ I/O-ს."""
+    async with photo_sem:
+        try:
+            return await fetch_and_store(
+                http_client, url, source, source_id, index,
+                upload_to_cloud=upload_to_cloud,
+                keep_local=keep_local,
+            )
+        except Exception as exc:                        # never let one bad photo kill the batch
+            print(f"  [skip photo] {source}/{source_id}/{index}: {type(exc).__name__}")
+            return None
+
+
 async def process_car(
     http_client: httpx.AsyncClient,
-    semaphore: asyncio.Semaphore,
+    photo_sem: asyncio.Semaphore,
     car_db_id: int,
     source: str,
     source_id: str,
@@ -72,28 +95,26 @@ async def process_car(
     upload_to_cloud: bool,
     keep_local: bool = True,
 ) -> int:
-    """ერთი მანქანის ყველა ფოტოს ჩატვირთვა — never raises, always returns int."""
-    async with semaphore:
-        keys: list[str] = []
-        for index, url in enumerate(image_urls, start=1):
-            try:
-                key = await fetch_and_store(
-                    http_client, url, source, source_id, index,
-                    upload_to_cloud=upload_to_cloud,
-                    keep_local=keep_local,
-                )
-            except Exception as exc:                    # never let one bad photo kill the batch
-                print(f"  [skip photo] {source}/{source_id}/{index}: {type(exc).__name__}")
-                key = None
-            if key:
-                keys.append(key)
+    """ერთი მანქანის ფოტოები პარალელურად — never raises, always returns int.
 
-        if keys:
-            try:
-                await update_image_keys(car_db_id, keys)
-            except Exception as exc:
-                print(f"  [skip DB update] {source}/{source_id}: {type(exc).__name__}")
-        return len(keys)
+    gather თანმიმდევრობას ინახავს, ამიტომ key-ები ფოტოს index-ის რიგზე რჩება;
+    ჩავარდნილი ფოტო None-ია და ისე იჭრება.
+    """
+    results = await asyncio.gather(*(
+        _fetch_one(
+            http_client, photo_sem, source, source_id, index, url,
+            upload_to_cloud, keep_local,
+        )
+        for index, url in enumerate(image_urls, start=1)
+    ))
+    keys = [key for key in results if key]
+
+    if keys:
+        try:
+            await update_image_keys(car_db_id, keys)
+        except Exception as exc:
+            print(f"  [skip DB update] {source}/{source_id}: {type(exc).__name__}")
+    return len(keys)
 
 
 async def main() -> None:
@@ -101,7 +122,8 @@ async def main() -> None:
     parser.add_argument("--source", help="მხოლოდ ერთი წყაროდან (autopapa/myauto)")
     parser.add_argument("--limit", type=int, help="რამდენი მანქანა მაქსიმუმ")
     parser.add_argument(
-        "--concurrent", type=int, default=5, help="ერთდროული მანქანების რაოდენობა"
+        "--concurrent", type=int, default=8,
+        help="ერთდროული ფოტოს download/upload-ების რაოდენობა (I/O bound)",
     )
     parser.add_argument(
         "--local-only",
@@ -136,35 +158,42 @@ async def main() -> None:
         return
 
     start = time.time()
-    semaphore = asyncio.Semaphore(args.concurrent)
+    total = len(pending)
+    total_photos = 0
+    done = 0
 
-    # Referer-ი per-request დაიდება storage.referer_for-ის მიხედვით (autopapa vs myauto)
+    # photo_sem ზღუდავს ერთდროულ ფოტო-I/O-ს; worker-ების pool ზღუდავს ერთდროულ
+    # მანქანებს (memory). Referer per-request იდება storage.referer_for-ით.
+    photo_sem = asyncio.Semaphore(args.concurrent)
+    queue: asyncio.Queue = asyncio.Queue()
+    for car in pending:
+        queue.put_nowait(car)
+
     async with httpx.AsyncClient(
         headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         },
         follow_redirects=True,
     ) as client:
-        tasks = [
-            process_car(
-                client, semaphore, car_id, source, source_id, urls,
-                upload_to_cloud, keep_local,
-            )
-            for car_id, source, source_id, urls in pending
-        ]
 
-        total_photos = 0
-        for index, coro in enumerate(asyncio.as_completed(tasks), start=1):
-            n_photos = await coro
-            total_photos += n_photos
-
-            if index % 10 == 0 or index == len(tasks):
-                elapsed = time.time() - start
-                rate = index / elapsed if elapsed else 0
-                print(
-                    f"[{index}/{len(tasks)}] photos:{total_photos} "
-                    f"rate:{rate:.1f} car/s"
+        async def worker() -> None:
+            nonlocal total_photos, done
+            while True:
+                try:
+                    car_id, source, source_id, urls = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    return
+                total_photos += await process_car(
+                    client, photo_sem, car_id, source, source_id, urls,
+                    upload_to_cloud, keep_local,
                 )
+                done += 1
+                if done % 10 == 0 or done == total:
+                    elapsed = time.time() - start
+                    rate = done / elapsed if elapsed else 0
+                    print(f"[{done}/{total}] photos:{total_photos} rate:{rate:.1f} car/s")
+
+        await asyncio.gather(*(worker() for _ in range(args.concurrent)))
 
     print(f"\nდასრულდა. ფოტოები: {total_photos}, დრო: {time.time() - start:.0f} წმ.")
 
