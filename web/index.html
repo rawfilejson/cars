@@ -527,6 +527,26 @@
         document.getElementById('f-sort').value = '';
     };
 
+    const ERROR_CODES = new Set([
+        'query_too_vague', 'query_empty', 'phone_too_short',
+        'car_invalid_key', 'car_not_found', 'cooldown', 'rate_limited',
+    ]);
+
+    function errorMessage(detail) {
+        if (detail && typeof detail === 'object' && ERROR_CODES.has(detail.code)) {
+            return t('err_' + detail.code, detail);
+        }
+        return t('err_unknown');
+    }
+
+    function showSearchError(meta, message) {
+        meta.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'text-accent';
+        span.textContent = message;
+        meta.appendChild(span);
+    }
+
     async function doSearch(opts = {}) {
         // resetPage: true when user starts a fresh search (typed something,
         // changed filters, hit Search). false when paginating.
@@ -554,8 +574,9 @@
             });
 
             if (!resp.ok) {
-                const err = await resp.json();
-                meta.innerHTML = `<span class="text-accent">${err.detail}</span>`;
+                let detail = null;
+                try { detail = (await resp.json()).detail; } catch {}
+                showSearchError(meta, errorMessage(detail));
                 results.innerHTML = '';
                 lastResponse = null;
                 return;
@@ -564,7 +585,7 @@
             lastResponse = await resp.json();
             renderResults(lastResponse);
         } catch (e) {
-            meta.innerHTML = `<span class="text-accent">${t('err_fetch', { msg: e.message })}</span>`;
+            showSearchError(meta, t('err_fetch', { msg: e.message }));
         } finally {
             btn.disabled = false;
             btn.textContent = t('btn_search');
@@ -782,8 +803,8 @@
 
         // Show TOTAL across pages, not just rows on this page
         let metaText = `<strong class="text-ink">${t('results_count', { n: data.total_count })}</strong>`;
-        if (data.remaining_free_searches != null) {
-            metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_free_searches })}</span>`;
+        if (data.remaining_searches != null) {
+            metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_searches })}</span>`;
         }
         meta.innerHTML = metaText;
 

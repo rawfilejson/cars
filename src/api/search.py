@@ -163,9 +163,7 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
     if not words or len(text) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — "
-                   "დაამატე წელი, ქალაქი ან მოდელის ვერსია "
-                   "(მაგ. Toyota Camry 2020 თბილისი).",
+            detail={"code": "query_too_vague"},
         )
 
     # search_blob is lowercased — use LIKE (case-sensitive) on lowered
@@ -206,7 +204,7 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
     if not _has_any_filter(req):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის ან გამოიყენე ფილტრები",
+            detail={"code": "query_empty"},
         )
     filter_frags, filter_params = _filter_clauses(req)
     where = " AND ".join(filter_frags)
@@ -237,7 +235,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
         if len(suffix) < 4:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ნომერი მინიმუმ 4 ციფრი უნდა იყოს",
+                detail={"code": "phone_too_short"},
             )
         sql = (
             "SELECT *, COUNT(*) OVER () AS _total FROM cars "
@@ -253,7 +251,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის",
+        detail={"code": "query_empty"},
     )
 
 
@@ -332,8 +330,7 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
         total_count=total_count,
         page=req.page,
         page_size=PAGE_SIZE,
-        charged=False,
-        remaining_free_searches=remaining,
+        remaining_searches=remaining,
     )
 
 
@@ -345,7 +342,7 @@ def get_car(key: str) -> CarPublic:
     if not m:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="არასწორი მისამართი",
+            detail={"code": "car_invalid_key"},
         )
     source, source_id = m.group(1), m.group(2)
 
@@ -360,6 +357,6 @@ def get_car(key: str) -> CarPublic:
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="მანქანა ვერ მოიძებნა — ალბათ წაიშალა წყაროდან",
+            detail={"code": "car_not_found"},
         )
     return _row_to_public(row)

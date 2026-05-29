@@ -72,7 +72,7 @@ def check_rate_limit(request: Request) -> int:
         wait = int(SEARCH_COOLDOWN_SECONDS - sec_since_last) + 1
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"მოიცადე {wait} წამი შემდეგი ცდისთვის",
+            detail={"code": "cooldown", "wait": wait},
             headers={"Retry-After": str(wait)},
         )
 
@@ -80,11 +80,11 @@ def check_rate_limit(request: Request) -> int:
     if count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=(
-                f"საათობრივი ლიმიტი ({SEARCH_LIMIT_PER_HOUR} ცდა) ამოწურეთ. "
-                f"შემდეგ საათში სცადეთ ან მომწერეთ Instagram-ზე {CONTACT_INSTAGRAM} "
-                f"მეტი ლიმიტის მისაღებად."
-            ),
+            detail={
+                "code": "rate_limited",
+                "limit": SEARCH_LIMIT_PER_HOUR,
+                "contact": CONTACT_INSTAGRAM,
+            },
         )
 
     return SEARCH_LIMIT_PER_HOUR - count_last_hour - 1
@@ -105,8 +105,8 @@ def log_search(
             cur.execute(
                 """
                 INSERT INTO searches
-                  (query, query_type, results_count, paid, user_ip, user_agent)
-                VALUES (%s, %s, %s, FALSE, %s, %s)
+                  (query, query_type, results_count, user_ip, user_agent)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
                 (query[:500], query_type, results_count, ip, user_agent),
             )

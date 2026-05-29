@@ -91,8 +91,7 @@ class SearchResponse(BaseModel):
     total_count: int                                # rows across all pages
     page: int                                       # current page (1-based)
     page_size: int                                  # rows per page
-    charged: bool                                   # ყოველთვის False (უფასოა)
-    remaining_free_searches: int | None             # ამ საათში დარჩენილი ცდები
+    remaining_searches: int | None                  # ამ საათში დარჩენილი ცდები
 
 
 class HealthCheck(BaseModel):

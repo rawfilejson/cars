@@ -160,12 +160,9 @@ CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (descript
 -- ვინც დასერჩა, რა შეიყვანა, რა მოვიდა შედეგად
 CREATE TABLE IF NOT EXISTS searches (
     id              BIGSERIAL PRIMARY KEY,
-    user_id         UUID,                           -- NULL თუ ანონიმური
     query           TEXT        NOT NULL,
-    query_type      TEXT,                           -- "vin" | "phone" | "free_text"
+    query_type      TEXT,                           -- "vin" | "phone" | "search" | "browse"
     results_count   INTEGER     NOT NULL DEFAULT 0,
-    paid            BOOLEAN     NOT NULL DEFAULT FALSE,
-    paid_amount     NUMERIC(10,2),
     user_ip         INET,
     user_agent      TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -173,65 +170,13 @@ CREATE TABLE IF NOT EXISTS searches (
 
 CREATE INDEX IF NOT EXISTS searches_query_idx ON searches(query);
 CREATE INDEX IF NOT EXISTS searches_created_at_idx ON searches(created_at DESC);
-CREATE INDEX IF NOT EXISTS searches_user_id_idx ON searches(user_id);
 CREATE INDEX IF NOT EXISTS searches_user_ip_idx ON searches(user_ip);
-
--- =====================================================================
--- მომხმარებლის subscription-ი
--- =====================================================================
--- Supabase Auth-ში user-ი ცალკე ცხრილია (auth.users). აქ ვინახავთ მხოლოდ
--- subscription-ის სტატუსს — ვის გადახდილი აქვს, რომელ თვემდე.
-CREATE TABLE IF NOT EXISTS subscriptions (
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         UUID        NOT NULL UNIQUE,    -- მიუთითებს auth.users.id-ზე
-    status          TEXT        NOT NULL,           -- "active" | "expired" | "canceled"
-    started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    expires_at      TIMESTAMPTZ NOT NULL,
-    payment_method  TEXT,                           -- "bog" | "tbc" | "stripe"
-    last_payment_amount NUMERIC(10,2),
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS subscriptions_user_id_idx ON subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS subscriptions_expires_at_idx ON subscriptions(expires_at);
-
-DROP TRIGGER IF EXISTS subscriptions_set_updated_at ON subscriptions;
-CREATE TRIGGER subscriptions_set_updated_at
-    BEFORE UPDATE ON subscriptions
-    FOR EACH ROW
-    EXECUTE FUNCTION set_updated_at();
-
--- =====================================================================
--- ფოტო-VIN OCR შედეგები
--- =====================================================================
--- ფოტოს VIN OCR-ით ვცდილობთ ვინ-ის ამოღებას. შედეგებს ცალკე ცხრილში ვინახავთ,
--- რომ მერე გადავამოწმოთ partial VIN-ის შესაბამისობა და human review.
-CREATE TABLE IF NOT EXISTS photo_vin_ocr (
-    id              BIGSERIAL PRIMARY KEY,
-    car_id          BIGINT      NOT NULL REFERENCES cars(id) ON DELETE CASCADE,
-    image_key       TEXT        NOT NULL,
-    extracted_vin   VARCHAR(17),
-    confidence      NUMERIC(4,3),                   -- 0.000 — 1.000
-    matches_partial BOOLEAN,                        -- partial VIN-ს ემთხვევა?
-    needs_review    BOOLEAN     NOT NULL DEFAULT FALSE,
-    ocr_provider    TEXT,                           -- "google_vision" | "tesseract"
-    raw_response    JSONB,                          -- სრული OCR პასუხი — debug-ისთვის
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS photo_vin_ocr_car_id_idx ON photo_vin_ocr(car_id);
-CREATE INDEX IF NOT EXISTS photo_vin_ocr_needs_review_idx ON photo_vin_ocr(needs_review)
-    WHERE needs_review = TRUE;
 
 -- =====================================================================
 -- Row Level Security (RLS) — default deny all
 -- =====================================================================
 -- Supabase ცხრილებს ავტომატურად ანახებს REST API-ით ანონიმური მომხმარებლებისთვის.
--- ჩავრთოთ RLS რომ ანონიმური წვდომა დაიხუროს. ჩვენი backend პირდაპირ DB-სთან
--- მუშაობს postgres user-ით (RLS bypass), ვებსაიტი კი მერე ცალკეულ პოლიტიკებს
--- დაამატებს უფლებამოსილი მომხმარებლებისთვის.
-ALTER TABLE cars          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE searches      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE photo_vin_ocr ENABLE ROW LEVEL SECURITY;
+-- RLS-ს ვრთავთ policy-ების გარეშე, რომ ეს public წვდომა დაიხუროს. backend
+-- პირდაპირ DB-სთან owner role-ით მუშაობს (RLS bypass), ამიტომ მისთვის არაფერი იცვლება.
+ALTER TABLE cars     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE searches ENABLE ROW LEVEL SECURITY;

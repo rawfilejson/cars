@@ -44,9 +44,18 @@ const TRANSLATIONS = {
         notice_slow: "ხანდახან 10-15 წამი ჭირდება ინფორმაციის მოძიებას. გთხოვთ მოითმინეთ.",
 
         err_fetch: "შეცდომა: {msg}",
-        err_too_generic:
+        err_unknown: "დაფიქსირდა შეცდომა, სცადეთ მოგვიანებით.",
+        err_query_too_vague:
             "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — დაამატე წელი, " +
             "ქალაქი ან მოდელის ვერსია (მაგ. Toyota Camry 2020 თბილისი).",
+        err_query_empty: "გთხოვთ შეიყვანოთ რაიმე ძიებისთვის ან გამოიყენე ფილტრები.",
+        err_phone_too_short: "ნომერი მინიმუმ 4 ციფრი უნდა იყოს.",
+        err_car_invalid_key: "არასწორი მისამართი.",
+        err_car_not_found: "მანქანა ვერ მოიძებნა — ალბათ წაიშალა წყაროდან.",
+        err_cooldown: "მოიცადე {wait} წამი შემდეგი ცდისთვის.",
+        err_rate_limited:
+            "საათობრივი ლიმიტი ({limit} ცდა) ამოწურეთ. შემდეგ საათში სცადეთ " +
+            "ან მომწერეთ Instagram-ზე {contact} მეტი ლიმიტისთვის.",
 
         spec_year: "წელი",
         spec_mileage: "გარბენი",
@@ -126,9 +135,18 @@ const TRANSLATIONS = {
         notice_slow: "Searches can take 10-15 seconds. Please be patient.",
 
         err_fetch: "Error: {msg}",
-        err_too_generic:
+        err_unknown: "Something went wrong, please try again later.",
+        err_query_too_vague:
             "Please be more specific — add the year, city, or trim " +
             "(e.g. Toyota Camry 2020 Tbilisi).",
+        err_query_empty: "Enter something to search, or use the filters.",
+        err_phone_too_short: "Phone number must be at least 4 digits.",
+        err_car_invalid_key: "Invalid address.",
+        err_car_not_found: "Car not found — it was probably removed from the source.",
+        err_cooldown: "Wait {wait}s before searching again.",
+        err_rate_limited:
+            "Hourly limit reached ({limit} searches). Try next hour, " +
+            "or message {contact} on Instagram for a higher limit.",
 
         spec_year: "Year",
         spec_mileage: "Mileage",
