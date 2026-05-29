@@ -17,8 +17,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import time
+from pathlib import Path
 
 from playwright.async_api import BrowserContext, Page, async_playwright
 
@@ -813,9 +815,6 @@ async def collect_all_ids(
 # ID cache — Phase 1 collection takes ~80 min via API. If Phase 2 (HTML
 # detail scrape) crashes, we don't want to redo Phase 1. Save to JSON,
 # load on next run. Delete the file to force a fresh ID fetch.
-import json
-from pathlib import Path
-
 IDS_CACHE_PATH = Path(__file__).resolve().parents[2] / "exports" / "myauto-ids.json"
 
 

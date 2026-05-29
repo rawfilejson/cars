@@ -139,6 +139,11 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
             return False
         return None
 
+    customs_raw = row.get("Customs_Cleared", "")
+    customs_cleared = parse_customs(customs_raw)
+    if customs_cleared is None:
+        customs_cleared = _b(customs_raw)
+
     return Car(
         source=row.get("Source", source) or source,
         source_id=source_id,
@@ -165,8 +170,7 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
         interior_material=row.get("Interior_Material", "") or "",
         steering=normalize_steering(row.get("Steering", "")),
         condition=row.get("Condition", "") or "",
-        customs_cleared=parse_customs(row.get("Customs_Cleared", ""))
-        or _b(row.get("Customs_Cleared")),
+        customs_cleared=customs_cleared,
         has_catalyst=_b(row.get("Has_Catalyst")),
         tech_inspection=_b(row.get("Tech_Inspection")),
         vin=vin,
