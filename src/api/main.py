@@ -26,8 +26,8 @@ from src.api.stats import router as stats_router
 from src.common.config import r2_is_configured
 
 
-# Production რეჟიმის ცნობა — Fly.io ან Render
-IS_PRODUCTION = bool(os.getenv("FLY_APP_NAME") or os.getenv("PRODUCTION"))
+# Production რეჟიმი — Render-ი PRODUCTION=1-ს აყენებს (იხ. render.yaml)
+IS_PRODUCTION = bool(os.getenv("PRODUCTION"))
 
 logging.basicConfig(
     level=logging.INFO if IS_PRODUCTION else logging.DEBUG,
