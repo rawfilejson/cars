@@ -19,11 +19,11 @@
 name: Scheduled Parser
 
 on:
-  # cron გათიშულია სანამ GitHub Secrets-ი არ დავაყენებთ.
-  # secrets-ის დამატების შემდეგ უნდა გავახსნათ:
-  #   - cron: '0 3 * * *'      # 07:00 თბილისი
-  #   - cron: '0 15 * * *'     # 19:00 თბილისი
-  workflow_dispatch:           # მხოლოდ ხელით
+  # დღეში 2-ჯერ; ქვემოთ random delay (0-60წთ) ზუსტ დროს არანდომებს.
+  schedule:
+    - cron: '0 3 * * *'        # ~07:00 თბილისი (+ random delay)
+    - cron: '0 15 * * *'       # ~19:00 თბილისი (+ random delay)
+  workflow_dispatch:           # ხელითაც
 
 # parallel-ად ერთდროულად ერთი job-ი მუშაობდეს
 concurrency:
@@ -37,15 +37,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
         run: uv sync
