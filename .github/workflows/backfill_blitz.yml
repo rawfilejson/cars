@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5]
+        shard: [0, 1, 2]
 
     steps:
       - name: Checkout code
@@ -57,4 +57,4 @@ jobs:
           CONCURRENT: ${{ github.event.inputs.concurrent }}
         run: |
           uv run python -m src.scripts.sync_photos \
-            --purge-local --shard ${{ matrix.shard }}/6 --concurrent ${CONCURRENT:-16}
+            --purge-local --shard ${{ matrix.shard }}/3 --concurrent ${CONCURRENT:-16}
