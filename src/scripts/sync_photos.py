@@ -28,9 +28,13 @@ from src.common.storage import fetch_and_store
 
 
 def fetch_pending_sync(
-    source: str | None, limit: int | None
+    source: str | None, limit: int | None, shard: tuple[int, int] | None = None
 ) -> list[tuple[int, str, str, list[str]]]:
-    """ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს."""
+    """ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს.
+
+    shard=(x, n) — მხოლოდ ის მანქანები სადაც id %% n == x. პარალელური blitz-ისთვის:
+    n runner თითო თავის ნაწილს ამუშავებს, overlap-ის გარეშე.
+    """
     query = """
         SELECT id, source, source_id, image_urls
         FROM cars
@@ -43,6 +47,11 @@ def fetch_pending_sync(
     if source:
         query += " AND source = %s"
         params.append(source)
+
+    if shard:
+        x, n = shard
+        query += " AND MOD(id, %s) = %s"
+        params.extend([n, x])
 
     query += " ORDER BY id"
 
@@ -57,9 +66,9 @@ def fetch_pending_sync(
 
 
 async def fetch_pending(
-    source: str | None, limit: int | None
+    source: str | None, limit: int | None, shard: tuple[int, int] | None = None
 ) -> list[tuple[int, str, str, list[str]]]:
-    return await asyncio.to_thread(fetch_pending_sync, source, limit)
+    return await asyncio.to_thread(fetch_pending_sync, source, limit, shard)
 
 
 async def _fetch_one(
@@ -136,7 +145,18 @@ async def main() -> None:
         help="R2-ში წარმატებული upload-ის შემდეგ ლოკალური ფაილი წაიშლება "
              "(disk-constrained backfill — runner-ს დისკი არ ევსება)",
     )
+    parser.add_argument(
+        "--shard",
+        help="X/N — მხოლოდ id %% N == X მანქანები (პარალელური blitz-ისთვის)",
+    )
     args = parser.parse_args()
+
+    shard: tuple[int, int] | None = None
+    if args.shard:
+        x_str, _, n_str = args.shard.partition("/")
+        shard = (int(x_str), int(n_str))
+        if not 0 <= shard[0] < shard[1]:
+            raise SystemExit(f"--shard X/N: საჭიროა 0 <= X < N (მიღებული: {args.shard})")
 
     upload_to_cloud = (not args.local_only) and r2_is_configured()
     if not args.local_only and not r2_is_configured():
@@ -149,7 +169,7 @@ async def main() -> None:
         )
     keep_local = not args.purge_local
 
-    pending = await fetch_pending(args.source, args.limit)
+    pending = await fetch_pending(args.source, args.limit, shard)
     print(f"დასამუშავებელი მანქანები: {len(pending)}")
 
     if not pending:

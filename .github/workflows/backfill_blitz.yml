@@ -1,0 +1,60 @@
+# Photo Backfill Blitz — backlog-ის ერთჯერადი პარალელური დასუფთავება.
+# 6 runner ერთდროულად, თითო id %% 6 == shard ნაწილს (overlap-ის გარეშე).
+# ხელით: Actions → Photo Backfill Blitz → Run workflow.
+#
+# ⚠️ ბევრ free-tier Actions წუთს ხარჯავს (≈6×timeout). ერთჯერადი backlog clear-ისთვის.
+# მუდმივი/ნაზი backfill-ისთვის sync_backfill.yml (auto-chain) გამოიყენე.
+
+name: Photo Backfill Blitz
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrent:
+        description: 'ერთდროული ფოტო-I/O თითო shard-ზე'
+        required: false
+        default: '16'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: photo-blitz
+  cancel-in-progress: false
+
+jobs:
+  blitz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Backfill shard ${{ matrix.shard }}/6
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          CONCURRENT: ${{ github.event.inputs.concurrent }}
+        run: |
+          uv run python -m src.scripts.sync_photos \
+            --purge-local --shard ${{ matrix.shard }}/6 --concurrent ${CONCURRENT:-16}
