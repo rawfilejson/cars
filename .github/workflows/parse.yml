@@ -54,6 +54,7 @@ jobs:
         run: uv run playwright install --with-deps chromium
 
       - name: Random delay (0-60 min) — anti-pattern detection
+        if: ${{ github.event_name == 'schedule' }}
         run: |
           DELAY=$((RANDOM % 3600))
           echo "Sleeping for $DELAY seconds (random)..."

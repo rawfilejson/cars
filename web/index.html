@@ -388,6 +388,21 @@
                         data-i18n="btn_search"></button>
             </div>
 
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <div class="filter-group">
+                    <span class="filter-label" data-i18n="filter_brand"></span>
+                    <select class="filter-select" id="f-brand">
+                        <option value="" data-i18n="brand_any"></option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label" data-i18n="filter_model"></span>
+                    <select class="filter-select" id="f-model" disabled>
+                        <option value="" data-i18n="model_any"></option>
+                    </select>
+                </div>
+            </div>
+
 
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="filter-group">
@@ -530,7 +545,47 @@
             document.getElementById('f-' + id).value = '';
         }
         document.getElementById('f-sort').value = '';
+        const brand = document.getElementById('f-brand');
+        const model = document.getElementById('f-model');
+        brand.value = '';
+        model.value = '';
+        model.innerHTML = `<option value="">${t('model_any')}</option>`;
+        model.disabled = true;
     };
+
+    let _makes = {};
+
+    async function loadMakes() {
+        try {
+            const resp = await fetch(`${API_BASE}/makes`);
+            if (!resp.ok) return;
+            _makes = (await resp.json()).makes || {};
+        } catch { return; }
+        document.getElementById('f-brand').insertAdjacentHTML('beforeend',
+            Object.keys(_makes).map(n =>
+                `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''));
+    }
+
+    function onBrandChange() {
+        const brand = document.getElementById('f-brand').value;
+        const model = document.getElementById('f-model');
+        const models = _makes[brand] || [];
+        model.innerHTML = `<option value="">${t('model_any')}</option>` +
+            models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+        model.disabled = !brand;
+        runBrandSearch();
+    }
+
+    function runBrandSearch() {
+        const brand = document.getElementById('f-brand').value;
+        const model = document.getElementById('f-model').value;
+        if (!brand) return;
+        document.getElementById('search-input').value = [brand, model].filter(Boolean).join(' ');
+        doSearch();
+    }
+
+    document.getElementById('f-brand').addEventListener('change', onBrandChange);
+    document.getElementById('f-model').addEventListener('change', runBrandSearch);
 
     const ERROR_CODES = new Set([
         'query_too_vague', 'query_empty', 'phone_too_short',
@@ -1083,6 +1138,7 @@
     })();
 
     loadStats();
+    loadMakes();
 </script>
 
 </body>
