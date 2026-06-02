@@ -179,10 +179,11 @@ async def main() -> None:
                     car_id, source, source_id, urls = queue.get_nowait()
                 except asyncio.QueueEmpty:
                     return
-                total_photos += await process_car(
+                n_photos = await process_car(
                     client, photo_sem, car_id, source, source_id, urls,
                     upload_to_cloud, keep_local,
                 )
+                total_photos += n_photos
                 done += 1
                 if done % 10 == 0 or done == total:
                     elapsed = time.time() - start
