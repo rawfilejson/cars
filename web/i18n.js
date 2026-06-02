@@ -21,6 +21,10 @@ const TRANSLATIONS = {
         filter_to:      "მდე",
         filter_sort:    "სორტირება",
         filter_clear:   "ფილტრების გასუფთავება",
+        filter_brand:   "ბრენდი",
+        filter_model:   "მოდელი",
+        brand_any:      "ყველა ბრენდი",
+        model_any:      "ყველა მოდელი",
 
         sort_default:     "სორტირება",
         sort_price_desc:  "ფასი: კლებადობით",
@@ -113,6 +117,10 @@ const TRANSLATIONS = {
         filter_to:      "to",
         filter_sort:    "Sort",
         filter_clear:   "Clear filters",
+        filter_brand:   "Brand",
+        filter_model:   "Model",
+        brand_any:      "All brands",
+        model_any:      "All models",
 
         sort_default:     "Sort",
         sort_price_desc:  "Price: high to low",
