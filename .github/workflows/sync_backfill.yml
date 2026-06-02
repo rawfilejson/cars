@@ -1,37 +1,33 @@
-# =====================================================================
-# Photo backfill — GitHub Actions (cloud-side ingestion)
-# =====================================================================
-# დაგროვილი image_urls-ის ფოტოებს ცლაუდში (R2) ვტვირთავთ — მომხმარებლის
-# PC-ს გარეშე. წყაროს CDN → runner → R2, ხოლო ლოკალური ასლი მაშინვე იშლება
-# (--purge-local), რომ runner-ის ~14 GB დისკი არ აივსოს.
+# Photo backfill — დაგროვილი image_urls → R2, მომხმარებლის PC-ს გარეშე.
+# წყაროს CDN → runner → R2, ლოკალური ასლი მაშინვე იშლება (--purge-local).
 #
-# ხელით გაშვება:
-#   Actions → Photo Backfill → Run workflow
-#   ან: gh workflow run sync_backfill.yml -f concurrent=8 -f limit=200
+# Auto-chaining: schedule ყოველ 6სთ აგრძელებს backlog-ს (sync_photos მხოლოდ
+# pending-ს ირჩევს, ამიტომ resumable-ია). როცა backlog გასუფთავდება (pending=0),
+# run თვითონ თიშავს ამ schedule-ს (gh workflow disable). PAT არ სჭირდება.
 #
-# resumable: sync_photos მხოლოდ pending მანქანებს (image_keys ცარიელი) ირჩევს,
-# ამიტომ timeout-ის შემდეგ უბრალოდ ისევ გავუშვათ — გააგრძელებს იქიდან.
-#
-# საჭირო Secrets (Settings → Secrets and variables → Actions):
-#   DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
-#   R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
-# =====================================================================
+# საჭირო Secrets: DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+# R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
 
 name: Photo Backfill
 
 on:
+  schedule:
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       concurrent:
-        description: 'ერთდროული მანქანების რაოდენობა'
+        description: 'ერთდროული ფოტო-I/O'
         required: false
-        default: '8'
+        default: '16'
       limit:
         description: 'მაქს. მანქანა (ცარიელი = ყველა pending)'
         required: false
         default: ''
 
-# ერთდროულად მხოლოდ ერთი backfill — DB-ში race არ გვინდა
+permissions:
+  contents: read
+  actions: write
+
 concurrency:
   group: photo-backfill
   cancel-in-progress: false
@@ -39,7 +35,7 @@ concurrency:
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 350          # GitHub-ის 6-საათიანი ლიმიტის ქვემოთ
+    timeout-minutes: 350
 
     steps:
       - name: Checkout code
@@ -53,7 +49,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      # Playwright არ გვჭირდება — sync_photos მხოლოდ httpx-ით მუშაობს
       - name: Install dependencies
         run: uv sync
 
@@ -68,12 +63,25 @@ jobs:
           CONCURRENT: ${{ github.event.inputs.concurrent }}
           LIMIT: ${{ github.event.inputs.limit }}
         run: |
-          ARGS="--purge-local --concurrent ${CONCURRENT:-8}"
+          ARGS="--purge-local --concurrent ${CONCURRENT:-16}"
           if [ -n "$LIMIT" ]; then
             ARGS="$ARGS --limit $LIMIT"
           fi
           echo "Running: sync_photos $ARGS"
           uv run python -m src.scripts.sync_photos $ARGS
+
+      - name: Stop auto-chaining when backlog is clear
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PENDING=$(uv run python -c "import psycopg; from src.common.config import DATABASE_URL; c=psycopg.connect(DATABASE_URL); cur=c.cursor(); cur.execute('SELECT COUNT(*) FROM cars WHERE image_urls IS NOT NULL AND array_length(image_urls,1)>0 AND (image_keys IS NULL OR array_length(image_keys,1) IS NULL)'); print(cur.fetchone()[0])")
+          echo "Pending cars: $PENDING"
+          if [ "$PENDING" = "0" ]; then
+            echo "Backlog clear — disabling the schedule."
+            gh workflow disable "Photo Backfill" --repo "$GITHUB_REPOSITORY"
+          fi
 
       - name: Notify on failure
         if: failure()
