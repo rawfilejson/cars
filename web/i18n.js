@@ -1,5 +1,4 @@
-// Two-language dictionary. KA is the default — Georgian users come first.
-// Switch persists via localStorage.
+// ka/en ლექსიკონი — ნაგულისხმევი ka; არჩევანი localStorage-ში ნახულობს.
 
 const TRANSLATIONS = {
     ka: {
@@ -81,7 +80,6 @@ const TRANSLATIONS = {
         photo_counter: "{i} / {n}",
         no_photos: "ფოტო არ არის",
 
-        // detail view (per-car page)
         back_to_search:    "← უკან ძიებაში",
         copy_link:         "ბმულის კოპირება",
         link_copied:       "კოპირებულია",
@@ -172,7 +170,6 @@ const TRANSLATIONS = {
         photo_counter: "{i} / {n}",
         no_photos: "no photo",
 
-        // detail view (per-car page)
         back_to_search:    "← Back to search",
         copy_link:         "Copy link",
         link_copied:       "Copied",
