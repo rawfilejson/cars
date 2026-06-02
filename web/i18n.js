@@ -72,6 +72,8 @@ const TRANSLATIONS = {
         section_description: "აღწერა",
         section_vin: "VIN",
         section_phone: "ტელეფონი",
+        see_more: "ვრცლად",
+        see_less: "დაკეცვა",
 
         posted_on: "გამოქვეყნდა: {date}",
         scraped_on_label: "ინფორმაცია მოვიძიეთ:",
@@ -162,6 +164,8 @@ const TRANSLATIONS = {
         section_description: "Description",
         section_vin: "VIN",
         section_phone: "Phone",
+        see_more: "See more",
+        see_less: "See less",
 
         posted_on: "Posted: {date}",
         scraped_on_label: "Retrieved:",
