@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /$
+Allow: /terms.html
+Allow: /privacy.html
+Disallow: /car/

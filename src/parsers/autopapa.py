@@ -32,6 +32,7 @@ from src.common.normalize import (
     sane_int,
     split_price,
 )
+from src.common import robots
 from src.common.validators import validate_car
 from src.common.vin import best_vin
 
@@ -165,14 +166,13 @@ async def fetch_vin_by_click(page: Page) -> str:
 
 async def fetch_vin_via_ajax(context: BrowserContext, car_id: str) -> str:
     """Fallback: hit the JSON endpoint autopapa uses internally."""
+    vin_url = f"{HOST}/get_vin/ge/{car_id}"
+    if not await robots.can_fetch(vin_url):
+        return ""
     page = await context.new_page()
     try:
         await page.route("**/*", block_heavy_resources)
-        await page.goto(
-            f"{HOST}/get_vin/ge/{car_id}",
-            wait_until="domcontentloaded",
-            timeout=10_000,
-        )
+        await page.goto(vin_url, wait_until="domcontentloaded", timeout=10_000)
         return await page.content()
     except Exception:
         return ""
@@ -357,6 +357,10 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
     refresh_all: if True, re-scrape rows we already have (default skips them).
     """
     print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES}, max_pages={max_pages})")
+
+    if not await robots.can_fetch(START_URL):
+        print(f"  robots.txt disallows {START_URL} — skipping")
+        return
 
     already_saved = await get_existing_ids(SOURCE) if not refresh_all else set()
     print(f"  In DB: {len(already_saved)} listings")
