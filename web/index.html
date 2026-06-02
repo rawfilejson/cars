@@ -276,6 +276,16 @@
             color: #1A1A1A; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
         }
+        .description.clamped {
+            display: -webkit-box; -webkit-box-orient: vertical;
+            -webkit-line-clamp: 5; line-clamp: 5; overflow: hidden;
+        }
+        .see-more {
+            margin-top: 6px; background: none; border: 0; padding: 0;
+            font-family: inherit; font-size: 13px; font-weight: 500;
+            color: #C2410C; cursor: pointer;
+        }
+        .see-more:hover { text-decoration: underline; }
 
 
         .meta-line { color: #6B6258; font-size: 12px; font-style: italic; }
@@ -860,6 +870,23 @@
             </div>`;
     }
 
+    function descriptionHtml(desc) {
+        if (!desc) return '';
+        const long = desc.length > 180 || (desc.match(/\n/g) || []).length > 4;
+        return `
+            <div class="border-t border-line pt-4 mb-4">
+              <div class="spec-label mb-2">${t('section_description')}</div>
+              <div class="description${long ? ' clamped' : ''}">${escapeHtml(desc)}</div>
+              ${long ? `<button class="see-more" onclick="toggleDesc(this)">${t('see_more')}</button>` : ''}
+            </div>`;
+    }
+
+    window.toggleDesc = function (btn) {
+        const desc = btn.parentElement.querySelector('.description');
+        const clamped = desc.classList.toggle('clamped');
+        btn.textContent = t(clamped ? 'see_more' : 'see_less');
+    };
+
     function carBodyHtml(car) {
         const specs = [];
         if (car.mileage_km)      specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
@@ -888,11 +915,7 @@
         return `
             ${specs.length ? `<div class="spec-grid mb-5">${specs.join('')}</div>` : ''}
 
-            ${car.description ? `
-              <div class="border-t border-line pt-4 mb-4">
-                <div class="spec-label mb-2">${t('section_description')}</div>
-                <div class="description">${escapeHtml(car.description)}</div>
-              </div>` : ''}
+            ${descriptionHtml(car.description)}
 
             ${car.vin ? `
               <div class="border-t border-line pt-4 mb-4">
