@@ -29,7 +29,7 @@ def get_pool() -> ConnectionPool:
         _pool = ConnectionPool(
             DATABASE_URL,
             min_size=2,
-            max_size=10,
+            max_size=6,
             kwargs={"row_factory": dict_row},
             open=True,
             timeout=10.0,
