@@ -94,7 +94,9 @@ const TRANSLATIONS = {
         detail_open_source:"ნახე წყაროზე",
         detail_gallery:    "ფოტოები",
 
-        footer_about: "მონაცემები autopapa.ge და myauto.ge-დან. ღია წყაროები. უფასო.",
+        footer_about: "მანქანების განცხადებების არქივი. უფასო.",
+        footer_terms: "წესები",
+        footer_privacy: "კონფიდენციალურობა",
         footer_contact: "კონტაქტი:",
     },
     en: {
@@ -190,7 +192,9 @@ const TRANSLATIONS = {
         detail_open_source:"Open on source",
         detail_gallery:    "Photos",
 
-        footer_about: "Data from autopapa.ge and myauto.ge. Open sources. Free.",
+        footer_about: "Car listings archive. Free.",
+        footer_terms: "Terms",
+        footer_privacy: "Privacy",
         footer_contact: "Contact:",
     },
 };
