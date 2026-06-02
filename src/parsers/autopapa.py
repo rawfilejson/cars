@@ -57,7 +57,6 @@ def first_int(text: str | None) -> int | None:
     match = re.search(r"\d", s)
     if not match:
         return None
-    # Walk forward collecting digits and inner spaces ("26 000" stays together).
     tail = re.match(r"[\d\s]+", s[match.start():])
     digits = re.sub(r"\D", "", tail.group(0)) if tail else match.group(0)
     return int(digits) if digits else None
@@ -124,7 +123,6 @@ async def collect_listing_links(page: Page, max_pages: int | None = None) -> lis
     return list(dict.fromkeys(link.split("?")[0] for link in links))
 
 
-# Grab all .nameInfoObject rows in one round-trip.
 _EXTRACT_PARAMS_JS = """
 () => {
     const result = {};
@@ -276,8 +274,6 @@ async def scrape_one(
 async def _build_car_from_page(context: BrowserContext, page: Page, url: str) -> Car:
     car_id = extract_id(url)
 
-    # Title has children (price, currency converter) — only the first text node
-    # is the actual "Make Model" string.
     title = await page.evaluate(
         "() => document.querySelector('.titleObject')?.firstChild?.textContent?.trim() || ''"
     )
@@ -285,8 +281,6 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
     manufacturer = title_parts[0] if title_parts else ""
     model = " ".join(title_parts[1:]) if len(title_parts) > 1 else ""
 
-    # Combine the structured params (right column) with the feature-list (left
-    # column) — they overlap on some fields, prefer the structured one.
     info_params = await extract_info_params(page)
     ca_el = await page.query_selector(".comment-all")
     features_text = (await ca_el.inner_text()).strip() if ca_el else ""
@@ -311,12 +305,10 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
     video_url = await extract_video(page)
     image_urls = await extract_photos(page)
 
-    # Try the VIN three ways: button click, description text, then AJAX.
     vin_from_click = await fetch_vin_by_click(page)
     vin_from_ajax = await fetch_vin_via_ajax(context, car_id) if car_id else ""
     vin = best_vin(vin_from_click, description, vin_from_ajax)
 
-    # "26 000 კმ. / 16 250 მილი" — keep the km part.
     mileage = first_int(params.get("გარბენი", "").split("/")[0])
 
     return Car(

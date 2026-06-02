@@ -22,11 +22,6 @@ from .config import DATABASE_URL
 from .models import Car
 
 
-# ---------------------------------------------------------------------------
-# Sync helpers — შემდეგ ვუშვებთ asyncio.to_thread-ში
-# ---------------------------------------------------------------------------
-
-
 def _get_existing_ids_sync(source: str) -> set[str]:
     with psycopg.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
@@ -45,8 +40,6 @@ def _count_cars_sync(source: str | None) -> int:
             return int(row[0]) if row else 0
 
 
-# UPSERT-ის sql — ერთხელ ვწერთ აქ, ბევრჯერ ვიყენებთ.
-# ON CONFLICT — თუ (source, source_id) უკვე არსებობს, განვაახლოთ.
 _UPSERT_SQL = """
 INSERT INTO cars (
     source, source_id, url,
@@ -145,11 +138,6 @@ def _update_image_keys_sync(car_db_id: int, keys: list[str]) -> None:
                 (keys, car_db_id),
             )
         conn.commit()
-
-
-# ---------------------------------------------------------------------------
-# Async API — sync helpers + asyncio.to_thread
-# ---------------------------------------------------------------------------
 
 
 async def get_existing_ids(source: str) -> set[str]:

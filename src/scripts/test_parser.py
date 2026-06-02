@@ -34,7 +34,6 @@ async def main(limit: int) -> None:
             await page.goto(START_URL, wait_until="domcontentloaded")
             await page.wait_for_selector("div.boxCatalog2")
 
-            # მხოლოდ პირველი გვერდიდან ლინკები (სიჩქარისთვის)
             test_links: list[str] = []
             for anchor in await page.query_selector_all("a.with_hash2"):
                 href = await anchor.get_attribute("href")

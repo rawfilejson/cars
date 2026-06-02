@@ -9,17 +9,11 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
-# Search
-# ---------------------------------------------------------------------------
-
-
 class SearchRequest(BaseModel):
     """ძიების მოთხოვნა."""
 
     query: str | None = Field(None, min_length=1, max_length=200)
 
-    # range filters (apply on top of query)
     year_from:    int | None = Field(None, ge=1900, le=2030)
     year_to:      int | None = Field(None, ge=1900, le=2030)
     price_from:   int | None = Field(None, ge=0)
@@ -27,15 +21,10 @@ class SearchRequest(BaseModel):
     mileage_from: int | None = Field(None, ge=0)
     mileage_to:   int | None = Field(None, ge=0)
 
-    # sort key. Default: newest first.
-    # "newest" | "price_asc" | "price_desc" | "year_desc" | "year_asc" |
-    # "mileage_asc" | "mileage_desc"
     sort: str | None = Field(None, max_length=20)
 
-    # Pagination — 25 results per page
     page: int = Field(1, ge=1, le=200)
 
-    # Legacy fields — deprecated, kept for backward compatibility
     vin: str | None = Field(None, min_length=3, max_length=17)
     phone: str | None = Field(None, min_length=4, max_length=20)
     free_text: str | None = Field(None, min_length=3, max_length=200)
@@ -85,13 +74,13 @@ class CarPublic(BaseModel):
 class SearchResponse(BaseModel):
     """ძიების შედეგი."""
 
-    query_type: str                                 # "vin" | "phone" | "search" | "browse"
+    query_type: str
     results: list[CarPublic]
-    results_count: int                              # rows on THIS page
-    total_count: int                                # rows across all pages
-    page: int                                       # current page (1-based)
-    page_size: int                                  # rows per page
-    remaining_searches: int | None                  # ამ საათში დარჩენილი ცდები
+    results_count: int
+    total_count: int
+    page: int
+    page_size: int
+    remaining_searches: int | None
 
 
 class HealthCheck(BaseModel):

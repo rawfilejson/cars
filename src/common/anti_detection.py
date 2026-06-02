@@ -24,7 +24,6 @@ USER_AGENTS = (
     "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
 )
 
-# Resource types we don't need — saves bandwidth and reduces fingerprint surface.
 BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet"}
 
 BLOCKED_DOMAINS = (
@@ -49,7 +48,6 @@ async def block_heavy_resources(route: Route) -> None:
     await route.continue_()
 
 
-# Runs before every page load to hide automation tells.
 _STEALTH_INIT_SCRIPT = """
 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
 

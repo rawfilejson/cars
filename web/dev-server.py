@@ -24,16 +24,12 @@ class SPAHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
     def do_GET(self):
-        # path-ი ფაილს ემთხვევა → ნორმალური ფაილი
-        # არ ემთხვევა და არ შეიცავს extension-ს → SPA fallback (index.html)
         rel = self.path.split("?", 1)[0].lstrip("/")
         target = WEB_DIR / rel
         if rel and (target.is_file() or target.is_dir()):
             return super().do_GET()
         if "." in os.path.basename(rel):
-            # asset-ის მსგავსი (.js, .css, .svg...) → 404-ში დატოვე
             return super().do_GET()
-        # rewrite to /
         self.path = "/"
         return super().do_GET()
 

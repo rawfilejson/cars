@@ -55,12 +55,6 @@ def extract_id(url: str) -> str:
     return match.group(1) if match else ""
 
 
-# ---------------------------------------------------------------------------
-# API-fast mode: full car data per API page (no per-car Playwright detail).
-# These lookup tables come from myauto's /appdata enums — stable enough to
-# hard-code.
-# ---------------------------------------------------------------------------
-
 CURRENCY_MAP = {1: "USD", 2: "EUR", 3: "GEL"}
 FUEL_MAP = {
     1: "ჰიბრიდი", 2: "ბენზინი", 3: "დიზელი", 4: "ელექტრო",
@@ -228,13 +222,6 @@ def item_to_car(item: dict) -> Car | None:
     )
 
 
-# ---------------------------------------------------------------------------
-# სპეც-ცხრილის labels — ქართულიდან Car მოდელის ფილდამდე
-# ---------------------------------------------------------------------------
-
-# label → handler. handler იღებს raw string-ს, აბრუნებს იმას რაც Car-ში ჩაჯდება.
-# რომელ ფილდში — ცალკე SPEC_TO_FIELD რუკაში.
-
 SPEC_TO_FIELD = {
     "მწარმოებელი":          "manufacturer",
     "მოდელი":               "model",
@@ -258,7 +245,6 @@ SPEC_TO_FIELD = {
     "სიმძლავრე":            "power_hp",
 }
 
-# int ფილდები + დაშვებული დიაპაზონები. sane_int დანარჩენს ჩააგდებს.
 _INT_RANGES = {
     "year":       (1900, 2030),
     "mileage_km": (0, 2_000_000),
@@ -275,7 +261,6 @@ def _convert_spec_value(field: str, raw: str) -> object:
     if field == "engine_volume_l":
         return clean_engine_volume(raw)
     if field == "doors":
-        # "4/5" → 4
         first = raw.split("/")[0] if raw else ""
         return sane_int(first, *_INT_RANGES["doors"])
     if field in _INT_RANGES:
@@ -292,11 +277,6 @@ def _convert_spec_value(field: str, raw: str) -> object:
     return raw.strip()
 
 
-# ---------------------------------------------------------------------------
-# გვერდიდან მონაცემების ამოღება
-# ---------------------------------------------------------------------------
-
-# `div[class*="py-[4px]"]` — ცხრილის ერთი ხაზი. ორი child div: label, value.
 _EXTRACT_SPEC_JS = """
 () => {
     const result = {};
@@ -318,8 +298,6 @@ async def extract_spec_params(page: Page) -> dict[str, str]:
     return await page.evaluate(_EXTRACT_SPEC_JS)
 
 
-# ფიჩერების სია — svg-ში `<g id="done">` ნიშნავს რომ ფიჩერი არსებობს.
-# `id="remove"` — არ არსებობს. ვიღებთ მხოლოდ "done"-ებს.
 _EXTRACT_FEATURES_JS = """
 () => {
     const features = [];
@@ -338,7 +316,6 @@ async def extract_features(page: Page) -> list[str]:
     return await page.evaluate(_EXTRACT_FEATURES_JS)
 
 
-# title: "2014 Lexus ES 350 Base" — წელი, მწარმოებელი, მოდელი
 _TITLE_RE = re.compile(r"^(\d{4})\s+(\S+)\s+(.*)$")
 
 
@@ -378,7 +355,6 @@ async def extract_photos(page: Page) -> list[str]:
         src = await el.get_attribute("src")
         if not src:
             continue
-        # thumbs URL-ი იგივეა large-სთან, მხოლოდ path-ში /thumbs/ vs /large/
         large = src.replace("/thumbs/", "/large/")
         key = large.split("?")[0]
         if key in seen:
@@ -388,7 +364,6 @@ async def extract_photos(page: Page) -> list[str]:
     return photos
 
 
-# myauto-ს URL pattern: /photos/{path}/{size}/{car_id}_{n}.jpg
 _PHOTO_N_RE = re.compile(r"/large/(\d+)_(\d+)\.jpg")
 
 
@@ -406,30 +381,22 @@ def _ensure_all_photos(photos: list[str], car_id: str, max_photos: int = 40) -> 
     if not match:
         return photos
 
-    base = first.split("_")[0]                           # ...{car_id} part
+    base = first.split("_")[0]
     base_id = match.group(1)
     if base_id != car_id:
-        # თუ ID-ი არ ემთხვევა, არ ჩავერევთ
         return photos
 
-    # მაქს რა n-ი ვნახეთ
     max_n = 1
     for p in photos:
         m = _PHOTO_N_RE.search(p)
         if m:
             max_n = max(max_n, int(m.group(2)))
 
-    suffix = first[first.find(".jpg"):]                  # `.jpg?v=11` ან `.jpg`
+    suffix = first[first.find(".jpg"):]
 
     return [f"{base}_{n}{suffix}" for n in range(1, min(max_n, max_photos) + 1)]
 
 
-# myauto-ს გვერდზე ფასს არ აქვს valuta-ის სიმბოლო ტექსტში — სიმბოლო ცალკე
-# SVG button-ებშია. ვცდილობთ:
-#   1. პირველი p.font-bold რომელშიც მხოლოდ ციფრებია = ფასი
-#   2. იქვე parent-ში არსებული active "rounded-full" ღილაკი = ვალუტა
-#      active = class-ში არ არის "/20" (inactive ღილაკები /20 opacity-ით)
-#      ვალუტა SVG path-ის data-name (`$`/`€`/`₾`) ან id-ში (USD/EUR/GEL)
 _PRICE_AND_CURRENCY_JS = """
 () => {
     const price_p = Array.from(document.querySelectorAll('p.font-bold')).find(el => {
@@ -470,7 +437,6 @@ async def extract_price(page: Page) -> tuple[int | None, str]:
     return amount, result["currency"]
 
 
-# VIN — სელერმა შეიყვანა თუ არა?
 _NO_VIN_MARKER = "გამყიდველს არ აქვს VIN კოდი"
 
 
@@ -479,26 +445,14 @@ async def extract_vin(page: Page, description: str) -> str:
     body_text = await page.evaluate("() => document.body.innerText")
 
     if _NO_VIN_MARKER in body_text:
-        # სელერმა საერთოდ არ შეიყვანა — შესაძლოა description-ში მაინც წერია
         return find_vin(description)
 
-    # ვცადოთ შევხედოთ VIN-ად მსგავსი string-ი მთლიან გვერდზე
     vin_from_page = find_vin(body_text)
     if vin_from_page:
         return vin_from_page
 
     return find_vin(description)
 
-
-# ტელეფონის ფილდი — IMPORTANT LIMITATION:
-#
-#   myauto გვერდს default-ად აქვს masked ნომერი ("599 51 5* **").
-#   "ნომრის ნახვა" ღილაკზე click-ის შემდეგაც modal-ი ცარიელ მომხმარებლისთვის
-#   მაინც ბრუნდება masked-ი href-ით: "tel:+995599515***" (ბოლო 3 ციფრი ფარული).
-#
-#   სრული ნომრის სანახავად საჭიროა JWT auth (login). ჩვენ ეს ჯერ არ გვაქვს.
-#   ამიტომ ყველა myauto phone → ცარიელი string. გამყიდველს მაინც დაუკავშირდება
-#   მომხმარებელი source URL-ით.
 
 _MASK_CHARS = "*"
 
@@ -509,11 +463,8 @@ async def extract_phone(page: Page) -> str:
     თუ რომელიმე გვერდმა მაინც გვერდს გვაჩვენოს სრული ნომერი (test, future feature, ან
     cached state), ვაბრუნებთ format_phone-ით. სხვა შემთხვევაში "".
     """
-    # ვცადოთ თუ უკვე visible-ია სრულად
     link = await page.query_selector('a[data-testid^="show-number-modal-phone"]')
     if not link:
-        # არც button click შეჭამდა, რადგან modal იგივე masked link-ს ბრუნდება auth-ის გარეშე
-        # უბრალოდ ვცადოთ რომ შემოწმდეს გვერდს არსებობს თუ არა უკვე ცარიელი ნომერი
         link = await page.query_selector('a[href^="tel:+995"]:not([href*="32 280"])')
 
     if not link:
@@ -527,7 +478,6 @@ async def extract_phone(page: Page) -> str:
 
 async def extract_seller_name(page: Page) -> str:
     """პროდავცის სახელი — როცა ჩანს."""
-    # სავარაუდო selector-ები (HTML-ი ბოლომდე არ ვნახე — ვცდი ფართო ვერსიას)
     for selector in (
         '[data-testid="seller-name"]',
         'div[class*="seller-name"]',
@@ -541,8 +491,6 @@ async def extract_seller_name(page: Page) -> str:
     return ""
 
 
-# myauto ქალაქებს page title-ში წერს: "იყიდება Subaru Forester 2017 თბილისი | ...".
-# spec ცხრილში ჩვეულებრივ ლოკაცია არ არის — title-ი უფრო საიმედო წყაროა.
 GE_CITIES = (
     "თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ფოთი", "ზუგდიდი",
     "ხაშური", "სამტრედია", "სენაკი", "ოზურგეთი", "მცხეთა", "ახალციხე",
@@ -568,11 +516,6 @@ async def extract_location(page: Page, spec: dict) -> str:
     return ""
 
 
-# ---------------------------------------------------------------------------
-# ერთი მანქანის სრული scrape
-# ---------------------------------------------------------------------------
-
-
 async def scrape_one(
     context: BrowserContext,
     url: str,
@@ -594,14 +537,12 @@ async def scrape_one(
                 try:
                     await page.wait_for_selector('div[class*="py-[4px]"]', timeout=10_000)
                 except Exception:
-                    # წაშლილ listing-ზე myauto ან ცარიელ body-ს ბრუნდება, ან
-                    # SPA generic homepage-ს — title-ი ცხადყოფს რომელია.
                     title = await page.evaluate("() => document.title")
                     body_len = await page.evaluate("() => (document.body.innerText || '').length")
                     is_homepage = title.startswith("ახალი და მეორადი")
                     if is_homepage or body_len < 200:
-                        return None                  # gone, skip silently
-                    raise                            # genuine slow-load, retry
+                        return None
+                    raise
                 return await _build_car_from_page(page, url)
             except Exception as exc:
                 if attempt == RETRY_PER_CAR - 1:
@@ -629,10 +570,8 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
     location = await extract_location(page, spec)
     vin = await extract_vin(page, description)
     if vin and not is_valid_vin(vin):
-        # find_vin-ი უკვე ფილტრავს, მაგრამ რომ უცეცხლო ნაგვი არ შემოგვერივა
         vin = ""
 
-    # სპეც-ცხრილიდან ფილდები
     spec_fields: dict[str, object] = {}
     for label, raw_value in spec.items():
         field = SPEC_TO_FIELD.get(label)
@@ -640,12 +579,10 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
             continue
         spec_fields[field] = _convert_spec_value(field, raw_value)
 
-    # title-დან მონაცემები (თუ spec-ში არ იყო, fallback)
     manufacturer = spec_fields.get("manufacturer") or manuf_t or ""
     model = spec_fields.get("model") or model_t or ""
     year = spec_fields.get("year") or year_t
 
-    # ოპციების ტექსტური ვერსია description-ის ბოლოს
     desc_parts = [description] if description else []
     if features:
         desc_parts.append("ოპციები: " + ", ".join(features))
@@ -687,18 +624,8 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
     )
 
 
-# ---------------------------------------------------------------------------
-# car_id-ების სიის ამოღება — Hybrid მიდგომა
-#
-# myauto-ს listings გვერდი React SPA-ია, pagination URL-ით არ მუშაობს.
-# detail page-ებს HTML-ით ვიღებთ (სუფთა, რენდერდი data), მაგრამ car_id-ების
-# ლისტი მხოლოდ XHR/API-დან მიდის. ამიტომ ერთადერთი API call ჩვენ ვუშვებთ
-# api2.myauto.ge-ის products endpoint-ზე — გვაძლევს car_id-ების სიას.
-# ---------------------------------------------------------------------------
-
 API_BASE = "https://api2.myauto.ge"
 
-# myauto-ს app-ი ამ User-Agent-ით უტევს ბექს — CLDB tag whitelist-ში
 MYAUTO_UA = (
     "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) CLDB 2.1.3.08; Chrome/129.0.0.0; Safari/537.36"
@@ -718,7 +645,7 @@ async def _warmup(context: BrowserContext) -> None:
         try:
             await page.goto(HOST, wait_until="commit", timeout=15_000)
         except Exception:
-            pass                                    # CF challenge ხანდახან ჯიქურია
+            pass
         await asyncio.sleep(3)
     finally:
         await page.close()
@@ -807,14 +734,6 @@ async def collect_all_ids(
     return all_ids
 
 
-# ---------------------------------------------------------------------------
-# run() — სრული nakadi: API → IDs → HTML scrape → DB + CSV
-# ---------------------------------------------------------------------------
-
-
-# ID cache — Phase 1 collection takes ~80 min via API. If Phase 2 (HTML
-# detail scrape) crashes, we don't want to redo Phase 1. Save to JSON,
-# load on next run. Delete the file to force a fresh ID fetch.
 IDS_CACHE_PATH = Path(__file__).resolve().parents[2] / "exports" / "myauto-ids.json"
 
 
@@ -892,7 +811,6 @@ async def run(max_pages: int | None = None) -> None:
 
             _consume(first_items)
 
-            # Fetch remaining pages in concurrent batches
             sem = asyncio.Semaphore(CONCURRENT_PAGES)
 
             async def _bounded_fetch(p):
@@ -908,7 +826,6 @@ async def run(max_pages: int | None = None) -> None:
                 _consume(items)
                 done_pages += 1
 
-                # Batch upsert every 250 cars
                 if len(buffer) >= 250:
                     saved += await upsert_cars(buffer)
                     append_cars_to_csv(buffer, SOURCE)
@@ -1066,7 +983,6 @@ if __name__ == "__main__":
             "https://www.myauto.ge/ka/pr/120183626/sale"
         _run_async(smoke_test(target_url))
     elif args and args[0] == "test" and len(args) > 1:
-        # ცდის run — შეზღუდული გვერდების რაოდენობით
         _run_async(run(max_pages=int(args[1])))
     else:
         _run_async(run())

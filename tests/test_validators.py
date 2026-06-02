@@ -75,7 +75,7 @@ def test_power_hp_out_of_range():
 
 
 def test_vin_wrong_length():
-    bad_vin = "JTNBE46K47"               # 10 chars
+    bad_vin = "JTNBE46K47"
     issues = validate_car(make_car(vin=bad_vin))
     assert any("vin" in i and "length" in i for i in issues)
 

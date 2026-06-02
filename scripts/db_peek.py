@@ -9,7 +9,6 @@ from psycopg.rows import dict_row
 from src.common.config import DATABASE_URL
 
 
-# Windows-ის cp1252 ვერ ვცემს ქართულს — UTF-8-ად გავხდეთ
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -17,7 +16,6 @@ if sys.stdout.encoding != "utf-8":
 def main():
     with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
         with conn.cursor() as cur:
-            # count per source
             print("=" * 70)
             print("CARS BY SOURCE")
             print("=" * 70)
@@ -33,7 +31,6 @@ def main():
                       f"vin:{row['with_vin']:5d}  phone:{row['with_phone']:5d}  "
                       f"photos:{row['with_photos']:5d}")
 
-            # 3 sample rows from autopapa
             print("\n" + "=" * 70)
             print("SAMPLE: autopapa, 3 latest cars")
             print("=" * 70)
@@ -55,7 +52,6 @@ def main():
                 print(f"  vin:          {row['vin'] or '(none)'}")
                 print(f"  photos:       {row['photo_count'] or 0}")
 
-            # phone format სტატისტიკა (გადასახედი რომ ძველი canonical-ი ჯერ კიდევ DB-შია)
             print("\n" + "=" * 70)
             print("PHONE FORMATS — sample of distinct patterns")
             print("=" * 70)
@@ -70,7 +66,6 @@ def main():
             for row in cur.fetchall():
                 print(f"  {row['phone']:25s}  ×{row['n']}")
 
-            # ფორმატის სტატისტიკა — სრულად joined vs spaced
             print("\n" + "=" * 70)
             print("PHONE FORMAT STATS — joined vs spaced")
             print("=" * 70)

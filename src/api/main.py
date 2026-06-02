@@ -26,7 +26,6 @@ from src.api.stats import router as stats_router
 from src.common.config import r2_is_configured
 
 
-# Production რეჟიმი — Render-ი PRODUCTION=1-ს აყენებს (იხ. render.yaml)
 IS_PRODUCTION = bool(os.getenv("PRODUCTION"))
 
 logging.basicConfig(
@@ -39,8 +38,6 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("API starting up...")
-    # Warm the pool on startup so the first user request doesn't pay the
-    # connection setup cost (~2s on Supabase)
     from src.api.db_pool import get_pool, close_pool
     get_pool()
     yield
@@ -57,13 +54,10 @@ app = FastAPI(
 )
 
 
-# CORS — production-ში მკაცრად შეცვალე
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # production frontend
         "https://cars.demee-metreveli.workers.dev",
-        # local dev
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5500",
@@ -71,7 +65,7 @@ app.add_middleware(
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8080",
     ],
-    allow_credentials=False,                    # auth აღარ გვაქვს
+    allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )

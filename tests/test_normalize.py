@@ -16,28 +16,24 @@ from src.common.normalize import (
 )
 
 
-# ---------------------------------------------------------------------------
-# format_phone — ყველაზე მნიშვნელოვანი, ბევრნაირი ცუდი input მოდის
-# ---------------------------------------------------------------------------
-
-GE = "+995 595 515 141"          # canonical expected
+GE = "+995 595 515 141"
 
 
 @pytest.mark.parametrize("raw", [
-    "595515141",                  # 9 digits raw
-    "+995595515141",              # joined country code
-    "+995 595 51 51 41",          # 3-2-2-2 spacing
-    "+995 595 515 141",           # already canonical
-    "tel:+995595515141",          # tel: link prefix
-    "tel:+995 595 51 51 41",      # tel: with spaces
-    "  595515141  ",              # surrounding whitespace
-    "595-51-51-41",               # dashes
-    "595.51.51.41",               # dots
-    "(595) 51 51 41",             # parentheses
-    "5-9-5-5-1-5-1-4-1",          # absurd dashes
-    "5 9 5 5 1 5 1 4 1",          # absurd spaces
-    "abc595515141xyz",            # garbage around digits
-    "995595515141",               # no plus
+    "595515141",
+    "+995595515141",
+    "+995 595 51 51 41",
+    "+995 595 515 141",
+    "tel:+995595515141",
+    "tel:+995 595 51 51 41",
+    "  595515141  ",
+    "595-51-51-41",
+    "595.51.51.41",
+    "(595) 51 51 41",
+    "5-9-5-5-1-5-1-4-1",
+    "5 9 5 5 1 5 1 4 1",
+    "abc595515141xyz",
+    "995595515141",
 ])
 def test_format_phone_ge_variants(raw):
     """ნებისმიერი ცუდი ფორმატი ქართული მობილურისთვის → ერთიდაიგივე canonical."""
@@ -66,10 +62,6 @@ def test_format_phone_unknown_keeps_digits():
     assert format_phone("12345") == "+12345"
 
 
-# ---------------------------------------------------------------------------
-# clean_int — ნებისმიერი ტექსტიდან რიცხვი
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("raw,expected", [
     ("26 000 კმ", 26000),
     ("$11 500", 11500),
@@ -84,22 +76,18 @@ def test_clean_int(raw, expected):
 
 
 @pytest.mark.parametrize("raw,lo,hi,expected", [
-    ("180 ც.ძ.", 1, 2000, 180),       # in range
-    ("2490 ც.ძ.", 1, 2000, None),     # over (Lexus typo case)
-    ("0", 1, 2000, None),             # under
-    ("", 1, 2000, None),              # empty
+    ("180 ც.ძ.", 1, 2000, 180),
+    ("2490 ც.ძ.", 1, 2000, None),
+    ("0", 1, 2000, None),
+    ("", 1, 2000, None),
     (None, 1, 2000, None),
     ("abc", 1, 2000, None),
-    ("6", 1, 16, 6),                  # cylinders OK
-    ("32", 1, 16, None),              # cylinders too many
+    ("6", 1, 16, 6),
+    ("32", 1, 16, None),
 ])
 def test_sane_int(raw, lo, hi, expected):
     assert sane_int(raw, lo, hi) == expected
 
-
-# ---------------------------------------------------------------------------
-# split_price — ფასი + ვალუტა
-# ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("raw,amount,currency", [
     ("$11 500", 11500, "USD"),
@@ -109,34 +97,26 @@ def test_sane_int(raw, lo, hi, expected):
     ("9500 EUR", 9500, "EUR"),
     ("", None, ""),
     (None, None, ""),
-    ("11500", 11500, ""),         # ვალუტის გარეშე
+    ("11500", 11500, ""),
 ])
 def test_split_price(raw, amount, currency):
     assert split_price(raw) == (amount, currency)
 
 
-# ---------------------------------------------------------------------------
-# clean_engine_volume — ლიტრები. CC-ც გადააქცევს.
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("raw,expected", [
     ("2.5 ლ", 2.5),
     ("2,5", 2.5),
     ("3.5", 3.5),
-    ("1499", 1.5),                # CC → L
+    ("1499", 1.5),
     ("1600 cc", 1.6),
     ("0", None),
-    ("99999", None),              # ძალიან დიდი — ჩავაგდოთ
+    ("99999", None),
     ("", None),
     (None, None),
 ])
 def test_clean_engine_volume(raw, expected):
     assert clean_engine_volume(raw) == expected
 
-
-# ---------------------------------------------------------------------------
-# normalize_steering — მარცხენა / მარჯვენა
-# ---------------------------------------------------------------------------
 
 def test_normalize_steering():
     assert normalize_steering("ABS, მარცხენა საჭე, ESP") == "მარცხენა"
@@ -145,10 +125,6 @@ def test_normalize_steering():
     assert normalize_steering(None) == ""
     assert normalize_steering("რაღაც სხვა") == ""
 
-
-# ---------------------------------------------------------------------------
-# parse_customs / parse_bool_yes_no
-# ---------------------------------------------------------------------------
 
 def test_parse_customs():
     assert parse_customs("განბაჟებული") is True

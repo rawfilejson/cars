@@ -35,7 +35,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # Windows-ზე UTF-8 stdout-ის გასაშვებად
     from src.common.runtime import _configure_windows_runtime
 
     _configure_windows_runtime()

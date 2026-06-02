@@ -11,7 +11,7 @@ from .models import Car
 
 
 YEAR_MIN, YEAR_MAX = 1900, 2030
-PRICE_MAX = 10_000_000          # nobody's selling a $10M car on autopapa
+PRICE_MAX = 10_000_000
 MILEAGE_MAX = 2_000_000
 ENGINE_L_MIN, ENGINE_L_MAX = 0.1, 10.0
 HP_MAX = 2_000

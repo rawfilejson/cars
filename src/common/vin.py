@@ -12,8 +12,6 @@ from __future__ import annotations
 import re
 
 
-# 17 chars, A-Z minus I/O/Q, plus 0-9. Word boundaries so we don't catch
-# longer junk like "VIN12345678901234567ABC".
 VIN_PATTERN = re.compile(r"\b[A-HJ-NPR-Z0-9]{17}\b")
 
 
@@ -33,7 +31,6 @@ def find_vin(text: str) -> str:
         return ""
 
     upper = text.upper()
-    # Wipe masked tokens so the regex doesn't catch their non-masked parts.
     cleaned = re.sub(r"[A-Z0-9]*\*+[A-Z0-9*]*", " ", upper)
 
     match = VIN_PATTERN.search(cleaned)

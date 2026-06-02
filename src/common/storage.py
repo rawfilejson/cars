@@ -35,7 +35,6 @@ log = logging.getLogger(__name__)
 
 _EXT_RE = re.compile(r"\.(jpg|jpeg|png|webp|gif)(?:\?|$)", re.IGNORECASE)
 
-# CDN-ებს ხშირად Referer-ი ნდია, თორემ 403. წყაროს მიხედვით ვაბრუნებთ.
 _REFERERS = {
     "autopapa": "https://autopapa.ge/",
     "myauto":   "https://www.myauto.ge/",
@@ -59,7 +58,7 @@ def local_path(key: str) -> Path:
     return PHOTOS_DIR / key
 
 
-_RETRY_DELAYS = (1.0, 2.0, 4.0)               # exponential backoff
+_RETRY_DELAYS = (1.0, 2.0, 4.0)
 
 
 async def download_to_local(
@@ -80,7 +79,6 @@ async def download_to_local(
     for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
         try:
             resp = await client.get(url, timeout=30.0, headers=headers)
-            # 4xx — permanent, no point retrying
             if 400 <= resp.status_code < 500:
                 log.warning("download %s — HTTP %d (no retry)", url, resp.status_code)
                 return False
@@ -88,8 +86,6 @@ async def download_to_local(
             path.write_bytes(resp.content)
             return True
         except (httpx.RequestError, httpx.HTTPStatusError) as exc:
-            # httpx.RequestError covers timeouts, network, protocol errors,
-            # mid-stream truncation (RemoteProtocolError), etc.
             last_exc = exc
             if attempt < len(_RETRY_DELAYS):
                 await asyncio.sleep(delay)
@@ -152,7 +148,7 @@ def upload_to_r2_sync(local_file: Path, key: str) -> bool:
         return False
     try:
         if _r2_object_exists(client, key):
-            return True                          # idempotent skip
+            return True
         client.upload_file(
             str(local_file),
             R2_BUCKET,
@@ -200,7 +196,7 @@ async def fetch_and_store(
 
     if upload_to_cloud and r2_is_configured():
         if not await upload_to_r2(local_path(key), key):
-            return None                              # R2-ში არ შევიდა — pending დატოვე
+            return None
         if not keep_local:
             try:
                 local_path(key).unlink(missing_ok=True)

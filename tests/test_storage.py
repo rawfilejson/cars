@@ -12,17 +12,13 @@ import pytest
 from src.common import storage
 
 
-# ---------------------------------------------------------------------------
-# key + extension helpers
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("url,expected_ext", [
     ("https://x.com/a/b/c.jpg", ".jpg"),
     ("https://x.com/a/b/c.jpeg", ".jpeg"),
     ("https://x.com/a/b/c.png?v=1", ".png"),
     ("https://x.com/a/b/c.webp", ".webp"),
-    ("https://x.com/no-ext", ".jpg"),               # fallback
-    ("https://x.com/a/b/c.JPG", ".jpg"),            # case
+    ("https://x.com/no-ext", ".jpg"),
+    ("https://x.com/a/b/c.JPG", ".jpg"),
 ])
 def test_guess_extension(url, expected_ext):
     assert storage._guess_extension(url) == expected_ext
@@ -38,10 +34,6 @@ def test_make_image_key_with_query_string():
     assert key == "myauto/999/1.webp"
 
 
-# ---------------------------------------------------------------------------
-# referer
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("source,expected", [
     ("autopapa", "https://autopapa.ge/"),
     ("myauto",   "https://www.myauto.ge/"),
@@ -51,10 +43,6 @@ def test_make_image_key_with_query_string():
 def test_referer_for(source, expected):
     assert storage.referer_for(source) == expected
 
-
-# ---------------------------------------------------------------------------
-# download_to_local — idempotency + retry
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def temp_photos_dir(monkeypatch):
@@ -100,7 +88,7 @@ async def test_download_to_local_skips_if_exists(temp_photos_dir, fast_retries):
         ok = await storage.download_to_local(client, "https://x/a.jpg", "src/123/1.jpg")
 
     assert ok
-    assert len(calls) == 0                       # never called network
+    assert len(calls) == 0
     assert target.read_bytes() == b"cached"
 
 
@@ -127,7 +115,7 @@ async def test_download_to_local_no_retry_on_4xx(temp_photos_dir, fast_retries):
     async with make_mock_client(handler) as client:
         ok = await storage.download_to_local(client, "https://x/a.jpg", "src/1/1.jpg")
     assert not ok
-    assert len(calls) == 1                       # 4xx is permanent
+    assert len(calls) == 1
 
 
 async def test_download_to_local_gives_up_after_max_retries(temp_photos_dir, fast_retries):
@@ -154,10 +142,6 @@ async def test_download_to_local_uses_referer(temp_photos_dir, fast_retries):
         )
     assert captured[0] == "https://www.myauto.ge/"
 
-
-# ---------------------------------------------------------------------------
-# R2 — head check before upload
-# ---------------------------------------------------------------------------
 
 def make_r2_client_mock(existing_keys: set[str]) -> MagicMock:
     """Mock boto3 S3 client with HeadObject that returns 404 for unknown keys."""
@@ -194,7 +178,7 @@ def test_upload_to_r2_sync_skips_if_exists(monkeypatch, tmp_path):
 
     ok = storage.upload_to_r2_sync(file, "src/1/1.jpg")
     assert ok
-    client.upload_file.assert_not_called()       # skipped
+    client.upload_file.assert_not_called()
 
 
 def test_upload_to_r2_sync_uploads_when_missing(monkeypatch, tmp_path):

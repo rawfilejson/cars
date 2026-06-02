@@ -47,9 +47,6 @@ def check_rate_limit(request: Request) -> int:
 
     with connection() as conn:
         with conn.cursor() as cur:
-            # ერთ query-ში ვიღებთ ორივეს:
-            #   ბოლო ცდიდან რამდენი წამი გავიდა (DB-ის NOW()-ით)
-            #   ბოლო 1 საათში რამდენი ცდა იყო
             cur.execute(
                 """
                 SELECT
@@ -63,11 +60,9 @@ def check_rate_limit(request: Request) -> int:
             )
             row = cur.fetchone()
 
-    # row_factory=dict_row in the pool — extract by column name
     sec_since_last = row["sec_since_last"] if row and row["sec_since_last"] is not None else None
     count_last_hour = int(row["count_last_hour"] or 0) if row else 0
 
-    # Cooldown
     if sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
         wait = int(SEARCH_COOLDOWN_SECONDS - sec_since_last) + 1
         raise HTTPException(
@@ -76,7 +71,6 @@ def check_rate_limit(request: Request) -> int:
             headers={"Retry-After": str(wait)},
         )
 
-    # საათობრივი ლიმიტი
     if count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,

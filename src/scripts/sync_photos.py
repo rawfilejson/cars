@@ -80,7 +80,7 @@ async def _fetch_one(
                 upload_to_cloud=upload_to_cloud,
                 keep_local=keep_local,
             )
-        except Exception as exc:                        # never let one bad photo kill the batch
+        except Exception as exc:
             print(f"  [skip photo] {source}/{source_id}/{index}: {type(exc).__name__}")
             return None
 
@@ -142,8 +142,6 @@ async def main() -> None:
     if not args.local_only and not r2_is_configured():
         print("R2 არ არის კონფიგურირებული — მხოლოდ ლოკალურად ვინახავთ.")
 
-    # safety: purge-local-ი მხოლოდ მაშინ, როცა ნამდვილად R2-ში ვტვირთავთ —
-    # თორემ ერთადერთ ასლს წავშლიდით backup-ის გარეშე.
     if args.purge_local and not upload_to_cloud:
         raise SystemExit(
             "--purge-local მოითხოვს R2 upload-ს. --local-only-სთან ან "
@@ -162,8 +160,6 @@ async def main() -> None:
     total_photos = 0
     done = 0
 
-    # photo_sem ზღუდავს ერთდროულ ფოტო-I/O-ს; worker-ების pool ზღუდავს ერთდროულ
-    # მანქანებს (memory). Referer per-request იდება storage.referer_for-ით.
     photo_sem = asyncio.Semaphore(args.concurrent)
     queue: asyncio.Queue = asyncio.Queue()
     for car in pending:

@@ -32,7 +32,7 @@ def get_pool() -> ConnectionPool:
             max_size=10,
             kwargs={"row_factory": dict_row},
             open=True,
-            timeout=10.0,                          # max wait for a free conn
+            timeout=10.0,
         )
     return _pool
 

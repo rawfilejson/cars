@@ -44,8 +44,6 @@ from src.common.normalize import (
 from src.common.vin import find_vin
 
 
-# დიდი CSV-ების კითხვისთვის Python-ის default field size limit ცოტაა
-# (description-ში ხანდახან 1MB-ზე მეტი ტექსტი წერია).
 csv.field_size_limit(10 * 1024 * 1024)
 
 
@@ -63,11 +61,6 @@ def _detect_format(header: list[str]) -> str:
     raise ValueError(f"უცნობი CSV ფორმატი — ვერ ვცანი. ველები: {header}")
 
 
-# ---------------------------------------------------------------------------
-# ფორმატი A (ძველი AutoPapa.csv)
-# ---------------------------------------------------------------------------
-
-
 def _row_to_car_format_a(row: dict[str, str], source: str) -> Car | None:
     source_id = (row.get("ID") or "").strip()
     if not source_id:
@@ -76,13 +69,11 @@ def _row_to_car_format_a(row: dict[str, str], source: str) -> Car | None:
     price_raw = row.get("Price", "")
     price_amount, price_currency = split_price(price_raw)
 
-    # Media — comma-separated URL-ები
     media_raw = row.get("Media", "") or ""
     image_urls = [u.strip() for u in media_raw.split(",") if u.strip()]
 
     description = clean_text(row.get("Description", ""))
 
-    # VIN — შესაძლოა ცარიელია ან აღწერაშია
     vin = find_vin(row.get("VIN", "")) or find_vin(description)
 
     return Car(
@@ -100,16 +91,10 @@ def _row_to_car_format_a(row: dict[str, str], source: str) -> Car | None:
         steering=normalize_steering(row.get("Steering", "")),
         customs_cleared=parse_customs(row.get("Customs", "")),
         vin=vin,
-        # ძველი ფაილში Phone scientific notation-ად გადადგა — ვტოვებთ ცარიელად
         phone="",
         description=description,
         image_urls=image_urls,
     )
-
-
-# ---------------------------------------------------------------------------
-# ფორმატი B (ახალი MyAuto.csv / ახალი AutoPapa.csv)
-# ---------------------------------------------------------------------------
 
 
 def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
@@ -117,7 +102,6 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
     if not source_id:
         return None
 
-    # Image_1..Image_20 → ერთი ლისტი
     image_urls: list[str] = []
     for i in range(1, 21):
         url = (row.get(f"Image_{i}") or "").strip()
@@ -127,8 +111,6 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
     description = clean_text(row.get("Description", ""))
     vin = find_vin(row.get("VIN", "")) or find_vin(description)
 
-    # has_turbo / customs_cleared / has_catalyst / tech_inspection —
-    # ბაზაში მათ ვწერთ True/False, CSV-ში ისევე როგორც ჩაიწერა (TRUE/FALSE/cell)
     def _b(text: str | None) -> bool | None:
         if not text:
             return None
@@ -184,11 +166,6 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
         video_url=row.get("Video_1", "") or "",
         image_urls=image_urls,
     )
-
-
-# ---------------------------------------------------------------------------
-# Driver
-# ---------------------------------------------------------------------------
 
 
 def _iter_cars(path: str, source: str) -> Iterable[Car]:
