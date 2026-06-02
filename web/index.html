@@ -52,23 +52,22 @@
         html, body { background: #FAF7F2; color: #1A1A1A; }
         html { -webkit-text-size-adjust: 100%; }
         body { font-family: 'Inter Tight', 'Noto Sans Georgian', system-ui, sans-serif; }
-        /* prevent horizontal scroll from any rogue element */
+
         body { overflow-x: hidden; }
 
-        /* the thin top rule that gives the page an editorial feel */
+
         .top-rule { height: 3px; background: #C2410C; }
 
-        /* language switch: pill that turns dark when active */
+
         .lang-btn { color: #6B6258; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
         .lang-btn.is-active { color: #1A1A1A; font-weight: 600; }
 
-        /* tab pills for search type */
+
         .tab { padding: 8px 16px; font-size: 14px; color: #6B6258; border: 1px solid transparent; border-radius: 999px; cursor: pointer; }
         .tab:hover { color: #1A1A1A; }
         .tab.is-active { background: #1A1A1A; color: #FAF7F2; }
 
-        /* the search input — flat, just a bottom border in the input area.
-           font-size 16px+ stops iOS Safari from zooming on focus */
+
         .search-input {
             background: transparent; border: 0; outline: 0;
             font-size: 16px; flex: 1; padding: 12px 0;
@@ -82,12 +81,12 @@
             letter-spacing: 0.05em;
         }
 
-        /* filter row */
+
         .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
         .filter-label { font-size: 11px; color: #6B6258; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
         .filter-input {
             background: transparent; border: 1px solid #E5DFD3; color: #1A1A1A;
-            padding: 8px; font-size: 16px;       /* 16px stops iOS zoom on focus */
+            padding: 8px; font-size: 16px;
             font-family: 'JetBrains Mono', monospace;
             width: 80px; text-align: center;
             -moz-appearance: textfield;
@@ -114,7 +113,7 @@
         }
         .filter-clear:hover { color: #C2410C; text-decoration-color: #C2410C; }
 
-        /* pagination */
+
         .pager {
             display: flex; align-items: center; justify-content: center;
             gap: 16px; margin-top: 32px; padding-top: 24px;
@@ -133,12 +132,12 @@
             color: #6B6258;
         }
 
-        /* result card spec rows: tabular feel */
+
         .spec-grid { display: grid; grid-template-columns: max-content 1fr; column-gap: 16px; row-gap: 6px; }
         .spec-label { color: #6B6258; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
         .spec-value { color: #1A1A1A; font-size: 14px; }
 
-        /* the listing count pill in the header — monospace digits feel like data */
+
         .count-pill {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 4px 10px; border: 1px solid #E5DFD3; border-radius: 4px;
@@ -149,7 +148,7 @@
             color: #1A1A1A;
         }
 
-        /* source badge — small block, NOT a pill, NOT a gradient */
+
         .source-badge {
             font-family: 'JetBrains Mono', monospace; font-size: 10px;
             text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500;
@@ -158,7 +157,7 @@
         .source-autopapa { color: #C2410C; border-color: #C2410C; background: #FEE7D6; }
         .source-myauto   { color: #1D4ED8; border-color: #1D4ED8; background: #DBE8FF; }
 
-        /* customs status — green frame for cleared, red for not */
+
         .customs-badge {
             font-family: 'JetBrains Mono', monospace; font-size: 10px;
             text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
@@ -167,18 +166,18 @@
         .customs-yes { color: #15803D; border-color: #15803D; background: #DCFCE7; }
         .customs-no  { color: #B91C1C; border-color: #B91C1C; background: #FEE2E2; }
 
-        /* card hover — subtle, just darkens the border */
+
         .card { border: 1px solid #E5DFD3; background: white; transition: border-color 150ms; }
         .card:hover { border-color: #1A1A1A; }
 
-        /* serif headline */
+
         .serif-display {
             font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
             font-weight: 600;
             letter-spacing: -0.02em;
         }
 
-        /* image placeholder when no photo */
+
         .no-photo {
             background: #F2EDE3;
             display: flex; align-items: center; justify-content: center;
@@ -186,8 +185,7 @@
             font-family: 'JetBrains Mono', monospace; font-size: 12px;
         }
 
-        /* main photo: fixed 4:3 aspect so wide car photos don't get
-           vertically-stretched into "zoomed in" crops */
+
         .carousel { position: relative; background: #1A1A1A; overflow: hidden; aspect-ratio: 4 / 3; cursor: zoom-in; }
         .carousel-stage { position: absolute; inset: 0; }
         .carousel-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -201,7 +199,7 @@
             pointer-events: none;
         }
 
-        /* thumbnail strip under the main photo */
+
         .thumb-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .thumb {
             aspect-ratio: 4 / 3; overflow: hidden; background: #F2EDE3;
@@ -221,7 +219,7 @@
             background: rgba(26,26,26,0.4); pointer-events: none;
         }
 
-        /* lightbox overlay */
+
         .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(15,12,8,0.96); display: flex; flex-direction: column; padding: 16px; }
         .lightbox.hidden { display: none; }
         .lightbox-stage {
@@ -273,28 +271,28 @@
         .lightbox-thumb.is-active { border-color: #C2410C; opacity: 1; }
         .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        /* description text — multi-line, with internal whitespace preserved */
+
         .description {
             color: #1A1A1A; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
         }
 
-        /* the small footer line under each card with scrape/post date */
+
         .meta-line { color: #6B6258; font-size: 12px; font-style: italic; }
 
-        /* notice when posted date unknown */
+
         .meta-note { color: #6B6258; font-size: 12px; }
 
-        /* phone list — one phone per line, monospace */
+
         .phone-list { display: flex; flex-direction: column; gap: 4px; }
         .phone-list a { font-family: 'JetBrains Mono', monospace; color: #1A1A1A; text-decoration: none; font-size: 14px; }
         .phone-list a:hover { color: #C2410C; }
 
-        /* card title as link — inherits, only color changes on hover */
+
         .card-title-link { color: inherit; text-decoration: none; }
         .card-title-link:hover { color: #C2410C; }
 
-        /* detail view — per-car page */
+
         .detail-bar {
             display: flex; justify-content: space-between; align-items: center;
             gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
@@ -311,7 +309,7 @@
         .detail-title { font-size: 32px; line-height: 1.1; }
         @media (min-width: 640px) { .detail-title { font-size: 40px; } }
 
-        /* gallery — vertical scrollable grid, 1/2/3 cols by viewport */
+
         .gallery {
             display: grid; gap: 8px; grid-template-columns: 1fr;
             margin: 24px 0;
@@ -380,7 +378,7 @@
                         data-i18n="btn_search"></button>
             </div>
 
-            <!-- filters row -->
+
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="filter-group">
                     <span class="filter-label" data-i18n="filter_year"></span>
@@ -430,8 +428,7 @@
 
 </main>
 
-<!-- lightbox lives at body root so it overlays everything -->
-<!-- onclick on the wrapper closes only if user clicked the empty bg (not a child) -->
+
 <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true"
      onclick="if (event.target === this) closeLightbox()">
     <div class="lightbox-counter" id="lightbox-counter">— / —</div>
@@ -467,7 +464,7 @@
             const n = data.total_cars.toLocaleString();
             document.getElementById('nav-listings-count').textContent = t('nav_listings_count', { n });
             document.getElementById('count-pill').classList.remove('hidden');
-        } catch (_) { /* silent */ }
+        } catch (_) {  }
     }
 
     document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -479,7 +476,6 @@
         if (lastResponse) renderResults(lastResponse);
     });
 
-    // ranges: input id suffix → API field
     const _FILTER_FIELDS = {
         'year-from':    'year_from',
         'year-to':      'year_to',
@@ -506,12 +502,11 @@
         return payload;
     }
 
-    // Populate year dropdowns 1900-current. Done once at load.
     (function populateYears() {
         const now = new Date().getFullYear();
         const yFrom = document.getElementById('f-year-from');
         const yTo   = document.getElementById('f-year-to');
-        const opts = ['<option value=""></option>']; // placeholder
+        const opts = ['<option value=""></option>'];
         for (let y = now; y >= 1900; y--) {
             opts.push(`<option value="${y}">${y}</option>`);
         }
@@ -527,13 +522,30 @@
         document.getElementById('f-sort').value = '';
     };
 
+    const ERROR_CODES = new Set([
+        'query_too_vague', 'query_empty', 'phone_too_short',
+        'car_invalid_key', 'car_not_found', 'cooldown', 'rate_limited',
+    ]);
+
+    function errorMessage(detail) {
+        if (detail && typeof detail === 'object' && ERROR_CODES.has(detail.code)) {
+            return t('err_' + detail.code, detail);
+        }
+        return t('err_unknown');
+    }
+
+    function showSearchError(meta, message) {
+        meta.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'text-accent';
+        span.textContent = message;
+        meta.appendChild(span);
+    }
+
     async function doSearch(opts = {}) {
-        // resetPage: true when user starts a fresh search (typed something,
-        // changed filters, hit Search). false when paginating.
         if (opts.resetPage !== false) currentPage = 1;
 
         const payload = buildSearchPayload();
-        // page is always present now, so a "do-nothing" check needs other keys
         if (Object.keys(payload).filter(k => k !== 'page').length === 0) return;
 
         const btn = document.getElementById('btn-search');
@@ -554,8 +566,9 @@
             });
 
             if (!resp.ok) {
-                const err = await resp.json();
-                meta.innerHTML = `<span class="text-accent">${err.detail}</span>`;
+                let detail = null;
+                try { detail = (await resp.json()).detail; } catch {}
+                showSearchError(meta, errorMessage(detail));
                 results.innerHTML = '';
                 lastResponse = null;
                 return;
@@ -564,7 +577,7 @@
             lastResponse = await resp.json();
             renderResults(lastResponse);
         } catch (e) {
-            meta.innerHTML = `<span class="text-accent">${t('err_fetch', { msg: e.message })}</span>`;
+            showSearchError(meta, t('err_fetch', { msg: e.message }));
         } finally {
             btn.disabled = false;
             btn.textContent = t('btn_search');
@@ -573,11 +586,9 @@
 
     document.getElementById('btn-search').onclick = () => doSearch();
 
-    // Enter in any input triggers a fresh search (resets to page 1)
     document.querySelectorAll('#search-input, .filter-input, .filter-select').forEach((el) => {
         el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
     });
-    // Sort change re-runs (back to page 1)
     document.getElementById('f-sort').addEventListener('change', () => {
         if (lastResponse) doSearch();
     });
@@ -585,21 +596,22 @@
     window.goToPage = function (page) {
         currentPage = page;
         doSearch({ resetPage: false });
-        window.scrollTo(0, 0);            // instant jump beats smooth here
+        window.scrollTo(0, 0);
     };
 
     function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function specRow(label, value) {
         return `<div class="spec-label">${escapeHtml(label)}</div><div class="spec-value">${escapeHtml(value)}</div>`;
     }
 
-    // Sellers sometimes paste 2+ phones into one field — backend stores the
-    // concatenation. Split on 12-digit "+995xxxxxxxxx" boundaries for display.
     function splitPhones(phone) {
         if (!phone) return [];
         const digits = phone.replace(/\D/g, '');
@@ -618,7 +630,6 @@
         });
     }
 
-    // Extract YouTube ID from various URL shapes
     function youtubeId(url) {
         if (!url) return null;
         const m = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
@@ -632,9 +643,7 @@
         return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    // ---- per-card photo block: main image + thumb strip + lightbox trigger ----
 
-    // global slide registry, keyed by card id
     const _slidesByCard = {};
 
     function slideStage(slide) {
@@ -670,7 +679,6 @@
 
         if (slides.length === 1) return main;
 
-        // up to 8 thumbnails in two rows
         const visible = slides.slice(0, 8);
         const thumbsHtml = visible.map((s, i) => `
             <button class="thumb ${i === 0 ? 'is-active' : ''} ${s.type === 'video' ? 'is-video' : ''}"
@@ -690,7 +698,6 @@
         document.getElementById(cardId + '-stage').innerHTML = slideStage(slides[idx]);
         const counter = document.getElementById(cardId + '-counter');
         if (counter) counter.textContent = t('photo_counter', { i: idx + 1, n: slides.length });
-        // sync thumb active state
         const thumbs = carousel.parentElement.querySelectorAll('.thumb');
         thumbs.forEach((el, i) => el.classList.toggle('is-active', i === idx));
     };
@@ -703,7 +710,6 @@
         openLightbox(slides, idx);
     };
 
-    // ---- lightbox ----
 
     let _lightbox = null;
 
@@ -716,7 +722,7 @@
 
     window.closeLightbox = function () {
         document.getElementById('lightbox').classList.add('hidden');
-        document.getElementById('lightbox-stage').innerHTML = '';   // stop any playing video
+        document.getElementById('lightbox-stage').innerHTML = '';
         document.body.style.overflow = '';
         _lightbox = null;
     };
@@ -748,7 +754,6 @@
             </button>
         `).join('');
 
-        // scroll active thumb into view
         const active = thumbs.querySelector('.lightbox-thumb.is-active');
         if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     }
@@ -780,10 +785,9 @@
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
 
-        // Show TOTAL across pages, not just rows on this page
         let metaText = `<strong class="text-ink">${t('results_count', { n: data.total_count })}</strong>`;
-        if (data.remaining_free_searches != null) {
-            metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_free_searches })}</span>`;
+        if (data.remaining_searches != null) {
+            metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_searches })}</span>`;
         }
         meta.innerHTML = metaText;
 
@@ -792,7 +796,6 @@
             return;
         }
 
-        // Reset per-card carousel state on each render
         for (const k in _slidesByCard) delete _slidesByCard[k];
 
         results.innerHTML = data.results.map((car, i) => {
@@ -828,10 +831,8 @@
         }).join('') + paginationHtml(data);
     }
 
-    // ---- shared bits used by both card and detail render ----
 
     function buildSlides(car) {
-        // video first if YouTube, then all images
         const slides = [];
         const ytId = youtubeId(car.video_url);
         if (ytId) {
@@ -860,8 +861,6 @@
     }
 
     function carBodyHtml(car) {
-        // Specs grid + description + VIN + phone + date — the bits that look
-        // the same whether shown on a search card or on the per-car page.
         const specs = [];
         if (car.mileage_km)      specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
         if (car.engine_volume_l) specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
@@ -881,7 +880,6 @@
               ${car.seller_name ? `<div class="text-muted text-xs mt-2">${escapeHtml(car.seller_name)}</div>` : ''}
             </div>` : '';
 
-        // posted_date is verbatim from source (e.g. "10 May 2026"); if blank, fall back to created_at
         const hasPostedDate = car.posted_date && car.posted_date.trim();
         const dateBlock = hasPostedDate
             ? `<div class="meta-line">${t('posted_on', { date: escapeHtml(car.posted_date.trim()) })}</div>`
@@ -909,7 +907,6 @@
             </div>`;
     }
 
-    // ---- router: /car/{source}-{source_id} or / ----
 
     const _CAR_KEY_RE = /^\/car\/((?:autopapa|myauto)-\d+)\/?$/;
 
@@ -959,8 +956,6 @@
         }
     }
 
-    // detail-page slide registry — separate from card slides so a click in the
-    // gallery opens the lightbox at the right index.
     let _detailSlides = [];
 
     function renderDetail(car) {
@@ -1044,7 +1039,6 @@
                 btn.classList.add('is-copied');
                 reset(orig);
             }).catch(() => {
-                // fall through to manual prompt
                 window.prompt('', url);
             });
         } else {
@@ -1058,7 +1052,6 @@
         else showSearchView();
     });
 
-    // Initial route — handle deeplinks to /car/{key} on cold load
     (function bootRoute() {
         const route = parseRoute();
         if (route.view === 'detail') {

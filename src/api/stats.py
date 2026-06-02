@@ -4,13 +4,18 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+import time
+
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from src.api.db_pool import connection
 
 
 router = APIRouter(prefix="/stats", tags=["stats"])
+
+_CACHE_TTL_SECONDS = 60.0
+_cache: tuple[float, "Stats"] | None = None
 
 
 class Stats(BaseModel):
@@ -53,6 +58,13 @@ def _get_stats_sync() -> Stats:
 
 
 @router.get("", response_model=Stats)
-def get_stats() -> Stats:
-    """საერთო სტატისტიკა — ვებსაიტის გვერდის header-ისთვის."""
-    return _get_stats_sync()
+def get_stats(response: Response) -> Stats:
+    """საერთო სტატისტიკა — TTL-ქეშით, რომ ყოველ page load-ზე COUNT არ გავუშვათ."""
+    global _cache
+    response.headers["Cache-Control"] = "public, max-age=60"
+    now = time.monotonic()
+    if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
+        return _cache[1]
+    stats = _get_stats_sync()
+    _cache = (now, stats)
+    return stats

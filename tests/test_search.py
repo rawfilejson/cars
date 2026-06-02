@@ -9,52 +9,40 @@ from src.api.schemas import SearchRequest
 from src.api.search import _build_query, _normalize_phone_query, _looks_like_phone
 
 
-# ---------------------------------------------------------------------------
-# phone normalization — ცუდი input → 9 ციფრი
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("raw,expected", [
-    ("595515141",        "595515141"),    # already clean
-    ("+995595515141",    "595515141"),    # joined country code
-    ("+995 595 515 141", "595515141"),    # display ფორმატით
-    ("+995 595 51 51 41","595515141"),    # 3-2-2-2 grouping
-    ("995 595 515 141",  "595515141"),    # no plus
-    ("(595) 51-51-41",   "595515141"),    # parentheses + dashes
-    ("5-9-5-5-1-5-1-4-1","595515141"),    # absurd dashes
-    ("55555 5555",       "555555555"),    # short messy
-    ("abc595515141xyz",  "595515141"),    # garbage around
-    (" 595 515 141 ",    "595515141"),    # surrounding whitespace
+    ("595515141",        "595515141"),
+    ("+995595515141",    "595515141"),
+    ("+995 595 515 141", "595515141"),
+    ("+995 595 51 51 41","595515141"),
+    ("995 595 515 141",  "595515141"),
+    ("(595) 51-51-41",   "595515141"),
+    ("5-9-5-5-1-5-1-4-1","595515141"),
+    ("55555 5555",       "555555555"),
+    ("abc595515141xyz",  "595515141"),
+    (" 595 515 141 ",    "595515141"),
     ("",                 ""),
     ("abc",              ""),
-    ("5555",             "5555"),         # 4 ციფრი — passes minimum
+    ("5555",             "5555"),
 ])
 def test_normalize_phone_query(raw, expected):
     """ნებისმიერი user input → ბოლო 9 ციფრი (ან ნაკლები)."""
     assert _normalize_phone_query(raw) == expected
 
 
-# ---------------------------------------------------------------------------
-# _looks_like_phone — phone detection
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize("text,expected", [
-    ("595515141",          True),    # 9 pure digits
-    ("+995 595 515 141",   True),    # 12 digits, 75% digits
-    ("5-9-5-5-1-5-1-4-1",  True),    # 9 digits, well over 60%
+    ("595515141",          True),
+    ("+995 595 515 141",   True),
+    ("5-9-5-5-1-5-1-4-1",  True),
     ("(555) 51-51-41",     True),
-    ("Toyota Camry 2020",  False),   # only 4 digits, 16% digits
-    ("Toyota",             False),   # 0 digits
-    ("123",                False),   # only 3 digits
-    ("123456",             False),   # 6 digits, < 7
-    ("1234567",            True),    # 7 digits, 100%
+    ("Toyota Camry 2020",  False),
+    ("Toyota",             False),
+    ("123",                False),
+    ("123456",             False),
+    ("1234567",            True),
 ])
 def test_looks_like_phone(text, expected):
     assert _looks_like_phone(text) is expected
 
-
-# ---------------------------------------------------------------------------
-# Smart route — single `query` field
-# ---------------------------------------------------------------------------
 
 def test_smart_route_vin_exact():
     sql, params, qtype = _build_query(SearchRequest(query="WBA1234567890ABCD"))
@@ -89,9 +77,7 @@ def test_smart_route_multi_word_AND():
     """Each word gets its own LIKE clause joined with AND."""
     sql, params, qtype = _build_query(SearchRequest(query="Toyota Camry 2020"))
     assert qtype == "search"
-    # 3 LIKE clauses for 3 words
     assert sql.count("search_blob LIKE") == 3
-    # similarity arg first (matches SQL order), then lowercased patterns
     assert params == ("Toyota Camry 2020", "%toyota%", "%camry%", "%2020%")
 
 
@@ -114,10 +100,6 @@ def test_smart_route_single_char_rejected():
         _build_query(SearchRequest(query="A"))
     assert exc.value.status_code == 400
 
-
-# ---------------------------------------------------------------------------
-# Legacy paths — old frontend (Carba) keeps working
-# ---------------------------------------------------------------------------
 
 def test_legacy_vin_full():
     sql, params, qtype = _build_query(SearchRequest(vin="WBA1234567890ABCD"))

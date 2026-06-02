@@ -24,7 +24,6 @@ def _configure_windows_runtime() -> None:
     if sys.platform != "win32":
         return
 
-    # Force UTF-8 stdout/stderr so print() doesn't blow up on ქართული.
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")

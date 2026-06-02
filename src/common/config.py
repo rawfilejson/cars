@@ -16,14 +16,12 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
 
-# ----- Database -----
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
     "postgresql://cars:cars@localhost:5432/cars",
 )
 
 
-# ----- Cloudflare R2 (S3-compatible) -----
 R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID", "")
 R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
 R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
@@ -41,24 +39,19 @@ def r2_is_configured() -> bool:
     return bool(R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY)
 
 
-# ----- Local photo cache -----
 PHOTOS_DIR: Path = Path(os.getenv("PHOTOS_DIR", ROOT_DIR / "photos")).resolve()
 
 
-# ----- Optional proxy -----
 PROXY_URL: str = os.getenv("PROXY_URL", "")
 
 
-# ----- Parser behaviour -----
 CONCURRENT_PAGES: int = int(os.getenv("CONCURRENT_PAGES", "10"))
 RETRY_PER_CAR: int = int(os.getenv("RETRY_PER_CAR", "2"))
 PAGE_TIMEOUT_MS: int = int(os.getenv("PAGE_TIMEOUT_MS", "25000"))
 
 
-# ----- Rate limiting -----
 SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "30"))
 SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "10"))
 
 
-# ----- Contact -----
 CONTACT_INSTAGRAM: str = os.getenv("CONTACT_INSTAGRAM", "@deme.brn")

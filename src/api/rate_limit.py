@@ -47,9 +47,6 @@ def check_rate_limit(request: Request) -> int:
 
     with connection() as conn:
         with conn.cursor() as cur:
-            # ერთ query-ში ვიღებთ ორივეს:
-            #   ბოლო ცდიდან რამდენი წამი გავიდა (DB-ის NOW()-ით)
-            #   ბოლო 1 საათში რამდენი ცდა იყო
             cur.execute(
                 """
                 SELECT
@@ -63,28 +60,25 @@ def check_rate_limit(request: Request) -> int:
             )
             row = cur.fetchone()
 
-    # row_factory=dict_row in the pool — extract by column name
     sec_since_last = row["sec_since_last"] if row and row["sec_since_last"] is not None else None
     count_last_hour = int(row["count_last_hour"] or 0) if row else 0
 
-    # Cooldown
     if sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
         wait = int(SEARCH_COOLDOWN_SECONDS - sec_since_last) + 1
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"მოიცადე {wait} წამი შემდეგი ცდისთვის",
+            detail={"code": "cooldown", "wait": wait},
             headers={"Retry-After": str(wait)},
         )
 
-    # საათობრივი ლიმიტი
     if count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=(
-                f"საათობრივი ლიმიტი ({SEARCH_LIMIT_PER_HOUR} ცდა) ამოწურეთ. "
-                f"შემდეგ საათში სცადეთ ან მომწერეთ Instagram-ზე {CONTACT_INSTAGRAM} "
-                f"მეტი ლიმიტის მისაღებად."
-            ),
+            detail={
+                "code": "rate_limited",
+                "limit": SEARCH_LIMIT_PER_HOUR,
+                "contact": CONTACT_INSTAGRAM,
+            },
         )
 
     return SEARCH_LIMIT_PER_HOUR - count_last_hour - 1
@@ -105,8 +99,8 @@ def log_search(
             cur.execute(
                 """
                 INSERT INTO searches
-                  (query, query_type, results_count, paid, user_ip, user_agent)
-                VALUES (%s, %s, %s, FALSE, %s, %s)
+                  (query, query_type, results_count, user_ip, user_agent)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
                 (query[:500], query_type, results_count, ip, user_agent),
             )

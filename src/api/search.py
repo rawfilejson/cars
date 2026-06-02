@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, Request, status, HTTPException
+from fastapi import APIRouter, Request, Response, status, HTTPException
 
 from src.api.db_pool import connection
 from src.api.rate_limit import check_rate_limit, log_search
@@ -21,24 +21,15 @@ from src.common.config import R2_PUBLIC_URL
 
 router = APIRouter(prefix="/search", tags=["search"])
 
-# detail-page endpoint lives at /car/{key} — separate router so it's not nested under /search
 car_router = APIRouter(prefix="/car", tags=["car"])
 
 PAGE_SIZE = 25
 
-# {source}-{source_id} permalink key. Both sources use numeric IDs.
 _CAR_KEY_RE = re.compile(r"^(autopapa|myauto)-(\d+)$")
 
 
-# WHERE clause haystack — `search_blob` is a STORED generated column that
-# concatenates and lowercases all searchable fields. It has a gin_trgm
-# index, so ILIKE '%word%' against it is fast (was a full seq scan over
-# 150k rows before).
 _SEARCH_BLOB = "search_blob"
 
-# Ranking haystack — short, identity-relevant fields only. Without this
-# narrow blob, similarity over the long description text dominates and a
-# search for "Toyota Camry" can rank a Land Cruiser above an actual Camry.
 _TITLE_BLOB = (
     "COALESCE(manufacturer,'') || ' ' || "
     "COALESCE(model,'') || ' ' || "
@@ -49,7 +40,6 @@ _TITLE_BLOB = (
 
 _VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
-# rough USD-equivalent for sorting across currencies
 _PRICE_IN_USD = (
     "(CASE price_currency "
     "WHEN 'USD' THEN price_amount::float "
@@ -120,20 +110,15 @@ def _looks_like_phone(text: str) -> bool:
     digits = re.sub(r"\D", "", text)
     if len(digits) < 7:
         return False
-    # All chars are phone-shaped → definitely a phone
     if _PHONE_CHARS_RE.fullmatch(text):
         return True
-    # Mixed junk but mostly digits → probably a phone
     return len(digits) / len(text) > 0.5
 
 
 def _paginate(sql_core: str, params: tuple, page: int) -> tuple[str, tuple]:
     """Wrap a SELECT with COUNT(*) OVER () + LIMIT/OFFSET pagination."""
-    # `sql_core` must already contain ORDER BY. We splice COUNT(*) into the
-    # SELECT list and append LIMIT/OFFSET.
     offset = (page - 1) * PAGE_SIZE
     sql_paginated = sql_core + f" LIMIT {PAGE_SIZE} OFFSET {offset}"
-    # Caller can wrap the SELECT however it likes — we just append paging.
     return sql_paginated, params
 
 
@@ -158,18 +143,13 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
         )
         return _paginate(sql, ("%" + suffix,), req.page) + ("phone",)
 
-    # Freeform — Ctrl-F across all fields, similarity for ranking, plus filters
     words = [w for w in text.split() if w]
     if not words or len(text) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — "
-                   "დაამატე წელი, ქალაქი ან მოდელის ვერსია "
-                   "(მაგ. Toyota Camry 2020 თბილისი).",
+            detail={"code": "query_too_vague"},
         )
 
-    # search_blob is lowercased — use LIKE (case-sensitive) on lowered
-    # patterns to let Postgres use the gin_trgm index efficiently.
     word_clauses = " AND ".join([f"{_SEARCH_BLOB} LIKE %s"] * len(words))
     patterns = [f"%{w.lower()}%" for w in words]
 
@@ -186,9 +166,6 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
         """
         params = (*patterns, *filter_params)
     else:
-        # Score on TITLE_BLOB (manufacturer+model+year+location) — short
-        # identity-fields-only. This prevents long descriptions from drowning
-        # the actual title relevance ("Toyota Camry" → real Camrys first).
         sql = f"""
             SELECT *, COUNT(*) OVER () AS _total,
                 similarity({_TITLE_BLOB}, %s) AS score
@@ -206,7 +183,7 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
     if not _has_any_filter(req):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის ან გამოიყენე ფილტრები",
+            detail={"code": "query_empty"},
         )
     filter_frags, filter_params = _filter_clauses(req)
     where = " AND ".join(filter_frags)
@@ -225,7 +202,6 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
     if req.query:
         return _smart_route(req, req.query)
 
-    # ----- Legacy path (kept for old Carba frontend) -----
     if req.vin and len(req.vin) == 17:
         sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin = %s ORDER BY updated_at DESC"
         return _paginate(sql, (req.vin.upper(),), req.page) + ("vin",)
@@ -237,7 +213,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
         if len(suffix) < 4:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ნომერი მინიმუმ 4 ციფრი უნდა იყოს",
+                detail={"code": "phone_too_short"},
             )
         sql = (
             "SELECT *, COUNT(*) OVER () AS _total FROM cars "
@@ -253,7 +229,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="გთხოვთ შეიყვანოთ რაიმე ძიებისთვის",
+        detail={"code": "query_empty"},
     )
 
 
@@ -306,7 +282,6 @@ def _row_to_public(row: dict) -> CarPublic:
 def search(req: SearchRequest, request: Request) -> SearchResponse:
     """ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო."""
 
-    # IP-ით rate limit — every page request counts as a separate search
     remaining = check_rate_limit(request)
 
     sql, params, query_type = _build_query(req)
@@ -316,7 +291,6 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
             cur.execute(sql, params)
             rows = cur.fetchall()
 
-    # _total comes from COUNT(*) OVER () in the SQL; same value on every row.
     total_count = int(rows[0]["_total"]) if rows else 0
 
     results = [_row_to_public(row) for row in rows]
@@ -332,20 +306,19 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
         total_count=total_count,
         page=req.page,
         page_size=PAGE_SIZE,
-        charged=False,
-        remaining_free_searches=remaining,
+        remaining_searches=remaining,
     )
 
 
 @car_router.get("/{key}", response_model=CarPublic)
-def get_car(key: str) -> CarPublic:
+def get_car(key: str, response: Response) -> CarPublic:
     """ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
     მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება."""
     m = _CAR_KEY_RE.match(key)
     if not m:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="არასწორი მისამართი",
+            detail={"code": "car_invalid_key"},
         )
     source, source_id = m.group(1), m.group(2)
 
@@ -360,6 +333,7 @@ def get_car(key: str) -> CarPublic:
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="მანქანა ვერ მოიძებნა — ალბათ წაიშალა წყაროდან",
+            detail={"code": "car_not_found"},
         )
+    response.headers["Cache-Control"] = "public, max-age=120"
     return _row_to_public(row)

@@ -21,7 +21,6 @@ from .models import Car
 
 EXPORTS_DIR: Path = ROOT_DIR / "exports"
 
-# CSV-ის ველების სია — Car.model_fields-დან, ერთგვაროვან რიგზე ვინახავთ
 _FIELDS: tuple[str, ...] = tuple(Car.model_fields.keys())
 
 

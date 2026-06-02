@@ -1,13 +1,15 @@
-# Cloudflare Workers config — serves the static frontend in web/ as a Worker.
-# No Worker script needed; we use the [assets] block which makes Cloudflare
-# treat the worker as a pure static site host (same as Pages, just packaged
-# under the Workers umbrella in the new unified UI).
-#
+# Cloudflare Workers config — სტატიკურ frontend-ს (web/) ემსახურება worker.js-ით,
+# რომელიც cron trigger-ით Render backend-ს ცოცხალს ინახავს (იხ. worker.js).
 # Docs: https://developers.cloudflare.com/workers/static-assets/
 
 name = "cars"
-compatibility_date = "2024-09-25"
+main = "worker.js"
+compatibility_date = "2024-11-01"
 
 [assets]
 directory = "./web"
+binding = "ASSETS"
 not_found_handling = "single-page-application"
+
+[triggers]
+crons = ["*/10 * * * *"]

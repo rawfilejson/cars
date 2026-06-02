@@ -64,7 +64,6 @@ def test_appends_without_duplicating_header(temp_exports):
     with files[0].open(encoding="utf-8") as f:
         lines = f.readlines()
 
-    # ერთი header + ორი data row = 3 ხაზი
     assert len(lines) == 3
     assert lines[0].startswith("source,source_id,url")
 

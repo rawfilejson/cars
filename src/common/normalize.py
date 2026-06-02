@@ -86,17 +86,14 @@ def format_phone(raw: str | None) -> str:
     if not digits:
         return ""
 
-    # ქართული მობილური — 9 ციფრი (5xx, 7xx) ან 995-ით 12
     if digits.startswith("995") and len(digits) == 12:
         return _format_ge(digits[3:])
     if len(digits) == 9 and digits[0] in ("5", "7", "3"):
         return _format_ge(digits)
 
-    # რუსული — 11 ციფრი, 7-ით იწყება
     if len(digits) == 11 and digits[0] == "7":
         return f"+7 {digits[1:4]} {digits[4:7]} {digits[7:9]} {digits[9:]}"
 
-    # უცნობი ფორმატი — უბრალოდ +
     return "+" + digits
 
 
@@ -161,6 +158,5 @@ def clean_engine_volume(text: str | None) -> float | None:
     if 0.1 <= value <= 50:
         return value
     if 50 < value <= 30000:
-        # Looks like cubic centimeters — convert to liters.
         return round(value / 1000, 2)
     return None
