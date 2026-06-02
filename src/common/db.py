@@ -14,23 +14,35 @@ Windows-ის async ეკოსისტემაში პრობლემ�
 from __future__ import annotations
 
 import asyncio
+import atexit
 from collections.abc import Iterable
 
-import psycopg
+from psycopg_pool import ConnectionPool
 
 from .config import DATABASE_URL
 from .models import Car
 
 
+_pool: ConnectionPool | None = None
+
+
+def _get_pool() -> ConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=16, open=True, timeout=30.0)
+        atexit.register(_pool.close)
+    return _pool
+
+
 def _get_existing_ids_sync(source: str) -> set[str]:
-    with psycopg.connect(DATABASE_URL) as conn:
+    with _get_pool().connection() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT source_id FROM cars WHERE source = %s", (source,))
             return {row[0] for row in cur.fetchall()}
 
 
 def _count_cars_sync(source: str | None) -> int:
-    with psycopg.connect(DATABASE_URL) as conn:
+    with _get_pool().connection() as conn:
         with conn.cursor() as cur:
             if source:
                 cur.execute("SELECT COUNT(*) FROM cars WHERE source = %s", (source,))
@@ -122,7 +134,7 @@ def _upsert_cars_sync(cars_list: list[Car]) -> int:
 
     params = [_car_to_params(c) for c in cars_list]
 
-    with psycopg.connect(DATABASE_URL) as conn:
+    with _get_pool().connection() as conn:
         with conn.cursor() as cur:
             cur.executemany(_UPSERT_SQL, params)
         conn.commit()
@@ -131,7 +143,7 @@ def _upsert_cars_sync(cars_list: list[Car]) -> int:
 
 
 def _update_image_keys_sync(car_db_id: int, keys: list[str]) -> None:
-    with psycopg.connect(DATABASE_URL) as conn:
+    with _get_pool().connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "UPDATE cars SET image_keys = %s WHERE id = %s",
