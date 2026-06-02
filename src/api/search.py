@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, Request, status, HTTPException
+from fastapi import APIRouter, Request, Response, status, HTTPException
 
 from src.api.db_pool import connection
 from src.api.rate_limit import check_rate_limit, log_search
@@ -311,7 +311,7 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
 
 
 @car_router.get("/{key}", response_model=CarPublic)
-def get_car(key: str) -> CarPublic:
+def get_car(key: str, response: Response) -> CarPublic:
     """ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
     მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება."""
     m = _CAR_KEY_RE.match(key)
@@ -335,4 +335,5 @@ def get_car(key: str) -> CarPublic:
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "car_not_found"},
         )
+    response.headers["Cache-Control"] = "public, max-age=120"
     return _row_to_public(row)
