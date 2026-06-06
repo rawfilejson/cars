@@ -722,6 +722,16 @@
         return `<img src="${escapeHtml(slide.src)}" alt="" onerror="this.style.opacity=0.2">`;
     }
 
+    const _preloaded = new Set();
+    function preloadSlides(slides) {
+        for (const s of slides) {
+            if (s.type === 'image' && s.src && !_preloaded.has(s.src)) {
+                _preloaded.add(s.src);
+                new Image().src = s.src;
+            }
+        }
+    }
+
     function thumbSrc(slide) {
         if (slide.type === 'video') {
             const id = (slide.src.match(/embed\/([\w-]+)/) || [])[1];
@@ -762,6 +772,7 @@
     window.switchCardSlide = function (cardId, idx) {
         const slides = _slidesByCard[cardId];
         if (!slides || !slides[idx]) return;
+        preloadSlides(slides);
         const carousel = document.getElementById(cardId);
         carousel.dataset.index = idx;
         document.getElementById(cardId + '-stage').innerHTML = slideStage(slides[idx]);
@@ -783,6 +794,7 @@
     let _lightbox = null;
 
     window.openLightbox = function (slides, startIdx) {
+        preloadSlides(slides);
         _lightbox = { slides, idx: Math.max(0, Math.min(startIdx || 0, slides.length - 1)) };
         document.body.style.overflow = 'hidden';
         renderLightbox();
