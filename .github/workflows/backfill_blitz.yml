@@ -1,8 +1,8 @@
 # Photo Backfill Blitz — backlog-ის ერთჯერადი პარალელური დასუფთავება.
-# 6 runner ერთდროულად, თითო id %% 6 == shard ნაწილს (overlap-ის გარეშე).
+# 3 runner ერთდროულად, თითო id %% 3 == shard ნაწილს (overlap-ის გარეშე).
 # ხელით: Actions → Photo Backfill Blitz → Run workflow.
 #
-# ⚠️ ბევრ free-tier Actions წუთს ხარჯავს (≈6×timeout). ერთჯერადი backlog clear-ისთვის.
+# ⚠️ ბევრ free-tier Actions წუთს ხარჯავს (≈3×timeout). ერთჯერადი backlog clear-ისთვის.
 # მუდმივი/ნაზი backfill-ისთვის sync_backfill.yml (auto-chain) გამოიყენე.
 
 name: Photo Backfill Blitz
@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Backfill shard ${{ matrix.shard }}/6
+      - name: Backfill shard ${{ matrix.shard }}/3
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
