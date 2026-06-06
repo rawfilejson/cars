@@ -14,6 +14,8 @@ Rate limiting — მხოლოდ IP-ის მიხედვით.
 
 from __future__ import annotations
 
+import ipaddress
+
 from fastapi import HTTPException, Request, status
 
 from src.api.db_pool import connection
@@ -24,14 +26,26 @@ from src.common.config import (
 )
 
 
+def _is_public_ip(value: str) -> bool:
+    try:
+        return ipaddress.ip_address(value).is_global
+    except ValueError:
+        return False
+
+
 def client_ip(request: Request) -> str:
-    """Real IP-ის ამოღება — Cloudflare proxy-ის შემდეგ ან პირდაპირ."""
-    cf_ip = request.headers.get("cf-connecting-ip")
-    if cf_ip:
-        return cf_ip
+    """Real client IP — X-Forwarded-For-ის უკანასკნელი public IP.
+
+    leftmost XFF და cf-connecting-ip კლიენტს შეუძლია გააყალბოს (API პირდაპირ
+    Render-ზეა, Cloudflare-ის უკან არა), ამიტომ XFF-ს მარჯვნიდან მარცხნივ
+    ვუყურებთ და პირველ public IP-ს ვიღებთ — ეს ჩვენი proxy-მ რომ ნახა, ის არის.
+    """
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
-        return fwd.split(",")[0].strip()
+        for part in reversed(fwd.split(",")):
+            ip = part.strip()
+            if _is_public_ip(ip):
+                return ip
     return request.client.host if request.client else "unknown"
 
 
