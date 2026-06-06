@@ -370,12 +370,30 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
     async with async_playwright() as playwright:
         browser, context = await create_stealth_context(playwright)
         try:
-            page = await context.new_page()
-            await page.route("**/*", block_heavy_resources)
-            await page.goto(START_URL, wait_until="domcontentloaded")
-            await page.wait_for_selector("div.boxCatalog2")
-            all_links = await collect_listing_links(page, max_pages=max_pages)
-            await page.close()
+            all_links: list[str] | None = None
+            for attempt in range(1, 4):
+                page = await context.new_page()
+                try:
+                    await page.route("**/*", block_heavy_resources)
+                    await page.goto(START_URL, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
+                    await page.wait_for_selector("div.boxCatalog2", timeout=PAGE_TIMEOUT_MS)
+                    all_links = await collect_listing_links(page, max_pages=max_pages)
+                    break
+                except Exception as exc:
+                    title = ""
+                    try:
+                        title = await page.title()
+                    except Exception:
+                        pass
+                    print(f"  listing load failed ({attempt}/3): {type(exc).__name__} — title {title[:60]!r}")
+                finally:
+                    await page.close()
+                await asyncio.sleep(3)
+
+            if all_links is None:
+                print("  autopapa is blocking this IP (likely a bot challenge). HTML scraping "
+                      "needs a residential IP/proxy (set PROXY_URL). Skipping autopapa this run.")
+                return
 
             new_links = [link for link in all_links if extract_id(link) not in already_saved]
             total, new = len(all_links), len(new_links)
