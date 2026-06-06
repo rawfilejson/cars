@@ -29,7 +29,7 @@ _pool: ConnectionPool | None = None
 def _get_pool() -> ConnectionPool:
     global _pool
     if _pool is None:
-        _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=4, open=True, timeout=30.0)
+        _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=2, open=True, timeout=30.0)
         atexit.register(_pool.close)
     return _pool
 
