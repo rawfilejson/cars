@@ -153,7 +153,10 @@ def upload_to_r2_sync(local_file: Path, key: str) -> bool:
             str(local_file),
             R2_BUCKET,
             key,
-            ExtraArgs={"ContentType": _content_type(key)},
+            ExtraArgs={
+                "ContentType": _content_type(key),
+                "CacheControl": "public, max-age=31536000, immutable",
+            },
         )
         return True
     except Exception as exc:
