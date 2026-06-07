@@ -950,7 +950,7 @@
         return `
             <div class="flex items-baseline gap-3 mb-5">
               <span class="font-mono text-2xl font-medium text-price">
-                ${car.price_amount ? car.price_amount.toLocaleString() : '—'}
+                ${car.price_amount > 0 ? car.price_amount.toLocaleString() : '—'}
               </span>
               <span class="text-muted text-sm uppercase tracking-wider">${escapeHtml(car.price_currency || '')}</span>
               ${customsBadge}

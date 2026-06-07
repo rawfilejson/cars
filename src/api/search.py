@@ -40,12 +40,14 @@ _TITLE_BLOB = (
 
 _VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
+# არასწორ ფასებს (0, უარყოფითი — myauto-ს "შეთანხმებით" sentinel) NULL-ად ვთვლით,
+# რომ price-sort/filter-ში არ მოხვდნენ (NULLS LAST). ~42k ასეთი ჩანაწერია ბაზაში.
 _PRICE_IN_USD = (
-    "(CASE price_currency "
+    "(CASE WHEN price_amount > 0 THEN CASE price_currency "
     "WHEN 'USD' THEN price_amount::float "
     "WHEN 'EUR' THEN price_amount::float * 1.08 "
     "WHEN 'GEL' THEN price_amount::float * 0.37 "
-    "END)"
+    "END END)"
 )
 
 _SORT_CLAUSES = {
@@ -250,7 +252,7 @@ def _row_to_public(row: dict) -> CarPublic:
         model=row.get("model") or "",
         year=row.get("year"),
         body_type=row.get("body_type") or "",
-        price_amount=row.get("price_amount"),
+        price_amount=(row.get("price_amount") if (row.get("price_amount") or 0) > 0 else None),
         price_currency=row.get("price_currency") or "",
         price_with_customs=row.get("price_with_customs"),
         engine_volume_l=(

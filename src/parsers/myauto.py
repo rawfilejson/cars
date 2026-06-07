@@ -157,9 +157,9 @@ def _build_phone_from_api(item: dict) -> str:
 
 
 def _build_vin_from_api(item: dict) -> str:
-    raw = (item.get("vin") or "").strip()
-    if raw and "*" not in raw:
-        return raw.upper()
+    raw = (item.get("vin") or "").strip().upper()
+    if raw and "*" not in raw and is_valid_vin(raw):
+        return raw
     in_desc = find_vin(item.get("car_desc") or "")
     if in_desc:
         return in_desc
@@ -191,7 +191,7 @@ def item_to_car(item: dict) -> Car | None:
         model=_build_model_from_api(item),
         year=_to_int(item.get("prod_year")),
         body_type=CATEGORY_MAP.get(item.get("category_id"), ""),
-        price_amount=_to_int(item.get("price")),
+        price_amount=_positive_int(item.get("price")),
         price_currency=CURRENCY_MAP.get(item.get("currency_id"), ""),
         engine_volume_l=_cc_to_liters(_to_int(item.get("engine_volume"))),
         engine_type=FUEL_MAP.get(item.get("fuel_type_id"), ""),
