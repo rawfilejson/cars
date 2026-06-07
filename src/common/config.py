@@ -50,8 +50,9 @@ RETRY_PER_CAR: int = int(os.getenv("RETRY_PER_CAR", "2"))
 PAGE_TIMEOUT_MS: int = int(os.getenv("PAGE_TIMEOUT_MS", "25000"))
 
 
-SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "30"))
-SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "10"))
+SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "60"))
+SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "2"))
+SEARCH_LIMIT_PER_IP_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_IP_HOUR", "600"))
 
 
 CONTACT_INSTAGRAM: str = os.getenv("CONTACT_INSTAGRAM", "@deme.brn")
