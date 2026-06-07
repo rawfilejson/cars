@@ -42,13 +42,28 @@ _VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
 # არასწორ ფასებს (0, უარყოფითი — myauto-ს "შეთანხმებით" sentinel) NULL-ად ვთვლით,
 # რომ price-sort/filter-ში არ მოხვდნენ (NULLS LAST). ~42k ასეთი ჩანაწერია ბაზაში.
-_PRICE_IN_USD = (
-    "(CASE WHEN price_amount > 0 THEN CASE price_currency "
+_MIN_PRICE_USD = 100
+_PRICE_USD_RAW = (
+    "(CASE price_currency "
     "WHEN 'USD' THEN price_amount::float "
     "WHEN 'EUR' THEN price_amount::float * 1.08 "
     "WHEN 'GEL' THEN price_amount::float * 0.37 "
-    "END END)"
+    "END)"
 )
+# junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → NULL, რომ price-sort/filter არ აირიოს
+_PRICE_IN_USD = (
+    f"(CASE WHEN price_amount > 0 AND {_PRICE_USD_RAW} >= {_MIN_PRICE_USD} "
+    f"THEN {_PRICE_USD_RAW} END)"
+)
+_FX_TO_USD = {"USD": 1.0, "EUR": 1.08, "GEL": 0.37}
+
+
+def _clean_price(amount: int | None, currency: str | None) -> int | None:
+    """junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → None (sort-ის იგივე ლოგიკა)."""
+    if not amount or amount <= 0:
+        return None
+    usd = _FX_TO_USD.get(currency or "", 1.0) * amount
+    return amount if usd >= _MIN_PRICE_USD else None
 
 _SORT_CLAUSES = {
     "newest":       "updated_at DESC",
@@ -252,7 +267,7 @@ def _row_to_public(row: dict) -> CarPublic:
         model=row.get("model") or "",
         year=row.get("year"),
         body_type=row.get("body_type") or "",
-        price_amount=(row.get("price_amount") if (row.get("price_amount") or 0) > 0 else None),
+        price_amount=_clean_price(row.get("price_amount"), row.get("price_currency")),
         price_currency=row.get("price_currency") or "",
         price_with_customs=row.get("price_with_customs"),
         engine_volume_l=(
