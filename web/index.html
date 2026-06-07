@@ -482,6 +482,22 @@
 
 <script>
     const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
+
+    const CLIENT_ID = (() => {
+        try {
+            let id = localStorage.getItem('cdb_cid');
+            if (!id || !/^[A-Za-z0-9_-]{8,64}$/.test(id)) {
+                const raw = (crypto.randomUUID && crypto.randomUUID())
+                    || (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                id = raw.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+                localStorage.setItem('cdb_cid', id);
+            }
+            return id;
+        } catch (_) {
+            return '';
+        }
+    })();
+
     let lastResponse = null;
     let currentPage = 1;
 
@@ -630,7 +646,7 @@
         try {
             const resp = await fetch(`${API_BASE}/search`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-Client-Id': CLIENT_ID },
                 body: JSON.stringify(payload),
             });
 

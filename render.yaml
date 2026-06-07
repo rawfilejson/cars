@@ -12,6 +12,13 @@ services:
     envVars:
       - key: PRODUCTION
         value: "1"
+      # rate limit — ბრაუზერის token-ზე (მთავარი) + IP backstop. იხ. rate_limit.py
+      - key: SEARCH_COOLDOWN_SECONDS
+        value: "2"
+      - key: SEARCH_LIMIT_PER_HOUR
+        value: "60"
+      - key: SEARCH_LIMIT_PER_IP_HOUR
+        value: "600"
       # secrets — set these manually in Render dashboard:
       - key: DATABASE_URL
         sync: false

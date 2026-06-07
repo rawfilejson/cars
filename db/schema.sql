@@ -102,6 +102,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
+-- rate-limit იდენტობა: client_id (ბრაუზერის ანონ. token) მთავარია, user_ip — backstop.
 CREATE TABLE IF NOT EXISTS searches (
     id              BIGSERIAL PRIMARY KEY,
     query           TEXT        NOT NULL,
@@ -109,12 +110,14 @@ CREATE TABLE IF NOT EXISTS searches (
     results_count   INTEGER     NOT NULL DEFAULT 0,
     user_ip         INET,
     user_agent      TEXT,
+    client_id       TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS searches_query_idx ON searches(query);
 CREATE INDEX IF NOT EXISTS searches_created_at_idx ON searches(created_at DESC);
-CREATE INDEX IF NOT EXISTS searches_user_ip_idx ON searches(user_ip);
+CREATE INDEX IF NOT EXISTS searches_client_id_created_idx ON searches (client_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS searches_user_ip_created_idx ON searches (user_ip, created_at DESC);
 
 -- RLS policy-ების გარეშე — Supabase-ის ანონიმური REST წვდომა იხურება;
 -- backend owner role-ით უკავშირდება (RLS bypass), ამიტომ მისთვის არაფერი იცვლება.
