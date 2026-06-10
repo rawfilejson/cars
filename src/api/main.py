@@ -51,6 +51,10 @@ app = FastAPI(
     description="ანონიმური, უფასო ძიება ვინ კოდით / ნომრით / ტექსტით",
     version="1.0.0",
     lifespan=lifespan,
+    # production-ში API schema/docs არ ვაქვეყნებთ — info disclosure
+    docs_url=None if IS_PRODUCTION else "/docs",
+    redoc_url=None if IS_PRODUCTION else "/redoc",
+    openapi_url=None if IS_PRODUCTION else "/openapi.json",
 )
 
 
