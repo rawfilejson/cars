@@ -8,8 +8,19 @@
     <meta name="theme-color" content="#1A1A1A">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Car-DB — Georgian car listings">
+    <meta property="og:description" content="Search Georgian car listings by VIN, phone, or text. Free, no signup.">
+    <meta property="og:image" content="/favicon.svg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Car-DB — Georgian car listings">
+    <meta name="twitter:description" content="Search by VIN, phone, or text. Free, no signup.">
+    <link rel="canonical" href="https://cars.demee-metreveli.workers.dev/">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://pub-5a5cb99bc7d2485faf5937207b078a27.r2.dev" crossorigin>
+    <link rel="dns-prefetch" href="https://cars-api-w7pz.onrender.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Georgian:wght@400;500;600&family=Noto+Serif+Georgian:wght@500;600;700&display=swap">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -112,6 +123,14 @@
             text-decoration: underline; text-decoration-color: #E5DFD3;
         }
         .filter-clear:hover { color: #C2410C; text-decoration-color: #C2410C; }
+
+        .copy-btn {
+            margin-left: 8px; border: 1px solid #E5DFD3; background: #fff; color: #6B6258;
+            border-radius: 6px; padding: 1px 8px; font-size: 13px; line-height: 1.4;
+            cursor: pointer; vertical-align: middle; transition: color .12s, border-color .12s;
+        }
+        .copy-btn:hover { color: #C2410C; border-color: #C2410C; }
+        .copy-btn.is-copied { color: #15803D; border-color: #15803D; }
 
 
         .pager {
@@ -735,7 +754,7 @@
         if (slide.type === 'video') {
             return `<iframe src="${escapeHtml(slide.src)}" allowfullscreen></iframe>`;
         }
-        return `<img src="${escapeHtml(slide.src)}" alt="" onerror="this.style.opacity=0.2">`;
+        return `<img src="${escapeHtml(slide.src)}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">`;
     }
 
     const _preloaded = new Set();
@@ -778,7 +797,7 @@
         const thumbsHtml = visible.map((s, i) => `
             <button class="thumb ${i === 0 ? 'is-active' : ''} ${s.type === 'video' ? 'is-video' : ''}"
                     onclick="event.stopPropagation(); switchCardSlide('${cardId}', ${i})">
-                <img src="${escapeHtml(thumbSrc(s))}" alt="" onerror="this.style.opacity=0.2">
+                <img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">
             </button>
         `).join('');
 
@@ -1007,7 +1026,7 @@
             ${car.vin ? `
               <div class="border-t border-line pt-4 mb-4">
                 <div class="spec-label mb-2">${t('section_vin')}</div>
-                <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code>
+                <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code><button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button>
               </div>` : ''}
 
             ${phoneBlock}
@@ -1078,7 +1097,7 @@
                  ${slides.map((s, i) => `
                    <button class="gallery-tile ${s.type === 'video' ? 'is-video' : ''}"
                            onclick="openDetailLightbox(${i})">
-                     <img src="${escapeHtml(thumbSrc(s))}" alt="" onerror="this.style.opacity=0.2">
+                     <img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">
                    </button>
                  `).join('')}
                </div>`
@@ -1153,6 +1172,20 @@
             });
         } else {
             window.prompt('', url);
+        }
+    };
+
+    window.copyText = function (text, btn) {
+        const orig = btn.textContent;
+        const done = () => {
+            btn.textContent = '✓';
+            btn.classList.add('is-copied');
+            setTimeout(() => { btn.textContent = orig; btn.classList.remove('is-copied'); }, 1200);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(() => window.prompt('', text));
+        } else {
+            window.prompt('', text);
         }
     };
 
