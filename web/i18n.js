@@ -5,6 +5,9 @@ const TRANSLATIONS = {
         brand_name: "Car-DB",
         brand_sub: "მანქანების ბაზა",
         nav_listings_count: "{n} განცხადება",
+        stat_cars: "მანქანა ბაზაში",
+        stat_free: "სრულიად უფასო",
+        stat_nosignup: "რეგისტრაცია არ სჭირდება",
 
         hero_title: "ერთი ძიება. ყველა განცხადება.",
         hero_desc:
@@ -103,6 +106,9 @@ const TRANSLATIONS = {
         brand_name: "Car-DB",
         brand_sub: "Georgian car listings",
         nav_listings_count: "{n} listings",
+        stat_cars: "cars indexed",
+        stat_free: "100% free",
+        stat_nosignup: "no sign-up",
 
         hero_title: "One search. Every listing.",
         hero_desc:

@@ -17,6 +17,27 @@
     <meta name="twitter:description" content="Search by VIN, phone, or text. Free, no signup.">
     <link rel="canonical" href="https://cars.demee-metreveli.workers.dev/">
 
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "Car-DB",
+          "url": "https://cars.demee-metreveli.workers.dev/",
+          "description": "Search Georgian car listings by VIN, phone number, or text. Free, no sign-up.",
+          "inLanguage": ["ka", "en"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": { "@type": "EntryPoint", "urlTemplate": "https://cars.demee-metreveli.workers.dev/?q={search_term_string}" },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        { "@type": "Organization", "name": "Car-DB", "url": "https://cars.demee-metreveli.workers.dev/" }
+      ]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://pub-5a5cb99bc7d2485faf5937207b078a27.r2.dev" crossorigin>
@@ -363,6 +384,32 @@
             color: #FAF7F2; font-size: 32px;
             background: rgba(0,0,0,0.25); pointer-events: none;
         }
+        /* product polish — elevation, motion, quick chips */
+        #search-section .card { box-shadow: 0 6px 28px rgba(26,26,26,.06); }
+        #results .card { animation: cardIn .42s cubic-bezier(.2,.7,.2,1) both; }
+        #results .card:hover { box-shadow: 0 12px 34px rgba(26,26,26,.12); transform: translateY(-3px); }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+        .hero-stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; align-items: baseline; }
+        .hero-stat { display: inline-flex; align-items: baseline; gap: 7px; color: #6B6258; font-size: 14px; }
+        .hero-stat b { font-family: 'JetBrains Mono', monospace; font-size: 19px; color: #1A1A1A; font-weight: 600; }
+        .hero-stat .dot { color: #15803D; font-size: 11px; transform: translateY(-1px); }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+        .chip {
+            border: 1px solid #E5DFD3; background: #fff; color: #1A1A1A; border-radius: 999px;
+            padding: 7px 15px; font-size: 14px; cursor: pointer; white-space: nowrap;
+            transition: border-color .14s, transform .14s, background .14s, color .14s;
+        }
+        .chip:hover { border-color: #1A1A1A; transform: translateY(-1px); }
+        .chip:active { transform: translateY(0); }
+        .chip.is-accent { background: #1A1A1A; color: #FAF7F2; border-color: #1A1A1A; }
+        .chip.is-accent:hover { background: #C2410C; border-color: #C2410C; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #results .card, .chip { animation: none !important; transition: none !important; }
+            #results .card:hover { transform: none; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -395,6 +442,22 @@
     <section id="hero-section" class="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8 md:pb-10">
         <h2 class="serif-display text-3xl md:text-5xl text-ink max-w-3xl leading-tight" data-i18n="hero_title"></h2>
         <p class="text-muted text-base md:text-lg max-w-2xl mt-3 md:mt-4" data-i18n="hero_desc"></p>
+
+        <div class="hero-stats">
+            <span class="hero-stat"><b id="hero-count">—</b> <span data-i18n="stat_cars"></span></span>
+            <span class="hero-stat"><span class="dot">●</span> <span data-i18n="stat_free"></span></span>
+            <span class="hero-stat"><span class="dot">●</span> <span data-i18n="stat_nosignup"></span></span>
+        </div>
+
+        <div class="chips" id="quick-chips">
+            <button class="chip is-accent" onclick="quickSearch('BMW')">BMW</button>
+            <button class="chip" onclick="quickSearch('Mercedes-Benz')">Mercedes-Benz</button>
+            <button class="chip" onclick="quickSearch('Toyota')">Toyota</button>
+            <button class="chip" onclick="quickSearch('Hyundai')">Hyundai</button>
+            <button class="chip" onclick="quickSearch('Ford')">Ford</button>
+            <button class="chip" onclick="quickSearch('Honda')">Honda</button>
+            <button class="chip" onclick="quickSearch('Lexus')">Lexus</button>
+        </div>
     </section>
 
     <section id="search-section" class="max-w-6xl mx-auto px-4 md:px-6 pb-8 md:pb-10">
@@ -460,7 +523,6 @@
                 <button class="filter-clear" onclick="clearFilters()" data-i18n="filter_clear"></button>
             </div>
 
-            <p class="mt-3 text-xs text-muted" data-i18n="notice_slow"></p>
             <p id="search-meta" class="mt-4 text-sm"></p>
         </div>
     </section>
@@ -1188,6 +1250,38 @@
             window.prompt('', text);
         }
     };
+
+    window.quickSearch = function (q) {
+        const el = document.getElementById('search-input');
+        if (el) el.value = q;
+        doSearch();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    (function loadHeroCount() {
+        fetch(API_BASE + '/stats')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+                if (!d || typeof d.total_cars !== 'number') return;
+                const el = document.getElementById('hero-count');
+                if (el) el.textContent = d.total_cars.toLocaleString() + '+';
+            })
+            .catch(() => {});
+    })();
+
+    // ?q=... → run that search on load (shareable links + enables the SearchAction)
+    (function applyQueryParam() {
+        setTimeout(() => {
+            try {
+                const q = new URLSearchParams(location.search).get('q');
+                if (q && q.trim() && location.pathname === '/') {
+                    const el = document.getElementById('search-input');
+                    if (el) el.value = q.trim();
+                    doSearch();
+                }
+            } catch (_) {}
+        }, 0);
+    })();
 
     window.addEventListener('popstate', () => {
         const route = parseRoute();
