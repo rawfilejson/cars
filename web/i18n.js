@@ -8,6 +8,15 @@ const TRANSLATIONS = {
         stat_cars: "მანქანა ბაზაში",
         stat_free: "სრულიად უფასო",
         stat_nosignup: "რეგისტრაცია არ სჭირდება",
+        saved_btn: "შენახული",
+        saved_title: "შენახული",
+        saved_cars_h: "მანქანები",
+        recent_h: "ბოლო ძიებები",
+        no_saved: "ჯერ არაფერი შეგინახავს",
+        clear_all: "გასუფთავება",
+        save_search: "ამ ძიების შენახვა",
+        saved_done: "შენახულია",
+        saved_searches_h: "შენახული ძიებები",
 
         hero_title: "ერთი ძიება. ყველა განცხადება.",
         hero_desc:
@@ -109,6 +118,15 @@ const TRANSLATIONS = {
         stat_cars: "cars indexed",
         stat_free: "100% free",
         stat_nosignup: "no sign-up",
+        saved_btn: "Saved",
+        saved_title: "Saved",
+        saved_cars_h: "Cars",
+        recent_h: "Recent searches",
+        no_saved: "Nothing saved yet",
+        clear_all: "Clear all",
+        save_search: "Save this search",
+        saved_done: "Saved",
+        saved_searches_h: "Saved searches",
 
         hero_title: "One search. Every listing.",
         hero_desc:
