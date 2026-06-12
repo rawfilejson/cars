@@ -1,5 +1,5 @@
-# Claude Code worktrees (internal — never commit)
-.claude/worktrees/
+# Claude Code (internal tooling — never commit)
+.claude/
 
 # Python
 __pycache__/
@@ -20,8 +20,10 @@ chrome_profile/
 
 # გენერირებული ფაილები
 photos/
+exports/
 *.csv
 *.csv.tmp
+*.xlsx
 
 # IDE
 .idea/

@@ -6,9 +6,9 @@
   * ერთიდაიგივე pattern გვქონდეს autopapa-სთან — სამომავლოდ ერთად მოვლა გვინდა
 
 ნაკადი:
-  1. listing pages (TODO Task #9) → მანქანების URL-ების სია
+  1. listing pages → მანქანების URL-ების სია
   2. ყოველი URL → scrape_one() → Car
-  3. batch upsert DB-ში + CSV append (TODO Task #8)
+  3. batch upsert DB-ში + CSV append
 
 ფონტ-obfuscation აღარ არსებობს (იყო თუ არა — დღეს არ ჩანს). სუფთა HTML ემთხვევა
 რენდერდ ეკრანს.
