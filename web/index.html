@@ -406,9 +406,25 @@
         .chip.is-accent { background: #1A1A1A; color: #FAF7F2; border-color: #1A1A1A; }
         .chip.is-accent:hover { background: #C2410C; border-color: #C2410C; }
 
+        /* search -> results: hero collapses so results lead */
+        #hero-section { transition: max-height .55s cubic-bezier(.2,.7,.2,1), opacity .35s ease, margin .4s ease, padding .4s ease; }
+        body.mode-results #hero-section { max-height: 0; opacity: 0; margin: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; pointer-events: none; }
+        body.mode-results #search-section { padding-top: 1.25rem; }
+
+        /* skeleton loading cards (shimmer) */
+        .skeleton-card { display: flex; overflow: hidden; border: 1px solid #E5DFD3; border-radius: 14px; background: #fff; margin-bottom: 16px; }
+        .sk { position: relative; overflow: hidden; background: #ECE6DA; border-radius: 8px; }
+        .sk::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: shimmer 1.25s infinite; }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+        .sk-img { width: 38%; min-height: 160px; }
+        .sk-body { flex: 1; padding: 22px; display: flex; flex-direction: column; gap: 13px; }
+        .sk-line { height: 14px; }
+        @media (max-width: 767px) { .skeleton-card { flex-direction: column; } .sk-img { width: 100%; min-height: 190px; } }
+
         @media (prefers-reduced-motion: reduce) {
-            #results .card, .chip { animation: none !important; transition: none !important; }
+            #results .card, .chip, #hero-section { animation: none !important; transition: none !important; }
             #results .card:hover { transform: none; }
+            .sk::after { animation: none; }
         }
     </style>
 </head>
@@ -723,6 +739,8 @@
         btn.textContent = t('btn_searching');
         meta.textContent = '';
         empty.classList.add('hidden');
+        document.body.classList.add('mode-results');
+        if (currentPage === 1) results.innerHTML = skeletonCards(5);
 
         try {
             const resp = await fetch(`${API_BASE}/search`, {
@@ -959,6 +977,19 @@
         `;
     }
 
+    function skeletonCards(n) {
+        let s = '';
+        for (let i = 0; i < n; i++) {
+            s += '<div class="skeleton-card"><div class="sk sk-img"></div>'
+               + '<div class="sk-body">'
+               + '<div class="sk sk-line" style="width:55%"></div>'
+               + '<div class="sk sk-line" style="width:32%;height:22px"></div>'
+               + '<div class="sk sk-line" style="width:85%"></div>'
+               + '<div class="sk sk-line" style="width:72%"></div></div></div>';
+        }
+        return s;
+    }
+
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
@@ -984,7 +1015,7 @@
             const carKey = `${car.source}-${car.source_id}`;
 
             return `
-                <article class="card mb-4">
+                <article class="card mb-4" style="animation-delay:${Math.min(i, 8) * 45}ms">
                   <div class="flex flex-col md:flex-row md:items-start">
                     <div class="md:w-96 flex-shrink-0 p-2 md:p-3">
                       ${photoBlockHtml(cardId, slides)}
@@ -1110,9 +1141,11 @@
         document.getElementById('hero-section').classList.remove('hidden');
         document.getElementById('search-section').classList.remove('hidden');
         if (lastResponse) {
+            document.body.classList.add('mode-results');
             document.getElementById('empty-state').classList.add('hidden');
             renderResults(lastResponse);
         } else {
+            document.body.classList.remove('mode-results');
             document.getElementById('results').innerHTML = '';
             document.getElementById('empty-state').classList.remove('hidden');
         }
