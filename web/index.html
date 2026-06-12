@@ -426,6 +426,48 @@
             #results .card:hover { transform: none; }
             .sk::after { animation: none; }
         }
+
+        /* refined benefit pills (replace the green dots) */
+        .hero-pill { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #C2410C; background: #FEE7D6; border-radius: 999px; padding: 5px 12px; font-weight: 500; }
+
+        /* clear-X inside the search bar */
+        .clear-x { color: #B0A795; font-size: 17px; line-height: 1; padding: 0 10px; background: transparent; border: 0; cursor: pointer; transition: color .12s; align-self: center; }
+        .clear-x:hover { color: #1A1A1A; }
+
+        /* save (heart) button */
+        .save-btn { background: transparent; border: 1px solid #E5DFD3; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: #B0A795; transition: all .15s ease; flex-shrink: 0; }
+        .save-btn:hover { border-color: #C2410C; color: #C2410C; transform: scale(1.08); }
+        .save-btn.is-saved { color: #C2410C; border-color: #C2410C; background: #FEE7D6; }
+
+        /* header Saved trigger */
+        .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #6B6258; border: 1px solid #E5DFD3; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
+        .saved-trigger:hover { border-color: #1A1A1A; color: #1A1A1A; }
+        .saved-trigger .cnt { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #C2410C; }
+
+        /* slide-in drawer */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(26,26,26,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
+        .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+        .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 390px; max-width: 92vw; background: #FAF7F2; box-shadow: -8px 0 44px rgba(26,26,26,.2); transform: translateX(100%); transition: transform .32s cubic-bezier(.2,.7,.2,1); z-index: 61; display: flex; flex-direction: column; }
+        .drawer.open { transform: none; }
+        .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #E5DFD3; }
+        .drawer-head h3 { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 22px; color: #1A1A1A; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 32px; }
+        .drawer-sec { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 10px; }
+        .drawer-sec:first-child { margin-top: 0; }
+        .drawer-sec-h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6B6258; }
+        .saved-row { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid #EFEADF; }
+        .saved-row .grow { cursor: pointer; min-width: 0; flex: 1; }
+        .saved-row:hover .saved-row-title { color: #C2410C; }
+        .saved-row img { width: 58px; height: 44px; object-fit: cover; border-radius: 6px; background: #ECE6DA; flex-shrink: 0; }
+        .saved-row-title { font-size: 14px; color: #1A1A1A; line-height: 1.3; }
+        .saved-row-price { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #15803D; margin-top: 2px; }
+        .row-x { color: #B0A795; border: 0; background: transparent; cursor: pointer; font-size: 14px; padding: 4px 2px; }
+        .row-x:hover { color: #C2410C; }
+        .hist-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #E5DFD3; border-radius: 999px; font-size: 13px; color: #1A1A1A; background: #fff; cursor: pointer; }
+        .hist-chip:hover { border-color: #1A1A1A; }
+        .drawer-empty { color: #6B6258; font-size: 13px; padding: 6px 0; }
+        .drawer-clear { font-size: 12px; color: #6B6258; text-decoration: underline; text-decoration-color: #E5DFD3; background: 0; border: 0; cursor: pointer; }
+        .drawer-clear:hover { color: #C2410C; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -444,6 +486,7 @@
             <div id="count-pill" class="count-pill hidden">
                 <span class="num" id="nav-listings-count">—</span>
             </div>
+            <button class="saved-trigger" onclick="openSaved()"><span>♥</span> <span data-i18n="saved_btn"></span> <span class="cnt" id="saved-count">0</span></button>
             <div class="flex items-center gap-1">
                 <button class="lang-btn" data-lang="ka">KA</button>
                 <span class="text-line">·</span>
@@ -461,8 +504,8 @@
 
         <div class="hero-stats">
             <span class="hero-stat"><b id="hero-count">—</b> <span data-i18n="stat_cars"></span></span>
-            <span class="hero-stat"><span class="dot">●</span> <span data-i18n="stat_free"></span></span>
-            <span class="hero-stat"><span class="dot">●</span> <span data-i18n="stat_nosignup"></span></span>
+            <span class="hero-pill" data-i18n="stat_free"></span>
+            <span class="hero-pill" data-i18n="stat_nosignup"></span>
         </div>
 
         <div class="chips" id="quick-chips">
@@ -481,6 +524,7 @@
             <div class="flex items-end gap-4 border-b border-ink pb-1">
                 <input id="search-input" type="text" class="search-input"
                        data-i18n-placeholder="ph_query" autocomplete="off">
+                <button id="clear-search" class="clear-x hidden" type="button" aria-label="clear" onclick="clearSearchInput()">✕</button>
                 <button id="btn-search"
                         class="bg-ink text-bg px-6 py-3 text-sm uppercase tracking-wider font-medium hover:bg-accent transition disabled:opacity-50"
                         data-i18n="btn_search"></button>
@@ -550,6 +594,15 @@
 
 </main>
 
+
+<div id="saved-overlay" class="drawer-overlay" onclick="closeSaved()"></div>
+<aside id="saved-drawer" class="drawer" aria-label="saved">
+    <div class="drawer-head">
+        <h3 data-i18n="saved_title"></h3>
+        <button class="clear-x" style="font-size:20px" onclick="closeSaved()" aria-label="close">✕</button>
+    </div>
+    <div id="saved-body" class="drawer-body"></div>
+</aside>
 
 <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true"
      onclick="if (event.target === this) closeLightbox()">
@@ -729,6 +782,7 @@
 
         const payload = buildSearchPayload();
         if (Object.keys(payload).filter(k => k !== 'page').length === 0) return;
+        pushHistory(document.getElementById('search-input').value);
 
         const btn = document.getElementById('btn-search');
         const meta = document.getElementById('search-meta');
@@ -998,6 +1052,9 @@
         if (data.remaining_searches != null) {
             metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_searches })}</span>`;
         }
+        if (data.results.length) {
+            metaText += ` <button class="hist-chip" style="margin-left:10px;padding:4px 11px;font-size:12px" onclick="saveCurrentSearch(this)">♥ ${t('save_search')}</button>`;
+        }
         meta.innerHTML = metaText;
 
         if (data.results.length === 0) {
@@ -1013,6 +1070,7 @@
             const slides = buildSlides(car);
             _slidesByCard[cardId] = slides;
             const carKey = `${car.source}-${car.source_id}`;
+            _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
 
             return `
                 <article class="card mb-4" style="animation-delay:${Math.min(i, 8) * 45}ms">
@@ -1029,7 +1087,10 @@
                           </h3>
                           ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(car.location)}</p>` : ''}
                         </div>
-                        <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
+                          <span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span>
+                        </div>
                       </div>
 
                       ${priceRowHtml(car)}
@@ -1314,6 +1375,104 @@
                 }
             } catch (_) {}
         }, 0);
+    })();
+
+    // --- saved cars / searches / history (localStorage; no account needed) ---
+    const _carData = {};
+    const LS_CARS = 'cdb_saved', LS_SEARCHES = 'cdb_searches', LS_HIST = 'cdb_history';
+    function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (_) { return []; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
+
+    function getSavedCars() { return lsGet(LS_CARS); }
+    function isCarSaved(key) { return getSavedCars().some(c => c.key === key); }
+    window.toggleSave = function (key, btn) {
+        let cars = getSavedCars();
+        const had = cars.some(c => c.key === key);
+        cars = had ? cars.filter(c => c.key !== key) : [(_carData[key] || { key: key, title: key }), ...cars].slice(0, 300);
+        lsSet(LS_CARS, cars);
+        if (btn) { btn.classList.toggle('is-saved', !had); btn.textContent = had ? '♡' : '♥'; }
+        updateSavedCount();
+    };
+
+    window.saveCurrentSearch = function (btn) {
+        const q = (document.getElementById('search-input').value || '').trim();
+        const sort = document.getElementById('f-sort').value || '';
+        const label = q || ((lastResponse && lastResponse.query_type) || 'search');
+        let s = lsGet(LS_SEARCHES).filter(x => !(x.q === q && x.sort === sort));
+        s.unshift({ q: q, sort: sort, label: label });
+        lsSet(LS_SEARCHES, s.slice(0, 40));
+        if (btn) { btn.textContent = '♥ ' + t('saved_done'); btn.disabled = true; }
+        updateSavedCount();
+    };
+    function runSavedSearch(q, sort) {
+        closeSaved();
+        document.getElementById('search-input').value = q || '';
+        document.getElementById('f-sort').value = sort || '';
+        doSearch();
+    }
+    function runHistory(q) { closeSaved(); document.getElementById('search-input').value = q; doSearch(); }
+
+    function pushHistory(q) {
+        q = (q || '').trim();
+        if (!q) return;
+        let h = lsGet(LS_HIST).filter(x => x.toLowerCase() !== q.toLowerCase());
+        h.unshift(q);
+        lsSet(LS_HIST, h.slice(0, 12));
+    }
+    window.clearHistory = function () { lsSet(LS_HIST, []); renderSaved(); };
+    window.clearSavedCars = function () { lsSet(LS_CARS, []); updateSavedCount(); renderSaved(); };
+    window.clearSavedSearches = function () { lsSet(LS_SEARCHES, []); updateSavedCount(); renderSaved(); };
+
+    function updateSavedCount() {
+        const el = document.getElementById('saved-count');
+        if (el) el.textContent = getSavedCars().length + lsGet(LS_SEARCHES).length;
+    }
+
+    window.openSaved = function () { renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.style.overflow = 'hidden'; };
+    window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.style.overflow = ''; };
+
+    function renderSaved() {
+        const cars = getSavedCars(), searches = lsGet(LS_SEARCHES), hist = lsGet(LS_HIST);
+        let h = '';
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_cars_h')} · ${cars.length}</span>${cars.length ? `<button class="drawer-clear" onclick="clearSavedCars()">${t('clear_all')}</button>` : ''}</div>`;
+        h += cars.length ? cars.map(c => `
+            <div class="saved-row">
+              <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
+                <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
+                <div class="min-w-0"><div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>${c.price ? `<div class="saved-row-price">${Number(c.price).toLocaleString()} ${escapeHtml(c.currency || '')}</div>` : ''}</div>
+              </div>
+              <button class="row-x" data-key="${escapeHtml(c.key)}" data-act="remove">✕</button>
+            </div>`).join('') : `<div class="drawer-empty">${t('no_saved')}</div>`;
+
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
+        h += searches.length ? searches.map((s, i) => `<button class="hist-chip" data-i="${i}" data-kind="search">♥ ${escapeHtml(s.label)}</button>`).join('') : `<div class="drawer-empty">—</div>`;
+
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
+        h += hist.length ? hist.map((q, i) => `<button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(q)}</button>`).join('') : `<div class="drawer-empty">—</div>`;
+
+        const body = document.getElementById('saved-body');
+        body.innerHTML = h;
+        body.querySelectorAll('[data-act="open"]').forEach(el => el.onclick = (e) => { goToCarDetail(el.dataset.key, e); closeSaved(); });
+        body.querySelectorAll('[data-act="remove"]').forEach(el => el.onclick = () => { toggleSave(el.dataset.key); renderSaved(); });
+        body.querySelectorAll('.hist-chip').forEach(b => {
+            b.onclick = () => {
+                if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s.q, s.sort); }
+                else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
+            };
+        });
+    }
+
+    window.clearSearchInput = function () {
+        const el = document.getElementById('search-input');
+        el.value = ''; el.focus();
+        document.getElementById('clear-search').classList.add('hidden');
+    };
+
+    (function wireExtras() {
+        const el = document.getElementById('search-input'), x = document.getElementById('clear-search');
+        if (el && x) { const tog = () => x.classList.toggle('hidden', !el.value); el.addEventListener('input', tog); tog(); }
+        updateSavedCount();
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaved(); });
     })();
 
     window.addEventListener('popstate', () => {
