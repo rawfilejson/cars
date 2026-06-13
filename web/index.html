@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- redeploy -->
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
@@ -408,9 +407,7 @@
         .chip.is-accent:hover { background: #C2410C; border-color: #C2410C; }
 
         /* search -> results: hero collapses so results lead */
-        #hero-section { transition: max-height .55s cubic-bezier(.2,.7,.2,1), opacity .35s ease, margin .4s ease, padding .4s ease; }
-        body.mode-results #hero-section { max-height: 0; opacity: 0; margin: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; pointer-events: none; }
-        body.mode-results #search-section { padding-top: 1.25rem; }
+        body.mode-results #hero-desc { display: none; }
 
         /* skeleton loading cards (shimmer) */
         .skeleton-card { display: flex; overflow: hidden; border: 1px solid #E5DFD3; border-radius: 14px; background: #fff; margin-bottom: 16px; }
@@ -501,7 +498,7 @@
 
     <section id="hero-section" class="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8 md:pb-10">
         <h2 class="serif-display text-3xl md:text-5xl text-ink max-w-3xl leading-tight" data-i18n="hero_title"></h2>
-        <p class="text-muted text-base md:text-lg max-w-2xl mt-3 md:mt-4" data-i18n="hero_desc"></p>
+        <p id="hero-desc" class="text-muted text-base md:text-lg max-w-2xl mt-3 md:mt-4" data-i18n="hero_desc"></p>
 
         <div class="hero-stats">
             <span class="hero-stat"><b id="hero-count">—</b> <span data-i18n="stat_cars"></span></span>
@@ -1276,7 +1273,7 @@
               <div class="p-4 md:p-8">
                 <div class="detail-bar">
                   <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
-                  <button class="detail-btn" onclick="copyDetailLink(this)">${t('copy_link')}</button>
+                  <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
                 </div>
 
                 <div class="flex items-start justify-between gap-4 mb-3">
@@ -1332,7 +1329,7 @@
         const orig = btn.textContent;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(() => {
-                btn.textContent = t('link_copied');
+                btn.textContent = '✓';
                 btn.classList.add('is-copied');
                 reset(orig);
             }).catch(() => {
@@ -1417,11 +1414,16 @@
     window.saveCurrentSearch = function (btn) {
         const q = (document.getElementById('search-input').value || '').trim();
         const sort = document.getElementById('f-sort').value || '';
-        const label = q || ((lastResponse && lastResponse.query_type) || 'search');
-        let s = lsGet(LS_SEARCHES).filter(x => !(x.q === q && x.sort === sort));
-        s.unshift({ q: q, sort: sort, label: label });
+        let s = lsGet(LS_SEARCHES);
+        const exists = s.some((x) => x.q === q && x.sort === sort);
+        s = s.filter((x) => !(x.q === q && x.sort === sort));
+        if (exists) {
+            if (btn) btn.textContent = '♡ ' + t('save_search');
+        } else {
+            s = [{ q: q, sort: sort, label: q || ((lastResponse && lastResponse.query_type) || 'search') }, ...s];
+            if (btn) btn.textContent = '♥ ' + t('saved_done');
+        }
         lsSet(LS_SEARCHES, s.slice(0, 40));
-        if (btn) { btn.textContent = '♥ ' + t('saved_done'); btn.disabled = true; }
         updateSavedCount();
     };
     function runSavedSearch(q, sort) {

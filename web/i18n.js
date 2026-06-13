@@ -18,7 +18,7 @@ const TRANSLATIONS = {
         saved_done: "შენახულია",
         saved_searches_h: "შენახული ძიებები",
 
-        hero_title: "ერთი ძიება. ყველა განცხადება.",
+        hero_title: "იპოვე მანქანა — VIN-ით, ნომრით ან ტექსტით.",
         hero_desc:
             "ქართული მანქანების სრული ბაზა — ეძებე VIN-ით, ნომრით " +
             "ან კონკრეტული აღწერით.",
@@ -98,7 +98,7 @@ const TRANSLATIONS = {
         photo_counter: "{i} / {n}",
         no_photos: "ფოტო არ არის",
 
-        back_to_search:    "← უკან ძიებაში",
+        back_to_search:    "← მთავარი",
         copy_link:         "ბმულის კოპირება",
         link_copied:       "კოპირებულია",
         detail_loading:    "იტვირთება...",
@@ -106,7 +106,7 @@ const TRANSLATIONS = {
         detail_open_source:"ნახე წყაროზე",
         detail_gallery:    "ფოტოები",
 
-        footer_about: "მანქანების განცხადებების არქივი. უფასო.",
+        footer_about: "მანქანების განცხადებების არქივი.",
         footer_terms: "წესები",
         footer_privacy: "კონფიდენციალურობა",
         footer_contact: "კონტაქტი:",
@@ -128,7 +128,7 @@ const TRANSLATIONS = {
         saved_done: "Saved",
         saved_searches_h: "Saved searches",
 
-        hero_title: "One search. Every listing.",
+        hero_title: "Find a car — by VIN, plate, or text.",
         hero_desc:
             "A unified index of Georgian car listings — searchable by VIN, " +
             "phone number, or a specific description.",
@@ -208,7 +208,7 @@ const TRANSLATIONS = {
         photo_counter: "{i} / {n}",
         no_photos: "no photo",
 
-        back_to_search:    "← Back to search",
+        back_to_search:    "← Home",
         copy_link:         "Copy link",
         link_copied:       "Copied",
         detail_loading:    "Loading...",
@@ -216,7 +216,7 @@ const TRANSLATIONS = {
         detail_open_source:"Open on source",
         detail_gallery:    "Photos",
 
-        footer_about: "Car listings archive. Free.",
+        footer_about: "Car listings archive.",
         footer_terms: "Terms",
         footer_privacy: "Privacy",
         footer_contact: "Contact:",
