@@ -104,6 +104,8 @@ const TRANSLATIONS = {
         detail_loading:    "იტვირთება...",
         detail_not_found:  "ეს განცხადება ვერ მოიძებნა — ალბათ წაშლილია წყაროდან.",
         detail_open_source:"ნახე წყაროზე",
+        notfound_msg:      "გვერდი ვერ მოიძებნა.",
+        notfound_home:     "მთავარ გვერდზე",
         detail_gallery:    "ფოტოები",
 
         footer_about: "მანქანების განცხადებების არქივი.",
@@ -214,6 +216,8 @@ const TRANSLATIONS = {
         detail_loading:    "Loading...",
         detail_not_found:  "This listing wasn't found — probably removed from the source.",
         detail_open_source:"Open on source",
+        notfound_msg:      "Page not found.",
+        notfound_home:     "Go to home",
         detail_gallery:    "Photos",
 
         footer_about: "Car listings archive.",

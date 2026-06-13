@@ -466,7 +466,19 @@
         .drawer-empty { color: #6B6258; font-size: 13px; padding: 6px 0; }
         .drawer-clear { font-size: 12px; color: #6B6258; text-decoration: underline; text-decoration-color: #E5DFD3; background: 0; border: 0; cursor: pointer; }
         .drawer-clear:hover { color: #C2410C; }
-    </style>
+
+        .notfound { text-align: center; padding: 80px 20px 100px; }
+        .notfound-code { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 92px; font-weight: 700; color: #C2410C; line-height: 1; }
+        .notfound-msg { color: #6B6258; font-size: 18px; margin: 14px 0 26px; }
+
+        .recent-row { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .recent-row:empty { margin-top: 0; }
+        .recent-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6B6258; }
+
+        .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; }
+        .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
+        .chip-del { border: 1px solid #E5DFD3; border-left: 0; background: #fff; color: #B0A795; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
+        .chip-del:hover { color: #C2410C; border-color: #C2410C; }
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -579,6 +591,7 @@
                 <button class="filter-clear" onclick="clearFilters()" data-i18n="filter_clear"></button>
             </div>
 
+            <div id="recent-row" class="recent-row"></div>
             <p id="search-meta" class="mt-4 text-sm"></p>
         </div>
     </section>
@@ -1210,8 +1223,22 @@
     const _CAR_KEY_RE = /^\/car\/((?:autopapa|myauto)-\d+)\/?$/;
 
     function parseRoute(path) {
-        const m = (path || location.pathname).match(_CAR_KEY_RE);
-        return m ? { view: 'detail', key: m[1] } : { view: 'search' };
+        path = path || location.pathname;
+        if (path === '/' || path === '') return { view: 'search' };
+        const m = path.match(_CAR_KEY_RE);
+        return m ? { view: 'detail', key: m[1] } : { view: 'notfound' };
+    }
+
+    function showNotFound() {
+        document.getElementById('hero-section').classList.add('hidden');
+        document.getElementById('search-section').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('results').innerHTML = `
+            <div class="notfound">
+              <div class="notfound-code">404</div>
+              <p class="notfound-msg">${t('notfound_msg')}</p>
+              <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('notfound_home')}</a>
+            </div>`;
     }
 
     function showSearchView() {
@@ -1242,11 +1269,7 @@
         try {
             const resp = await fetch(`${API_BASE}/car/${key}`);
             if (resp.status === 404) {
-                results.innerHTML = `
-                    <div class="py-16 text-center text-muted">
-                      <p class="mb-4">${t('detail_not_found')}</p>
-                      <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
-                    </div>`;
+                showNotFound();
                 return;
             }
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -1447,8 +1470,21 @@
         let h = lsGet(LS_HIST).filter(x => x.toLowerCase() !== q.toLowerCase());
         h.unshift(q);
         lsSet(LS_HIST, h.slice(0, 12));
+        renderRecent();
     }
-    window.clearHistory = function () { lsSet(LS_HIST, []); renderSaved(); };
+
+    function renderRecent() {
+        const row = document.getElementById('recent-row');
+        if (!row) return;
+        const h = lsGet(LS_HIST).slice(0, 8);
+        row.innerHTML = h.length
+            ? `<span class="recent-label">${t('recent_h')}</span>` + h.map((q, i) => `<button class="hist-chip" data-i="${i}">${escapeHtml(q)}</button>`).join('')
+            : '';
+        row.querySelectorAll('.hist-chip').forEach((b) => {
+            b.onclick = () => { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); };
+        });
+    }
+    window.clearHistory = function () { lsSet(LS_HIST, []); renderSaved(); renderRecent(); };
     window.clearSavedCars = function () { lsSet(LS_CARS, []); updateSavedCount(); renderSaved(); };
     window.clearSavedSearches = function () { lsSet(LS_SEARCHES, []); updateSavedCount(); renderSaved(); };
 
@@ -1474,10 +1510,10 @@
             </div>`).join('') : `<div class="drawer-empty">${t('no_saved')}</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
-        h += searches.length ? searches.map((s, i) => `<button class="hist-chip" data-i="${i}" data-kind="search">♥ ${escapeHtml(s.label)}</button>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search">♥ ${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
-        h += hist.length ? hist.map((q, i) => `<button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(q)}</button>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(q)}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const body = document.getElementById('saved-body');
         body.innerHTML = h;
@@ -1487,6 +1523,14 @@
             b.onclick = () => {
                 if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s.q, s.sort); }
                 else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
+            };
+        });
+        body.querySelectorAll('.chip-del').forEach((b) => {
+            b.onclick = (e) => {
+                e.stopPropagation();
+                const lk = b.dataset.kind === 'search' ? LS_SEARCHES : LS_HIST;
+                const a = lsGet(lk); a.splice(+b.dataset.i, 1); lsSet(lk, a);
+                updateSavedCount(); renderSaved(); renderRecent();
             };
         });
     }
@@ -1501,20 +1545,21 @@
         const el = document.getElementById('search-input'), x = document.getElementById('clear-search');
         if (el && x) { const tog = () => x.classList.toggle('hidden', !el.value); el.addEventListener('input', tog); tog(); }
         updateSavedCount();
+        renderRecent();
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaved(); });
     })();
 
     window.addEventListener('popstate', () => {
         const route = parseRoute();
         if (route.view === 'detail') showDetailView(route.key);
+        else if (route.view === 'notfound') showNotFound();
         else showSearchView();
     });
 
     (function bootRoute() {
         const route = parseRoute();
-        if (route.view === 'detail') {
-            showDetailView(route.key);
-        }
+        if (route.view === 'detail') showDetailView(route.key);
+        else if (route.view === 'notfound') showNotFound();
     })();
 
     loadStats();
