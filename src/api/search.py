@@ -10,8 +10,9 @@
 from __future__ import annotations
 
 import re
+import time
 
-from fastapi import APIRouter, Request, Response, status, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Request, Response, status, HTTPException
 
 from src.api.db_pool import connection
 from src.api.rate_limit import check_rate_limit, log_search
@@ -132,11 +133,18 @@ def _looks_like_phone(text: str) -> bool:
     return len(digits) / len(text) > 0.5
 
 
-def _paginate(sql_core: str, params: tuple, page: int) -> tuple[str, tuple]:
-    """Wrap a SELECT with COUNT(*) OVER () + LIMIT/OFFSET pagination."""
+def _paginate(where_sql: str, where_params: tuple, order_by: str,
+              order_params: tuple, page: int) -> tuple[str, tuple]:
+    """შედეგების გვერდი CTE-ით: id + total პატარა სვეტებზე ვიღებთ, შემდეგ სრულ
+    row-ებს (description/ფოტოები TOAST-შია) მხოლოდ ამ 25-სთვის ვკითხულობთ —
+    Supabase free-tier-ის ნელ დისკზე ბევრ-შედეგიან ძიებას მკვეთრად აჩქარებს."""
     offset = (page - 1) * PAGE_SIZE
-    sql_paginated = sql_core + f" LIMIT {PAGE_SIZE} OFFSET {offset}"
-    return sql_paginated, params
+    sql = (
+        f"WITH ids AS (SELECT id, COUNT(*) OVER () AS _total FROM cars "
+        f"WHERE {where_sql} ORDER BY {order_by} LIMIT {PAGE_SIZE} OFFSET {offset}) "
+        f"SELECT c.*, ids._total FROM ids JOIN cars c ON c.id = ids.id ORDER BY {order_by}"
+    )
+    return sql, (*where_params, *order_params, *order_params)
 
 
 def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
@@ -148,17 +156,14 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
 
     upper = text.upper()
     if _VIN_RE.match(upper):
-        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin = %s ORDER BY updated_at DESC"
-        return _paginate(sql, (upper,), req.page) + ("vin",)
+        return _paginate("vin = %s", (upper,), "updated_at DESC", (), req.page) + ("vin",)
 
     if _looks_like_phone(text):
         suffix = _normalize_phone_query(text)
-        sql = (
-            "SELECT *, COUNT(*) OVER () AS _total FROM cars "
-            "WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
-            "ORDER BY updated_at DESC"
-        )
-        return _paginate(sql, ("%" + suffix,), req.page) + ("phone",)
+        return _paginate(
+            "regexp_replace(phone, '\\D', '', 'g') LIKE %s", ("%" + suffix,),
+            "updated_at DESC", (), req.page,
+        ) + ("phone",)
 
     words = [w for w in text.split() if w]
     if not words or len(text) < 2:
@@ -169,30 +174,15 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
 
     word_clauses = " AND ".join([f"{_SEARCH_BLOB} LIKE %s"] * len(words))
     patterns = [f"%{w.lower()}%" for w in words]
-
     filter_frags, filter_params = _filter_clauses(req)
     extra_where = (" AND " + " AND ".join(filter_frags)) if filter_frags else ""
+    where_sql = f"{word_clauses}{extra_where}"
+    where_params = (*patterns, *filter_params)
 
     if req.sort:
-        order_by = _sort_clause(req.sort)
-        sql = f"""
-            SELECT *, COUNT(*) OVER () AS _total
-            FROM cars
-            WHERE {word_clauses}{extra_where}
-            ORDER BY {order_by}
-        """
-        params = (*patterns, *filter_params)
-    else:
-        sql = f"""
-            SELECT *, COUNT(*) OVER () AS _total,
-                similarity({_TITLE_BLOB}, %s) AS score
-            FROM cars
-            WHERE {word_clauses}{extra_where}
-            ORDER BY score DESC NULLS LAST, updated_at DESC
-        """
-        params = (text, *patterns, *filter_params)
-
-    return _paginate(sql, tuple(params), req.page) + ("search",)
+        return _paginate(where_sql, where_params, _sort_clause(req.sort), (), req.page) + ("search",)
+    order_by = f"similarity({_TITLE_BLOB}, %s) DESC NULLS LAST, updated_at DESC"
+    return _paginate(where_sql, where_params, order_by, (text,), req.page) + ("search",)
 
 
 def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
@@ -204,14 +194,7 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
         )
     filter_frags, filter_params = _filter_clauses(req)
     where = " AND ".join(filter_frags)
-    order_by = _sort_clause(req.sort)
-    sql = f"""
-        SELECT *, COUNT(*) OVER () AS _total
-        FROM cars
-        WHERE {where}
-        ORDER BY {order_by}
-    """
-    return _paginate(sql, tuple(filter_params), req.page) + ("browse",)
+    return _paginate(where, tuple(filter_params), _sort_clause(req.sort), (), req.page) + ("browse",)
 
 
 def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
@@ -220,11 +203,9 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
         return _smart_route(req, req.query)
 
     if req.vin and len(req.vin) == 17:
-        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin = %s ORDER BY updated_at DESC"
-        return _paginate(sql, (req.vin.upper(),), req.page) + ("vin",)
+        return _paginate("vin = %s", (req.vin.upper(),), "updated_at DESC", (), req.page) + ("vin",)
     if req.vin:
-        sql = "SELECT *, COUNT(*) OVER () AS _total FROM cars WHERE vin LIKE %s ORDER BY updated_at DESC"
-        return _paginate(sql, (req.vin.upper() + "%",), req.page) + ("vin",)
+        return _paginate("vin LIKE %s", (req.vin.upper() + "%",), "updated_at DESC", (), req.page) + ("vin",)
     if req.phone:
         suffix = _normalize_phone_query(req.phone)
         if len(suffix) < 4:
@@ -232,12 +213,10 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"code": "phone_too_short"},
             )
-        sql = (
-            "SELECT *, COUNT(*) OVER () AS _total FROM cars "
-            "WHERE regexp_replace(phone, '\\D', '', 'g') LIKE %s "
-            "ORDER BY updated_at DESC"
-        )
-        return _paginate(sql, ("%" + suffix,), req.page) + ("phone",)
+        return _paginate(
+            "regexp_replace(phone, '\\D', '', 'g') LIKE %s", ("%" + suffix,),
+            "updated_at DESC", (), req.page,
+        ) + ("phone",)
     if req.free_text:
         return _smart_route(req, req.free_text)
 
@@ -295,18 +274,37 @@ def _row_to_public(row: dict) -> CarPublic:
     )
 
 
+# ერთიდაიგივე ძიების შედეგს ვაქეშებთ — Supabase free-tier-ის ნელი დისკი ერთხელ
+# იკითხება, შემდეგ პოპულარული ძიება (BMW, Mercedes…) მყისიერია. TTL 10 წთ.
+_RESULT_CACHE: dict[str, tuple[float, list]] = {}
+_RESULT_TTL = 600.0
+_RESULT_CACHE_MAX = 600
+
+
+def _query_rows(sql: str, params: tuple) -> list:
+    key = sql + "\x00" + repr(params)
+    now = time.monotonic()
+    hit = _RESULT_CACHE.get(key)
+    if hit is not None and now - hit[0] < _RESULT_TTL:
+        return hit[1]
+    with connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+    if len(_RESULT_CACHE) >= _RESULT_CACHE_MAX:
+        _RESULT_CACHE.clear()
+    _RESULT_CACHE[key] = (now, rows)
+    return rows
+
+
 @router.post("", response_model=SearchResponse)
-def search(req: SearchRequest, request: Request) -> SearchResponse:
+def search(req: SearchRequest, request: Request, background_tasks: BackgroundTasks) -> SearchResponse:
     """ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო."""
 
     remaining = check_rate_limit(request)
 
     sql, params, query_type = _build_query(req)
-
-    with connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            rows = cur.fetchall()
+    rows = _query_rows(sql, params)
 
     total_count = int(rows[0]["_total"]) if rows else 0
 
@@ -314,7 +312,7 @@ def search(req: SearchRequest, request: Request) -> SearchResponse:
     results_count = len(results)
 
     query_repr = req.query or req.vin or req.phone or req.free_text or ""
-    log_search(request, query_repr, query_type, results_count)
+    background_tasks.add_task(log_search, request, query_repr, query_type, results_count)
 
     return SearchResponse(
         query_type=query_type,
