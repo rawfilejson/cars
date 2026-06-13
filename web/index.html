@@ -137,6 +137,8 @@
         }
         @media (min-width: 640px) { .filter-select { font-size: 13px; padding: 6px 28px 6px 10px; } }
         .filter-select:focus { border-color: #1A1A1A; outline: 0; }
+        .filter-brand { background-image: none; padding: 8px 10px; min-width: 150px; }
+        @media (min-width: 640px) { .filter-brand { padding: 6px 10px; min-width: 160px; } }
         .filter-dash { color: #B0A795; }
         .filter-clear {
             background: transparent; border: 0; padding: 0;
@@ -191,20 +193,24 @@
 
         .source-badge {
             font-family: 'JetBrains Mono', monospace; font-size: 10px;
-            text-transform: uppercase; letter-spacing: 0.12em; font-weight: 500;
-            padding: 3px 8px; border: 1px solid;
+            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
+            padding: 2px 9px; border-radius: 999px; line-height: 1.7;
         }
-        .source-autopapa { color: #C2410C; border-color: #C2410C; background: #FEE7D6; }
-        .source-myauto   { color: #1D4ED8; border-color: #1D4ED8; background: #DBE8FF; }
+        .source-autopapa { color: #9A3412; background: #F4E5D9; }
+        .source-myauto   { color: #1E40AF; background: #E4ECFB; }
 
 
         .customs-badge {
+            display: inline-flex; align-items: center; gap: 5px;
             font-family: 'JetBrains Mono', monospace; font-size: 10px;
-            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
-            padding: 3px 10px; border: 1px solid; white-space: nowrap;
+            text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+            padding: 2px 9px; border-radius: 999px; white-space: nowrap; line-height: 1.7;
         }
-        .customs-yes { color: #15803D; border-color: #15803D; background: #DCFCE7; }
-        .customs-no  { color: #B91C1C; border-color: #B91C1C; background: #FEE2E2; }
+        .customs-badge::before {
+            content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+        }
+        .customs-yes { color: #15803D; background: #E5F5EB; }
+        .customs-no  { color: #B91C1C; background: #FAE8E8; }
 
 
         .card { border: 1px solid #E5DFD3; background: white; transition: border-color 150ms; }
@@ -479,6 +485,7 @@
         .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
         .chip-del { border: 1px solid #E5DFD3; border-left: 0; background: #fff; color: #B0A795; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
         .chip-del:hover { color: #C2410C; border-color: #C2410C; }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -541,9 +548,9 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <div class="filter-group">
                     <span class="filter-label" data-i18n="filter_brand"></span>
-                    <select class="filter-select" id="f-brand">
-                        <option value="" data-i18n="brand_any"></option>
-                    </select>
+                    <input class="filter-select filter-brand" id="f-brand" list="brand-list"
+                           data-i18n-placeholder="brand_any" autocomplete="off">
+                    <datalist id="brand-list"></datalist>
                 </div>
                 <div class="filter-group">
                     <span class="filter-label" data-i18n="filter_model"></span>
@@ -699,7 +706,7 @@
         for (const [id, key] of Object.entries(_FILTER_FIELDS)) {
             const raw = document.getElementById('f-' + id).value;
             const n = parseInt(raw, 10);
-            if (!Number.isNaN(n)) payload[key] = n;
+            if (!Number.isNaN(n) && n >= 0) payload[key] = n;
         }
 
         const sort = document.getElementById('f-sort').value;
@@ -728,6 +735,21 @@
         yTo.addEventListener('change', () => fixRange('to'));
     })();
 
+    // ფასი/გარბენი — "დან" არ უნდა აღემატებოდეს "მდე"-ს; თუ აღემატება, ვცვლით ადგილებს
+    (function wireNumRanges() {
+        const swap = (from, to) => {
+            const f = parseFloat(from.value), t = parseFloat(to.value);
+            if (!Number.isNaN(f) && !Number.isNaN(t) && f > t) {
+                const tmp = from.value; from.value = to.value; to.value = tmp;
+            }
+        };
+        for (const [a, b] of [['f-price-from', 'f-price-to'], ['f-mileage-from', 'f-mileage-to']]) {
+            const from = document.getElementById(a), to = document.getElementById(b);
+            from.addEventListener('change', () => swap(from, to));
+            to.addEventListener('change', () => swap(from, to));
+        }
+    })();
+
     window.clearFilters = function () {
         for (const id of Object.keys(_FILTER_FIELDS)) {
             document.getElementById('f-' + id).value = '';
@@ -749,18 +771,29 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        document.getElementById('f-brand').insertAdjacentHTML('beforeend',
-            Object.keys(_makes).map(n =>
-                `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''));
+        document.getElementById('brand-list').innerHTML =
+            Object.keys(_makes).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+    }
+
+    // აკრეფილ ტექსტს კანონიკურ ბრენდს უსადაგებს (მაგ. "merc" -> "Mercedes-Benz")
+    function resolveBrand(v) {
+        v = (v || '').trim();
+        if (!v || _makes[v]) return v;
+        const low = v.toLowerCase();
+        return Object.keys(_makes).find(k => k.toLowerCase() === low)
+            || Object.keys(_makes).find(k => k.toLowerCase().startsWith(low))
+            || v;
     }
 
     function onBrandChange() {
-        const brand = document.getElementById('f-brand').value;
+        const input = document.getElementById('f-brand');
+        const brand = resolveBrand(input.value);
+        if (brand !== input.value) input.value = brand;
         const model = document.getElementById('f-model');
         const models = _makes[brand] || [];
         model.innerHTML = `<option value="">${t('model_any')}</option>` +
             models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-        model.disabled = !brand;
+        model.disabled = !models.length;
         runBrandSearch();
     }
 
@@ -799,7 +832,17 @@
         if (opts.resetPage !== false) currentPage = 1;
 
         const payload = buildSearchPayload();
-        if (Object.keys(payload).filter(k => k !== 'page').length === 0) return;
+        const fields = Object.keys(payload).filter(k => k !== 'page');
+        if (fields.length === 0) return;
+        // მხოლოდ სიმბოლოებისგან/პუნქტუაციისგან შემდგარი query API-მდე არ უშვებთ
+        if (payload.query && fields.length === 1 &&
+            payload.query.replace(/[^\p{L}\p{N}]/gu, '').length === 0) {
+            document.body.classList.add('mode-results');
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('results').innerHTML = '';
+            showSearchError(document.getElementById('search-meta'), t('err_query_too_vague'));
+            return;
+        }
         pushHistory(document.getElementById('search-input').value);
 
         const _ckey = JSON.stringify(payload);
