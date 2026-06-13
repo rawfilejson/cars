@@ -505,8 +505,6 @@
 
         <div class="hero-stats">
             <span class="hero-stat"><b id="hero-count">—</b> <span data-i18n="stat_cars"></span></span>
-            <span class="hero-pill" data-i18n="stat_free"></span>
-            <span class="hero-pill" data-i18n="stat_nosignup"></span>
         </div>
 
         <div class="chips" id="quick-chips">
@@ -651,6 +649,8 @@
 
     let lastResponse = null;
     let currentPage = 1;
+    const _searchCache = new Map();
+    const _SEARCH_TTL = 300000;
 
     async function loadStats() {
         try {
@@ -785,6 +785,16 @@
         if (Object.keys(payload).filter(k => k !== 'page').length === 0) return;
         pushHistory(document.getElementById('search-input').value);
 
+        const _ckey = JSON.stringify(payload);
+        const _hit = _searchCache.get(_ckey);
+        if (_hit && Date.now() - _hit.t < _SEARCH_TTL) {
+            lastResponse = _hit.data;
+            document.body.classList.add('mode-results');
+            document.getElementById('empty-state').classList.add('hidden');
+            renderResults(_hit.data);
+            return;
+        }
+
         const btn = document.getElementById('btn-search');
         const meta = document.getElementById('search-meta');
         const empty = document.getElementById('empty-state');
@@ -814,6 +824,7 @@
             }
 
             lastResponse = await resp.json();
+            _searchCache.set(_ckey, { t: Date.now(), data: lastResponse });
             renderResults(lastResponse);
         } catch (e) {
             showSearchError(meta, t('err_fetch', { msg: e.message }));
@@ -1089,7 +1100,7 @@
                           ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(car.location)}</p>` : ''}
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                          <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
+                          <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
                           <span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span>
                         </div>
                       </div>
@@ -1391,9 +1402,17 @@
         const had = cars.some(c => c.key === key);
         cars = had ? cars.filter(c => c.key !== key) : [(_carData[key] || { key: key, title: key }), ...cars].slice(0, 300);
         lsSet(LS_CARS, cars);
-        if (btn) { btn.classList.toggle('is-saved', !had); btn.textContent = had ? '♡' : '♥'; }
+        refreshHearts();
         updateSavedCount();
     };
+
+    function refreshHearts() {
+        document.querySelectorAll('.save-btn[data-key]').forEach((b) => {
+            const s = isCarSaved(b.dataset.key);
+            b.classList.toggle('is-saved', s);
+            b.textContent = s ? '♥' : '♡';
+        });
+    }
 
     window.saveCurrentSearch = function (btn) {
         const q = (document.getElementById('search-input').value || '').trim();
