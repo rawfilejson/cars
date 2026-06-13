@@ -16,7 +16,7 @@ services:
       - key: SEARCH_COOLDOWN_SECONDS
         value: "7"
       - key: SEARCH_LIMIT_PER_HOUR
-        value: "60"
+        value: "20"
       - key: SEARCH_LIMIT_PER_IP_HOUR
         value: "600"
       # secrets — set these manually in Render dashboard:
