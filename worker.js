@@ -32,6 +32,11 @@ export default {
   async fetch(request, env) {
     const resp = await env.ASSETS.fetch(request);
     const headers = new Headers(resp.headers);
+    // env.ASSETS გვაძლევს დეკოდირებულ body-ს, მაგრამ Content-Encoding/Length
+    // header-ები ძველი (კოდირებული) რჩება — браузер ვერ ხსნის და body ცარიელდება
+    // (განსაკუთრებით Cloudflare-ის ახალ zstd-ზე). ვშლით, რომ CF ხელახლა შეფუთოს.
+    headers.delete("content-encoding");
+    headers.delete("content-length");
     for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
       headers.set(key, value);
     }
