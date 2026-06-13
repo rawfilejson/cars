@@ -67,8 +67,8 @@
             },
         };
     </script>
-    <script src="config.js"></script>
-    <script src="i18n.js"></script>
+    <script src="/config.js"></script>
+    <script src="/i18n.js"></script>
 
     <script>
         if (window.CF_ANALYTICS_TOKEN) {
@@ -706,6 +706,13 @@
         const html = opts.join('');
         yFrom.innerHTML = html;
         yTo.innerHTML = html;
+        // არასწორი დიაპაზონის თავიდან აცილება — "დან" ყოველთვის <= "მდე"
+        const fixRange = (changed) => {
+            const f = parseInt(yFrom.value, 10), t = parseInt(yTo.value, 10);
+            if (f && t && f > t) (changed === 'from' ? yTo : yFrom).value = (changed === 'from' ? yFrom : yTo).value;
+        };
+        yFrom.addEventListener('change', () => fixRange('from'));
+        yTo.addEventListener('change', () => fixRange('to'));
     })();
 
     window.clearFilters = function () {
