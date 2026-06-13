@@ -31,13 +31,15 @@ const SECURITY_HEADERS = {
 export default {
   async fetch(request, env) {
     const resp = await env.ASSETS.fetch(request);
-    // resp.body-ის ხელახლა შეფუთვა Content-Encoding-ს ურევდა (SPA fallback-ზე
-    // body ცარიელი მოდიოდა). new Response(body, resp) აკლონებს უცვლელად.
-    const out = new Response(resp.body, resp);
+    const headers = new Headers(resp.headers);
     for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-      out.headers.set(key, value);
+      headers.set(key, value);
     }
-    return out;
+    return new Response(resp.body, {
+      status: resp.status,
+      statusText: resp.statusText,
+      headers,
+    });
   },
 
   async scheduled(event, env, ctx) {
