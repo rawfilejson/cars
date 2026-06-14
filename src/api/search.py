@@ -15,6 +15,7 @@ import time
 from fastapi import APIRouter, BackgroundTasks, Request, Response, status, HTTPException
 
 from src.api.db_pool import connection
+from src.api.facets import facet_variants
 from src.api.rate_limit import check_rate_limit, log_search
 from src.api.schemas import CarPublic, SearchRequest, SearchResponse
 from src.common.config import R2_PUBLIC_URL
@@ -105,18 +106,17 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     if req.mileage_to is not None:
         fragments.append("mileage_km <= %s")
         params.append(req.mileage_to)
-    if req.body_type:
-        fragments.append("body_type = %s")
-        params.append(req.body_type)
-    if req.fuel_type:
-        fragments.append("engine_type = %s")
-        params.append(req.fuel_type)
-    if req.gearbox:
-        fragments.append("gearbox = %s")
-        params.append(req.gearbox)
-    if req.drive_wheels:
-        fragments.append("drive_wheels = %s")
-        params.append(req.drive_wheels)
+    for value, col in (
+        (req.body_type, "body_type"),
+        (req.fuel_type, "engine_type"),
+        (req.gearbox, "gearbox"),
+        (req.drive_wheels, "drive_wheels"),
+    ):
+        if value:
+            variants = facet_variants(value)
+            placeholders = ", ".join(["%s"] * len(variants))
+            fragments.append(f"{col} IN ({placeholders})")
+            params.extend(variants)
     if req.customs_cleared is not None:
         fragments.append("customs_cleared = %s")
         params.append(req.customs_cleared)
