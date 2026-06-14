@@ -618,6 +618,38 @@
                 <button class="filter-clear" onclick="clearFilters()" data-i18n="filter_clear"></button>
             </div>
 
+            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <div class="filter-group" data-filter="body_type">
+                    <span class="filter-label" data-i18n="filter_body"></span>
+                    <select class="filter-select facet-select" id="f-body"><option value="" data-i18n="any_opt"></option></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('body_type')" aria-label="reset">↺</button>
+                </div>
+                <div class="filter-group" data-filter="fuel">
+                    <span class="filter-label" data-i18n="filter_fuel"></span>
+                    <select class="filter-select facet-select" id="f-fuel"><option value="" data-i18n="any_opt"></option></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('fuel')" aria-label="reset">↺</button>
+                </div>
+                <div class="filter-group" data-filter="gearbox">
+                    <span class="filter-label" data-i18n="filter_gearbox"></span>
+                    <select class="filter-select facet-select" id="f-gearbox"><option value="" data-i18n="any_opt"></option></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('gearbox')" aria-label="reset">↺</button>
+                </div>
+                <div class="filter-group" data-filter="drive">
+                    <span class="filter-label" data-i18n="filter_drive"></span>
+                    <select class="filter-select facet-select" id="f-drive"><option value="" data-i18n="any_opt"></option></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('drive')" aria-label="reset">↺</button>
+                </div>
+                <div class="filter-group" data-filter="customs">
+                    <span class="filter-label" data-i18n="filter_customs"></span>
+                    <select class="filter-select facet-select" id="f-customs">
+                        <option value="" data-i18n="customs_all"></option>
+                        <option value="yes" data-i18n="cleared"></option>
+                        <option value="no" data-i18n="not_cleared"></option>
+                    </select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('customs')" aria-label="reset">↺</button>
+                </div>
+            </div>
+
             <div id="recent-row" class="recent-row"></div>
             <p id="search-meta" class="mt-4 text-sm"></p>
         </div>
@@ -706,6 +738,7 @@
 
     document.addEventListener('langchange', () => {
         loadStats();
+        refillFacets();
         if (parseRoute().view === 'detail' && _detailCar) {
             renderDetail(_detailCar);
             return;
@@ -732,6 +765,17 @@
             const n = parseInt(raw, 10);
             if (!Number.isNaN(n) && n >= 0) payload[key] = n;
         }
+
+        const body    = document.getElementById('f-body').value;
+        const fuel    = document.getElementById('f-fuel').value;
+        const gearbox = document.getElementById('f-gearbox').value;
+        const drive   = document.getElementById('f-drive').value;
+        const customs = document.getElementById('f-customs').value;
+        if (body)    payload.body_type    = body;
+        if (fuel)    payload.fuel_type    = fuel;
+        if (gearbox) payload.gearbox      = gearbox;
+        if (drive)   payload.drive_wheels = drive;
+        if (customs) payload.customs_cleared = (customs === 'yes');
 
         const sort = document.getElementById('f-sort').value;
         if (sort) payload.sort = sort;
@@ -779,6 +823,9 @@
             document.getElementById('f-' + id).value = '';
         }
         document.getElementById('f-sort').value = '';
+        for (const id of ['f-body', 'f-fuel', 'f-gearbox', 'f-drive', 'f-customs']) {
+            document.getElementById(id).value = '';
+        }
         const brand = document.getElementById('f-brand');
         const model = document.getElementById('f-model');
         brand.value = '';
@@ -789,11 +836,16 @@
     };
 
     const _RESET_GROUPS = {
-        brand:   ['f-brand'],
-        model:   ['f-model'],
-        year:    ['f-year-from', 'f-year-to'],
-        price:   ['f-price-from', 'f-price-to'],
-        mileage: ['f-mileage-from', 'f-mileage-to'],
+        brand:     ['f-brand'],
+        model:     ['f-model'],
+        year:      ['f-year-from', 'f-year-to'],
+        price:     ['f-price-from', 'f-price-to'],
+        mileage:   ['f-mileage-from', 'f-mileage-to'],
+        body_type: ['f-body'],
+        fuel:      ['f-fuel'],
+        gearbox:   ['f-gearbox'],
+        drive:     ['f-drive'],
+        customs:   ['f-customs'],
     };
 
     // თითო ფილტრს ცალკე ასუფთავებს და თავიდან ეძებს
@@ -836,6 +888,34 @@
         document.getElementById('f-brand').insertAdjacentHTML('beforeend',
             Object.keys(_makes).map(n =>
                 `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''));
+    }
+
+    let _facets = {};
+
+    async function loadFacets() {
+        try {
+            const resp = await fetch(`${API_BASE}/facets`);
+            if (!resp.ok) return;
+            _facets = (await resp.json()).facets || {};
+        } catch { return; }
+        refillFacets();
+    }
+
+    // dropdown-ის option-ებს ავსებს; value = ქართული (DB), ტექსტი = tval (en-ზე ითარგმნება)
+    function fillFacet(id, values) {
+        const sel = document.getElementById(id);
+        if (!sel || !values) return;
+        const cur = sel.value;
+        sel.innerHTML = `<option value="">${t('any_opt')}</option>` +
+            values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(tval(v))}</option>`).join('');
+        sel.value = cur;
+    }
+
+    function refillFacets() {
+        fillFacet('f-body', _facets.body_type);
+        fillFacet('f-fuel', _facets.fuel);
+        fillFacet('f-gearbox', _facets.gearbox);
+        fillFacet('f-drive', _facets.drive);
     }
 
     function onBrandChange() {
@@ -956,6 +1036,10 @@
     });
     document.getElementById('f-sort').addEventListener('change', () => {
         if (lastResponse) doSearch();
+    });
+    // ფასეტ-ფილტრის შეცვლა — თუ უკვე არის შედეგი, მაშინვე ხელახლა ვეძებთ (auto.ru-ს მსგავსად)
+    document.querySelectorAll('.facet-select').forEach((el) => {
+        el.addEventListener('change', () => { if (lastResponse) doSearch(); });
     });
 
     window.goToPage = function (page) {
@@ -1677,6 +1761,7 @@
 
     loadStats();
     loadMakes();
+    loadFacets();
 </script>
 
 </body>
