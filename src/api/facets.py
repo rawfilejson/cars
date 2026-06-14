@@ -24,6 +24,27 @@ _FIELDS = {
     "drive": "drive_wheels",
 }
 
+# ბინძური variant → კანონიკური მნიშვნელობა (ბაზაში ერთი და იგივე რამდენ ნაირად წერია)
+_CANON = {
+    "ჰეჩბეკი": "ჰეტჩბეკი",
+    "ჰეტჩბექი": "ჰეტჩბეკი",
+    "ჰეჩბექი": "ჰეტჩბეკი",
+    "ბენზინზე": "ბენზინი",
+    "დიზელზე": "დიზელი",
+    "4X4": "4x4",
+}
+
+
+def facet_canon(value: str) -> str:
+    """raw მნიშვნელობას კანონიკურამდე ამცირებს."""
+    return _CANON.get(value, value)
+
+
+def facet_variants(value: str) -> list[str]:
+    """კანონიკურ მნიშვნელობას უბრუნებს ყველა raw variant-ს (ფილტრში IN-ისთვის)."""
+    out = [value] + [raw for raw, canon in _CANON.items() if canon == value]
+    return list(dict.fromkeys(out))
+
 
 class FacetsResponse(BaseModel):
     """{facet: [მნიშვნელობები]} — სიხშირის მიხედვით."""
@@ -47,7 +68,11 @@ def _load_facets() -> FacetsResponse:
                     """,
                     (_MIN_COUNT,),
                 )
-                out[key] = [row["v"] for row in cur.fetchall()]
+                # კანონიკურამდე ვაერთიანებთ duplicate-ებს, სიხშირის რიგი რჩება
+                seen: dict[str, None] = {}
+                for row in cur.fetchall():
+                    seen.setdefault(facet_canon(row["v"]), None)
+                out[key] = list(seen.keys())
     return FacetsResponse(facets=out)
 
 
