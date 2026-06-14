@@ -105,6 +105,21 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     if req.mileage_to is not None:
         fragments.append("mileage_km <= %s")
         params.append(req.mileage_to)
+    if req.body_type:
+        fragments.append("body_type = %s")
+        params.append(req.body_type)
+    if req.fuel_type:
+        fragments.append("engine_type = %s")
+        params.append(req.fuel_type)
+    if req.gearbox:
+        fragments.append("gearbox = %s")
+        params.append(req.gearbox)
+    if req.drive_wheels:
+        fragments.append("drive_wheels = %s")
+        params.append(req.drive_wheels)
+    if req.customs_cleared is not None:
+        fragments.append("customs_cleared = %s")
+        params.append(req.customs_cleared)
     return fragments, params
 
 
@@ -114,10 +129,12 @@ def _sort_clause(sort: str | None) -> str:
 
 
 def _has_any_filter(req: SearchRequest) -> bool:
-    return any(
+    ranges = any(
         getattr(req, k) is not None
         for k in ("year_from", "year_to", "price_from", "price_to", "mileage_from", "mileage_to")
     )
+    facets = any(getattr(req, k) for k in ("body_type", "fuel_type", "gearbox", "drive_wheels"))
+    return ranges or facets or req.customs_cleared is not None
 
 
 _PHONE_CHARS_RE = re.compile(r"[\d\s+()\-.]+")

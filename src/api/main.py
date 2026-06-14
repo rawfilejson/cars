@@ -20,6 +20,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.api.facets import router as facets_router
 from src.api.makes import router as makes_router
 from src.api.schemas import HealthCheck
 from src.api.search import router as search_router, car_router
@@ -92,6 +93,7 @@ app.include_router(search_router)
 app.include_router(car_router)
 app.include_router(stats_router)
 app.include_router(makes_router)
+app.include_router(facets_router)
 
 
 @app.exception_handler(Exception)
