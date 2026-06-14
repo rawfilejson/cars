@@ -137,8 +137,15 @@
         }
         @media (min-width: 640px) { .filter-select { font-size: 13px; padding: 6px 28px 6px 10px; } }
         .filter-select:focus { border-color: #1A1A1A; outline: 0; }
-        .filter-brand { background-image: none; padding: 8px 10px; min-width: 150px; }
-        @media (min-width: 640px) { .filter-brand { padding: 6px 10px; min-width: 160px; } }
+        /* ბრენდი/მოდელი — გრძელი სახელი ეკრანს არ უნდა გასცდეს */
+        #f-brand, #f-model { max-width: 190px; text-overflow: ellipsis; }
+        @media (max-width: 640px) {
+            #f-brand, #f-model { max-width: 42vw; }
+        }
+        /* თითო ფილტრის რესეტი — მხოლოდ მნიშვნელობის არსებობისას ჩანს */
+        .filter-reset { display: none; border: 0; background: transparent; color: #B0A795; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; }
+        .filter-group.has-val .filter-reset { display: inline-flex; }
+        .filter-reset:hover { color: #C2410C; }
         .filter-dash { color: #B0A795; }
         .filter-clear {
             background: transparent; border: 0; padding: 0;
@@ -318,6 +325,12 @@
         .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 
+        .desc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .desc-translate {
+            background: none; border: 0; padding: 0; cursor: pointer;
+            font-size: 12px; color: #6B6258; text-transform: none; letter-spacing: 0;
+        }
+        .desc-translate:hover { color: #C2410C; }
         .description {
             color: #1A1A1A; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
@@ -483,8 +496,10 @@
 
         .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; }
         .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
-        .chip-del { border: 1px solid #E5DFD3; border-left: 0; background: #fff; color: #B0A795; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
-        .chip-del:hover { color: #C2410C; border-color: #C2410C; }
+        .chip-del { display: flex; align-items: center; border: 1px solid #E5DFD3; border-left: 0; background: #fff; color: #B0A795; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
+        /* მთელი chip ერთად რეაგირებს hover-ზე — ნახევრად outline აღარ ჩანს */
+        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del { border-color: #1A1A1A; }
+        .chip-wrap:hover .chip-del { color: #C2410C; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -546,43 +561,48 @@
             </div>
 
             <div class="mt-5 flex flex-wrap items-center gap-3">
-                <div class="filter-group">
+                <div class="filter-group" data-filter="brand">
                     <span class="filter-label" data-i18n="filter_brand"></span>
-                    <input class="filter-select filter-brand" id="f-brand" list="brand-list"
-                           data-i18n-placeholder="brand_any" autocomplete="off">
-                    <datalist id="brand-list"></datalist>
+                    <select class="filter-select" id="f-brand">
+                        <option value="" data-i18n="brand_any"></option>
+                    </select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('brand')" aria-label="reset">↺</button>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group" data-filter="model">
                     <span class="filter-label" data-i18n="filter_model"></span>
                     <select class="filter-select" id="f-model" disabled>
                         <option value="" data-i18n="model_any"></option>
                     </select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('model')" aria-label="reset">↺</button>
                 </div>
             </div>
 
 
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div class="filter-group">
+                <div class="filter-group" data-filter="year">
                     <span class="filter-label" data-i18n="filter_year"></span>
                     <select class="filter-select filter-year" id="f-year-from"></select>
                     <span class="filter-dash">–</span>
                     <select class="filter-select filter-year" id="f-year-to"></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('year')" aria-label="reset">↺</button>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group" data-filter="price">
                     <span class="filter-label" data-i18n="filter_price"></span>
                     <input class="filter-input" type="number" id="f-price-from"
                            data-i18n-placeholder="filter_from" min="0">
                     <span class="filter-dash">–</span>
                     <input class="filter-input" type="number" id="f-price-to"
                            data-i18n-placeholder="filter_to" min="0">
+                    <button class="filter-reset" type="button" onclick="resetFilter('price')" aria-label="reset">↺</button>
                 </div>
-                <div class="filter-group">
+                <div class="filter-group" data-filter="mileage">
                     <span class="filter-label" data-i18n="filter_mileage"></span>
                     <input class="filter-input" type="number" id="f-mileage-from"
                            data-i18n-placeholder="filter_from" min="0">
                     <span class="filter-dash">–</span>
                     <input class="filter-input" type="number" id="f-mileage-to"
                            data-i18n-placeholder="filter_to" min="0">
+                    <button class="filter-reset" type="button" onclick="resetFilter('mileage')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group md:ml-auto">
                     <select class="filter-select" id="f-sort">
@@ -761,7 +781,45 @@
         model.value = '';
         model.innerHTML = `<option value="">${t('model_any')}</option>`;
         model.disabled = true;
+        updateFilterResets();
     };
+
+    const _RESET_GROUPS = {
+        brand:   ['f-brand'],
+        model:   ['f-model'],
+        year:    ['f-year-from', 'f-year-to'],
+        price:   ['f-price-from', 'f-price-to'],
+        mileage: ['f-mileage-from', 'f-mileage-to'],
+    };
+
+    // თითო ფილტრს ცალკე ასუფთავებს და თავიდან ეძებს
+    window.resetFilter = function (kind) {
+        if (kind === 'brand') {
+            document.getElementById('f-brand').value = '';
+            const model = document.getElementById('f-model');
+            model.value = '';
+            model.innerHTML = `<option value="">${t('model_any')}</option>`;
+            model.disabled = true;
+        } else {
+            (_RESET_GROUPS[kind] || []).forEach((id) => {
+                document.getElementById(id).value = '';
+            });
+        }
+        updateFilterResets();
+        if (lastResponse) doSearch();
+    };
+
+    function updateFilterResets() {
+        for (const [kind, ids] of Object.entries(_RESET_GROUPS)) {
+            const group = document.querySelector(`[data-filter="${kind}"]`);
+            if (!group) continue;
+            const hasVal = ids.some((id) => {
+                const el = document.getElementById(id);
+                return el && el.value;
+            });
+            group.classList.toggle('has-val', hasVal);
+        }
+    }
 
     let _makes = {};
 
@@ -771,29 +829,18 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        document.getElementById('brand-list').innerHTML =
-            Object.keys(_makes).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
-    }
-
-    // აკრეფილ ტექსტს კანონიკურ ბრენდს უსადაგებს (მაგ. "merc" -> "Mercedes-Benz")
-    function resolveBrand(v) {
-        v = (v || '').trim();
-        if (!v || _makes[v]) return v;
-        const low = v.toLowerCase();
-        return Object.keys(_makes).find(k => k.toLowerCase() === low)
-            || Object.keys(_makes).find(k => k.toLowerCase().startsWith(low))
-            || v;
+        document.getElementById('f-brand').insertAdjacentHTML('beforeend',
+            Object.keys(_makes).map(n =>
+                `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''));
     }
 
     function onBrandChange() {
-        const input = document.getElementById('f-brand');
-        const brand = resolveBrand(input.value);
-        if (brand !== input.value) input.value = brand;
+        const brand = document.getElementById('f-brand').value;
         const model = document.getElementById('f-model');
         const models = _makes[brand] || [];
         model.innerHTML = `<option value="">${t('model_any')}</option>` +
             models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-        model.disabled = !models.length;
+        model.disabled = !brand;
         runBrandSearch();
     }
 
@@ -898,6 +945,10 @@
 
     document.querySelectorAll('#search-input, .filter-input, .filter-select').forEach((el) => {
         el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+    });
+    document.querySelectorAll('.filter-input, .filter-select').forEach((el) => {
+        el.addEventListener('change', updateFilterResets);
+        el.addEventListener('input', updateFilterResets);
     });
     document.getElementById('f-sort').addEventListener('change', () => {
         if (lastResponse) doSearch();
@@ -1207,11 +1258,24 @@
         const long = desc.length > 180 || (desc.match(/\n/g) || []).length > 4;
         return `
             <div class="border-t border-line pt-4 mb-4">
-              <div class="spec-label mb-2">${t('section_description')}</div>
+              <div class="desc-head mb-2">
+                <span class="spec-label">${t('section_description')}</span>
+                <button class="desc-translate" onclick="translateDesc(this)">${t('translate_btn')} ↗</button>
+              </div>
               <div class="description${long ? ' clamped' : ''}">${escapeHtml(desc)}</div>
               ${long ? `<button class="see-more" onclick="toggleDesc(this)">${t('see_more')}</button>` : ''}
             </div>`;
     }
+
+    // აღწერას Google Translate-ში ხსნის მიმდინარე ენაზე (ტექსტი public-ია)
+    window.translateDesc = function (btn) {
+        const box = btn.closest('div').parentElement.querySelector('.description');
+        const text = (box && box.textContent || '').trim();
+        if (!text) return;
+        const url = 'https://translate.google.com/?sl=auto&tl=' +
+            encodeURIComponent(getLang()) + '&op=translate&text=' + encodeURIComponent(text);
+        window.open(url, '_blank', 'noopener');
+    };
 
     window.toggleDesc = function (btn) {
         const desc = btn.parentElement.querySelector('.description');
