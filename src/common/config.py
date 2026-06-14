@@ -50,9 +50,10 @@ RETRY_PER_CAR: int = int(os.getenv("RETRY_PER_CAR", "2"))
 PAGE_TIMEOUT_MS: int = int(os.getenv("PAGE_TIMEOUT_MS", "25000"))
 
 
-SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "20"))
-SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "7"))
-SEARCH_LIMIT_PER_IP_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_IP_HOUR", "600"))
+# SEARCH_LIMIT_PER_HOUR <= 0 → საათობრივი ლიმიტი გამორთულია (მხოლოდ cooldown მოქმედებს)
+SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "0"))
+SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "10"))
+SEARCH_LIMIT_PER_IP_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_IP_HOUR", "3000"))
 
 
 CONTACT_INSTAGRAM: str = os.getenv("CONTACT_INSTAGRAM", "@deme.brn")
