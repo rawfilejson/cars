@@ -706,6 +706,10 @@
 
     document.addEventListener('langchange', () => {
         loadStats();
+        if (parseRoute().view === 'detail' && _detailCar) {
+            renderDetail(_detailCar);
+            return;
+        }
         if (lastResponse) renderResults(lastResponse);
     });
 
@@ -1208,7 +1212,7 @@
                             <a href="/car/${escapeHtml(carKey)}" class="card-title-link"
                                onclick="return goToCarDetail('${escapeHtml(carKey)}', event)">${escapeHtml(title)}</a>
                           </h3>
-                          ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(car.location)}</p>` : ''}
+                          ${car.location ? `<p class="text-muted text-sm mt-1">${escapeHtml(tval(car.location))}</p>` : ''}
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                           <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
@@ -1287,11 +1291,11 @@
         const specs = [];
         if (car.mileage_km)      specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
         if (car.engine_volume_l) specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
-        if (car.engine_type)     specs.push(specRow(t('spec_fuel'),    car.engine_type));
-        if (car.gearbox)         specs.push(specRow(t('spec_gearbox'), car.gearbox));
-        if (car.drive_wheels)    specs.push(specRow(t('spec_drive'),   car.drive_wheels));
-        if (car.color)           specs.push(specRow(t('spec_color'),   car.color));
-        if (car.steering)        specs.push(specRow(t('spec_steering'), car.steering));
+        if (car.engine_type)     specs.push(specRow(t('spec_fuel'),    tval(car.engine_type)));
+        if (car.gearbox)         specs.push(specRow(t('spec_gearbox'), tval(car.gearbox)));
+        if (car.drive_wheels)    specs.push(specRow(t('spec_drive'),   tval(car.drive_wheels)));
+        if (car.color)           specs.push(specRow(t('spec_color'),   tval(car.color)));
+        if (car.steering)        specs.push(specRow(t('spec_steering'), tval(car.steering)));
 
         const phones = splitPhones(car.phone || '');
         const phoneBlock = phones.length ? `
@@ -1388,8 +1392,10 @@
     }
 
     let _detailSlides = [];
+    let _detailCar = null;
 
     function renderDetail(car) {
+        _detailCar = car;
         const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
         const slides = buildSlides(car);
         _detailSlides = slides;
@@ -1416,7 +1422,7 @@
                 <div class="flex items-start justify-between gap-4 mb-3">
                   <div class="min-w-0">
                     <h1 class="serif-display detail-title text-ink">${escapeHtml(title)}</h1>
-                    ${car.location ? `<p class="text-muted text-sm mt-2">${escapeHtml(car.location)}</p>` : ''}
+                    ${car.location ? `<p class="text-muted text-sm mt-2">${escapeHtml(tval(car.location))}</p>` : ''}
                   </div>
                   <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
                 </div>

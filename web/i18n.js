@@ -270,6 +270,53 @@ function applyTranslations() {
 
 document.addEventListener("DOMContentLoaded", applyTranslations);
 
+// მონაცემთა მნიშვნელობების ka→en რუკა (ენუმ-ველები + ქალაქები)
+const VALUE_MAP_EN = {
+    "ბენზინი": "Petrol", "დიზელი": "Diesel", "ჰიბრიდი": "Hybrid",
+    "დატენვადი ჰიბრიდი": "Plug-in hybrid", "ელექტრო": "Electric",
+    "ელექტრული": "Electric", "გაზი": "Gas", "ბუნებრივი გაზი": "Natural gas",
+
+    "ავტომატიკა": "Automatic", "ტიპტრონიკი": "Tiptronic",
+    "მექანიკა": "Manual", "ვარიატორი": "CVT",
+
+    "წინა": "Front", "უკანა": "Rear", "სრული": "AWD", "ოთხივე": "4x4",
+
+    "მარცხენა": "Left", "მარჯვენა": "Right",
+
+    "ჯიპი": "SUV", "სედანი": "Sedan", "ჰეტჩბეკი": "Hatchback",
+    "კროსოვერი": "Crossover", "უნივერსალი": "Wagon", "კუპე": "Coupe",
+    "მინივენი": "Minivan", "პიკაპი": "Pickup", "კაბრიოლეტი": "Convertible",
+    "ფურგონი": "Van", "მიკროავტობუსი": "Microbus", "ლიმუზინი": "Limousine",
+
+    "თეთრი": "White", "შავი": "Black", "რუხი": "Gray",
+    "ვერცხლისფერი": "Silver", "წითელი": "Red", "ლურჯი": "Blue",
+    "ცისფერი": "Light blue", "მწვანე": "Green", "ყვითელი": "Yellow",
+    "ნარინჯისფერი": "Orange", "ბორდოსფერი": "Maroon", "ოქროსფერი": "Gold",
+    "ყავისფერი": "Brown", "ვარდისფერი": "Pink", "იისფერი": "Purple",
+    "ჩალისფერი": "Beige", "მეტალიკი": "metallic", "ნაცრისფერი": "Gray",
+
+    "თბილისი": "Tbilisi", "ქუთაისი": "Kutaisi", "ბათუმი": "Batumi",
+    "რუსთავი": "Rustavi", "გორი": "Gori", "ზუგდიდი": "Zugdidi",
+    "ფოთი": "Poti", "ხაშური": "Khashuri", "სამტრედია": "Samtredia",
+    "სენაკი": "Senaki", "თელავი": "Telavi", "ოზურგეთი": "Ozurgeti",
+    "მარნეული": "Marneuli", "ქობულეთი": "Kobuleti", "ახალციხე": "Akhaltsikhe",
+    "ზესტაფონი": "Zestaponi", "მცხეთა": "Mtskheta", "კასპი": "Kaspi",
+    "ბორჯომი": "Borjomi", "გარდაბანი": "Gardabani", "ლაგოდეხი": "Lagodekhi",
+};
+
+// ენუმ/ქალაქის მნიშვნელობას ინგლისურად აბრუნებს (en რეჟიმში); სხვა დროს — უცვლელად
+function tval(value) {
+    if (!value || getLang() !== "en") return value;
+    if (VALUE_MAP_EN[value]) return VALUE_MAP_EN[value];
+    const parts = String(value).split(/\s+/);
+    if (parts.length > 1) {
+        const mapped = parts.map((p) => VALUE_MAP_EN[p] || p);
+        if (mapped.some((mw, i) => mw !== parts[i])) return mapped.join(" ");
+    }
+    return value;
+}
+
 window.t = t;
+window.tval = tval;
 window.getLang = getLang;
 window.setLang = setLang;
