@@ -91,7 +91,7 @@ def _limit_error(limit: int) -> HTTPException:
     )
 
 
-def check_rate_limit(request: Request) -> int:
+def check_rate_limit(request: Request) -> int | None:
     """ცდის ჩატარებამდე rate-limit-ის შემოწმება. აბრუნებს დარჩენილ ცდებს.
 
     Raises:
@@ -105,7 +105,7 @@ def check_rate_limit(request: Request) -> int:
     elif ip:
         identity_col, identity_val = "user_ip", ip
     else:
-        return SEARCH_LIMIT_PER_HOUR
+        return None
 
     with connection() as conn:
         with conn.cursor() as cur:
@@ -142,13 +142,16 @@ def check_rate_limit(request: Request) -> int:
     if sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
         raise _cooldown_error(sec_since_last)
 
-    if count_last_hour >= SEARCH_LIMIT_PER_HOUR:
+    # SEARCH_LIMIT_PER_HOUR <= 0 ნიშნავს „საათობრივი ლიმიტი გამორთულია" — მხოლოდ cooldown მოქმედებს
+    hourly_on = SEARCH_LIMIT_PER_HOUR > 0
+    if hourly_on and count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_HOUR)
 
-    if ip and ip_count >= SEARCH_LIMIT_PER_IP_HOUR:
+    # IP backstop რჩება scraping-ის წინააღმდეგ (ჩვეულებრივ მომხმარებელს არ ეხება)
+    if ip and SEARCH_LIMIT_PER_IP_HOUR > 0 and ip_count >= SEARCH_LIMIT_PER_IP_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_IP_HOUR)
 
-    return SEARCH_LIMIT_PER_HOUR - count_last_hour - 1
+    return (SEARCH_LIMIT_PER_HOUR - count_last_hour - 1) if hourly_on else None
 
 
 def log_search(
