@@ -21,6 +21,12 @@ class SearchRequest(BaseModel):
     mileage_from: int | None = Field(None, ge=0)
     mileage_to:   int | None = Field(None, ge=0)
 
+    body_type:    str | None = Field(None, max_length=40)
+    fuel_type:    str | None = Field(None, max_length=40)
+    gearbox:      str | None = Field(None, max_length=40)
+    drive_wheels: str | None = Field(None, max_length=40)
+    customs_cleared: bool | None = None
+
     sort: str | None = Field(None, max_length=20)
 
     page: int = Field(1, ge=1, le=200)
