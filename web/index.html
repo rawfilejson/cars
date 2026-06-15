@@ -110,7 +110,29 @@
         .shell { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 22px; align-items: start; }
         .filters-toggle { display: none; }
         .sidebar { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 18px;
-            position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+            position: sticky; top: 16px; }
+
+        /* ===== custom rounded dropdown ===== */
+        .cdd { position: relative; flex: 1 1 0; min-width: 0; }
+        .cdd select { display: none; }
+        .cdd-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 42px;
+            background: #fff; border: 1px solid #DCE3EA; border-radius: 11px; padding: 0 12px; font-size: 14px; color: #2B2D42;
+            font-family: inherit; cursor: pointer; text-align: left; transition: border-color .12s; }
+        .cdd-btn:hover { border-color: #A9B4C2; }
+        .cdd.open .cdd-btn { border-color: #EF233C; }
+        .cdd.disabled { opacity: .5; }
+        .cdd.disabled .cdd-btn { cursor: not-allowed; }
+        .cdd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cdd-chev { color: #8D99AE; font-size: 11px; transition: transform .15s; flex-shrink: 0; }
+        .cdd.open .cdd-chev { transform: rotate(180deg); }
+        .cdd-panel { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 45;
+            background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; box-shadow: 0 14px 36px rgba(43,45,66,.18);
+            padding: 6px; max-height: 290px; overflow-y: auto; }
+        .cdd.open .cdd-panel { display: block; animation: cddIn .14s ease both; }
+        @keyframes cddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
+        .cdd-opt:hover { background: #F3F6F8; }
+        .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .sidebar-head h3 { font-size: 16px; font-weight: 700; color: #2B2D42; }
         .sidebar .mt-5 { margin-top: 0; }
@@ -902,6 +924,7 @@
         model.innerHTML = `<option value="">${t('model_any')}</option>`;
         model.disabled = true;
         updateFilterResets();
+        refreshDropdowns();
     };
 
     const _RESET_GROUPS = {
@@ -937,6 +960,7 @@
             });
         }
         updateFilterResets();
+        refreshDropdowns();
         if (lastResponse) doSearch();
     };
 
@@ -1840,9 +1864,63 @@
         else if (route.view === 'notfound') showNotFound();
     })();
 
+    /* ===== custom rounded dropdowns — native <select> popups can't be styled ===== */
+    function enhanceDropdowns() {
+        document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
+        });
+    }
+
+    function enhanceSelect(sel) {
+        if (sel._cdd) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'cdd';
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(sel);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cdd-btn';
+        const panel = document.createElement('div');
+        panel.className = 'cdd-panel';
+        wrap.append(btn, panel);
+
+        const render = () => {
+            wrap.classList.toggle('disabled', sel.disabled);
+            const cur = sel.options[sel.selectedIndex];
+            btn.innerHTML = `<span class="cdd-label">${escapeHtml(cur ? cur.textContent : '')}</span><span class="cdd-chev">▾</span>`;
+            panel.innerHTML = Array.from(sel.options).map((o, i) =>
+                `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`).join('');
+        };
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sel.disabled) return;
+            const wasOpen = wrap.classList.contains('open');
+            document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
+            if (!wasOpen) { render(); wrap.classList.add('open'); panel.scrollTop = 0; }
+        });
+        panel.addEventListener('click', (e) => {
+            const opt = e.target.closest('.cdd-opt');
+            if (!opt) return;
+            sel.selectedIndex = +opt.dataset.i;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            wrap.classList.remove('open');
+            render();
+        });
+        sel.addEventListener('change', render);
+        new MutationObserver(render).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
+        sel._cdd = { render };
+        render();
+    }
+
+    function refreshDropdowns() {
+        document.querySelectorAll('select.filter-select').forEach(s => s._cdd && s._cdd.render());
+    }
+
     loadStats();
     loadMakes();
     loadFacets();
+    enhanceDropdowns();
 </script>
 
 </body>
