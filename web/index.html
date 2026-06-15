@@ -152,6 +152,39 @@
         body.mode-detail .search-band, body.mode-detail .sidebar, body.mode-detail .filters-toggle,
         body.mode-detail #recent-row, body.mode-detail .results-meta { display: none; }
         body.mode-detail .shell { grid-template-columns: 1fr; }
+
+        /* ===== detail (inner) page — two-column ===== */
+        .dt-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .dt-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+        .dt-gallery { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; overflow: hidden; }
+        .dt-main { display: block; width: 100%; border: 0; padding: 0; cursor: zoom-in; position: relative; background: #E2E8EE; }
+        .dt-main img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+        .dt-count { position: absolute; right: 12px; bottom: 12px; background: rgba(43,45,66,.78); color: #fff; font-size: 12px; padding: 4px 11px; border-radius: 999px; }
+        .dt-thumbs { display: flex; gap: 8px; padding: 12px; overflow-x: auto; }
+        .dt-thumb { width: 84px; height: 60px; flex-shrink: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; padding: 0; background: #E2E8EE; cursor: pointer; }
+        .dt-thumb.on { border-color: #EF233C; }
+        .dt-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .dt-panel { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 22px; position: sticky; top: 16px; }
+        .dt-ptop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .dt-title { font-size: 24px; font-weight: 800; letter-spacing: -.01em; color: #2B2D42; line-height: 1.15; }
+        .dt-loc { color: #8D99AE; font-size: 14px; margin-top: 4px; }
+        .dt-pricebox { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; padding: 16px 18px; background: #F3F6F8; border-radius: 14px; }
+        .dt-price { font-size: 28px; font-weight: 800; color: #2B2D42; }
+        .dt-specs { border-top: 1px solid #DCE3EA; }
+        .dt-srow { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 14px; border-bottom: 1px solid #DCE3EA; }
+        .dt-srow .k { color: #8D99AE; }
+        .dt-srow .v { font-weight: 600; color: #2B2D42; text-align: right; }
+        .dt-vin { margin-top: 14px; font-size: 13px; color: #2B2D42; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .dt-vin code { font-family: 'JetBrains Mono', monospace; }
+        .dt-calls { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+        .dt-call { display: block; text-align: center; background: #EF233C; color: #fff; border-radius: 999px; padding: 14px; font-size: 16px; font-weight: 700; }
+        .dt-call:hover { background: #D90429; }
+        .dt-seller { color: #8D99AE; font-size: 13px; margin-top: 8px; text-align: center; }
+        .dt-source { display: block; text-align: center; background: #fff; color: #2B2D42; border: 1px solid #DCE3EA; border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 600; margin-top: 10px; }
+        .dt-source:hover { border-color: #2B2D42; }
+        .dt-desc { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 22px; margin-top: 22px; }
+        .dt-meta { color: #8D99AE; font-size: 13px; margin-top: 16px; }
+        @media (max-width: 820px) { .dt-grid { grid-template-columns: 1fr; } .dt-panel { position: static; } }
         .empty-state { padding: 80px 0; text-align: center; color: #8D99AE; font-size: 14px; }
         @media (max-width: 860px) {
             .shell { grid-template-columns: 1fr; }
@@ -1583,54 +1616,88 @@
     let _detailSlides = [];
     let _detailCar = null;
 
+    let _detailMainIdx = 0;
+
     function renderDetail(car) {
         _detailCar = car;
+        _detailMainIdx = 0;
         const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
         const slides = buildSlides(car);
         _detailSlides = slides;
+        const km = getLang() === 'en' ? ' km' : ' კმ';
 
-        const galleryHtml = slides.length
-            ? `<div class="gallery">
-                 ${slides.map((s, i) => `
-                   <button class="gallery-tile ${s.type === 'video' ? 'is-video' : ''}"
-                           onclick="openDetailLightbox(${i})">
-                     <img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">
-                   </button>
-                 `).join('')}
-               </div>`
-            : `<div class="no-photo my-6" style="aspect-ratio: 4 / 3;">${t('no_photos')}</div>`;
+        const mainSrc = (s) => s && s.type === 'image' ? s.src : (s ? thumbSrc(s) : '');
+        const gallery = slides.length ? `
+            <div class="dt-gallery">
+              <button class="dt-main" id="dt-main-btn" onclick="openDetailLightbox(0)">
+                <img id="dt-main-img" src="${escapeHtml(mainSrc(slides[0]))}" alt="" decoding="async" onerror="this.style.opacity=.2">
+                ${slides.length > 1 ? `<span class="dt-count">${t('photo_counter', { i: 1, n: slides.length })}</span>` : ''}
+              </button>
+              ${slides.length > 1 ? `<div class="dt-thumbs">${slides.slice(0, 14).map((s, i) =>
+                  `<button class="dt-thumb ${i === 0 ? 'on' : ''}" onclick="dtSetMain(${i})"><img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" onerror="this.style.opacity=.2"></button>`).join('')}</div>` : ''}
+            </div>` : `<div class="dt-gallery"><div class="no-photo" style="aspect-ratio:4/3;border-radius:14px">${t('no_photos')}</div></div>`;
+
+        const srow = (k, v) => `<div class="dt-srow"><span class="k">${k}</span><span class="v">${escapeHtml(String(v))}</span></div>`;
+        const specs = [];
+        if (car.year)            specs.push(srow(t('spec_year'),     car.year));
+        if (car.mileage_km)      specs.push(srow(t('spec_mileage'),  car.mileage_km.toLocaleString() + km));
+        if (car.engine_volume_l) specs.push(srow(t('spec_engine'),   car.engine_volume_l + ' L'));
+        if (car.engine_type)     specs.push(srow(t('spec_fuel'),     tval(car.engine_type)));
+        if (car.gearbox)         specs.push(srow(t('spec_gearbox'),  tval(car.gearbox)));
+        if (car.drive_wheels)    specs.push(srow(t('spec_drive'),    tval(car.drive_wheels)));
+        if (car.color)           specs.push(srow(t('spec_color'),    tval(car.color)));
+        if (car.steering)        specs.push(srow(t('spec_steering'), tval(car.steering)));
+
+        const phones = splitPhones(car.phone || '');
+        const calls = phones.length
+            ? phones.map(p => `<a class="dt-call" href="tel:${escapeHtml(p.replace(/\s/g, ''))}">☎ ${escapeHtml(p)}</a>`).join('')
+            : '';
+        const customs = car.customs_cleared === true ? `<span class="customs-badge customs-yes">${t('cleared')}</span>`
+            : car.customs_cleared === false ? `<span class="customs-badge customs-no">${t('not_cleared')}</span>` : '';
+        const price = car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—';
+        const dateLine = car.posted_date && car.posted_date.trim()
+            ? t('posted_on', { date: escapeHtml(car.posted_date.trim()) })
+            : t('scraped_on_note', { date: formatDate(car.created_at) });
 
         document.getElementById('results').innerHTML = `
-            <article class="card">
-              <div class="p-4 md:p-8">
-                <div class="detail-bar">
-                  <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
-                  <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
-                </div>
-
-                <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="dt-bar">
+              <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
+              <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
+            </div>
+            <div class="dt-grid">
+              ${gallery}
+              <div class="dt-panel">
+                <div class="dt-ptop">
                   <div class="min-w-0">
-                    <h1 class="serif-display detail-title text-ink">${escapeHtml(title)}</h1>
-                    ${car.location ? `<p class="text-muted text-sm mt-2">${escapeHtml(tval(car.location))}</p>` : ''}
+                    <h1 class="dt-title">${escapeHtml(title)}</h1>
+                    ${car.location ? `<p class="dt-loc">${escapeHtml(tval(car.location))}</p>` : ''}
                   </div>
-                  <span class="source-badge source-${escapeHtml(car.source)} shrink-0">${escapeHtml(car.source)}</span>
+                  <span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span>
                 </div>
-
-                ${priceRowHtml(car)}
-
-                ${galleryHtml}
-
-                ${carBodyHtml(car)}
-
-                ${car.url ? `
-                  <div class="mt-6">
-                    <a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="detail-btn">
-                      ${t('detail_open_source')} ↗
-                    </a>
-                  </div>` : ''}
+                <div class="dt-pricebox"><span class="dt-price">${price}</span>${customs}</div>
+                <div class="dt-specs">${specs.join('')}</div>
+                ${car.vin ? `<div class="dt-vin"><span class="spec-label">${t('section_vin')}</span> <code>${escapeHtml(car.vin)}</code><button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button></div>` : ''}
+                ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
+                ${car.seller_name ? `<div class="dt-seller">${escapeHtml(car.seller_name)}</div>` : ''}
+                ${car.url ? `<a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="dt-source">${t('detail_open_source')} ↗</a>` : ''}
               </div>
-            </article>`;
+            </div>
+            ${car.description ? `<div class="dt-desc">${descriptionHtml(car.description)}</div>` : ''}
+            <div class="dt-meta">${dateLine}</div>`;
     }
+
+    window.dtSetMain = function (i) {
+        const s = _detailSlides[i];
+        if (!s) return;
+        _detailMainIdx = i;
+        const img = document.getElementById('dt-main-img');
+        if (img) img.src = s.type === 'image' ? s.src : thumbSrc(s);
+        const btn = document.getElementById('dt-main-btn');
+        if (btn) btn.setAttribute('onclick', `openDetailLightbox(${i})`);
+        const c = document.querySelector('.dt-count');
+        if (c) c.textContent = t('photo_counter', { i: i + 1, n: _detailSlides.length });
+        document.querySelectorAll('.dt-thumb').forEach((el, j) => el.classList.toggle('on', j === i));
+    };
 
     window.openDetailLightbox = function (idx) {
         if (_detailSlides.length) openLightbox(_detailSlides, idx);
