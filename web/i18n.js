@@ -44,6 +44,7 @@ const TRANSLATIONS = {
         filter_customs: "განბაჟება",
         any_opt:        "ნებისმიერი",
         customs_all:    "ყველა",
+        ad_label:       "რეკლამა",
 
         sort_default:     "სორტირება",
         sort_price_desc:  "ფასი: კლებადობით",
@@ -164,6 +165,7 @@ const TRANSLATIONS = {
         filter_customs: "Customs",
         any_opt:        "Any",
         customs_all:    "All",
+        ad_label:       "Advertisement",
 
         sort_default:     "Sort",
         sort_price_desc:  "Price: high to low",
