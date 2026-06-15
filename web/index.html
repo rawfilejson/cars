@@ -54,8 +54,9 @@
                         ink: '#1A1A1A',
                         muted: '#6B6258',
                         line: '#E5DFD3',
-                        accent: '#C2410C',
-                        'accent-soft': '#FEE7D6',
+                        accent: '#E11D2B',
+                        'accent-soft': '#FDE6E8',
+                        'accent-dark': '#B0121E',
                         price: '#15803D',
                     },
                     fontFamily: {
@@ -88,7 +89,7 @@
         body { overflow-x: hidden; }
 
 
-        .top-rule { height: 3px; background: #C2410C; }
+        .top-rule { height: 3px; background: #E11D2B; }
 
 
         .lang-btn { color: #6B6258; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
@@ -118,7 +119,7 @@
         .filter-label { font-size: 11px; color: #6B6258; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
         .filter-input {
             background: transparent; border: 1px solid #E5DFD3; color: #1A1A1A;
-            padding: 8px; font-size: 16px;
+            padding: 8px; font-size: 16px; border-radius: 11px;
             font-family: 'JetBrains Mono', monospace;
             width: 80px; text-align: center;
             -moz-appearance: textfield;
@@ -129,7 +130,7 @@
         .filter-input:focus { border-color: #1A1A1A; outline: 0; }
         .filter-select {
             background: white; border: 1px solid #E5DFD3; color: #1A1A1A;
-            padding: 8px 28px 8px 10px; font-size: 16px;
+            padding: 8px 28px 8px 10px; font-size: 16px; border-radius: 11px;
             font-family: inherit; cursor: pointer;
             -webkit-appearance: none; -moz-appearance: none; appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231A1A1A' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
@@ -145,21 +146,21 @@
         /* თითო ფილტრის რესეტი — მხოლოდ მნიშვნელობის არსებობისას ჩანს */
         .filter-reset { display: none; border: 0; background: transparent; color: #B0A795; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; }
         .filter-group.has-val .filter-reset { display: inline-flex; }
-        .filter-reset:hover { color: #C2410C; }
+        .filter-reset:hover { color: #E11D2B; }
         .filter-dash { color: #B0A795; }
         .filter-clear {
             background: transparent; border: 0; padding: 0;
             font-size: 12px; color: #6B6258; cursor: pointer;
             text-decoration: underline; text-decoration-color: #E5DFD3;
         }
-        .filter-clear:hover { color: #C2410C; text-decoration-color: #C2410C; }
+        .filter-clear:hover { color: #E11D2B; text-decoration-color: #E11D2B; }
 
         .copy-btn {
             margin-left: 8px; border: 1px solid #E5DFD3; background: #fff; color: #6B6258;
             border-radius: 6px; padding: 1px 8px; font-size: 13px; line-height: 1.4;
             cursor: pointer; vertical-align: middle; transition: color .12s, border-color .12s;
         }
-        .copy-btn:hover { color: #C2410C; border-color: #C2410C; }
+        .copy-btn:hover { color: #E11D2B; border-color: #E11D2B; }
         .copy-btn.is-copied { color: #15803D; border-color: #15803D; }
 
 
@@ -169,12 +170,12 @@
             border-top: 1px solid #E5DFD3;
         }
         .pager-btn {
-            background: transparent; border: 1px solid #E5DFD3;
+            background: transparent; border: 1px solid #E5DFD3; border-radius: 999px;
             color: #1A1A1A; font-size: 14px; font-weight: 500;
-            padding: 10px 20px; cursor: pointer;
+            padding: 10px 22px; cursor: pointer;
             transition: border-color 100ms, color 100ms;
         }
-        .pager-btn:hover:not(:disabled) { border-color: #1A1A1A; color: #C2410C; }
+        .pager-btn:hover:not(:disabled) { border-color: #1A1A1A; color: #E11D2B; }
         .pager-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .pager-info {
             font-family: 'JetBrains Mono', monospace; font-size: 13px;
@@ -189,7 +190,7 @@
 
         .count-pill {
             display: inline-flex; align-items: center; gap: 8px;
-            padding: 4px 10px; border: 1px solid #E5DFD3; border-radius: 4px;
+            padding: 5px 14px; border: 1px solid #E5DFD3; border-radius: 999px;
             background: white;
         }
         .count-pill .num {
@@ -220,7 +221,7 @@
         .customs-no  { color: #B91C1C; background: #FAE8E8; }
 
 
-        .card { border: 1px solid #E5DFD3; background: white; transition: border-color 150ms; }
+        .card { border: 1px solid #E5DFD3; background: white; border-radius: 18px; overflow: hidden; transition: border-color 150ms, box-shadow 150ms; }
         .card:hover { border-color: #1A1A1A; }
 
 
@@ -321,7 +322,7 @@
         }
         @media (min-width: 640px) { .lightbox-thumb { width: 84px; height: 63px; } }
         .lightbox-thumb:hover { opacity: 0.9; }
-        .lightbox-thumb.is-active { border-color: #C2410C; opacity: 1; }
+        .lightbox-thumb.is-active { border-color: #E11D2B; opacity: 1; }
         .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 
@@ -330,7 +331,7 @@
             background: none; border: 0; padding: 0; cursor: pointer;
             font-size: 12px; color: #6B6258; text-transform: none; letter-spacing: 0;
         }
-        .desc-translate:hover { color: #C2410C; }
+        .desc-translate:hover { color: #E11D2B; }
         .description {
             color: #1A1A1A; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
@@ -342,7 +343,7 @@
         .see-more {
             margin-top: 6px; background: none; border: 0; padding: 0;
             font-family: inherit; font-size: 13px; font-weight: 500;
-            color: #C2410C; cursor: pointer;
+            color: #E11D2B; cursor: pointer;
         }
         .see-more:hover { text-decoration: underline; }
 
@@ -355,11 +356,11 @@
 
         .phone-list { display: flex; flex-direction: column; gap: 4px; }
         .phone-list a { font-family: 'JetBrains Mono', monospace; color: #1A1A1A; text-decoration: none; font-size: 14px; }
-        .phone-list a:hover { color: #C2410C; }
+        .phone-list a:hover { color: #E11D2B; }
 
 
         .card-title-link { color: inherit; text-decoration: none; }
-        .card-title-link:hover { color: #C2410C; }
+        .card-title-link:hover { color: #E11D2B; }
 
 
         .detail-bar {
@@ -372,7 +373,7 @@
             font-family: inherit; text-decoration: none;
             transition: color 100ms, border-color 100ms;
         }
-        .detail-btn:hover { color: #C2410C; border-color: #C2410C; }
+        .detail-btn:hover { color: #E11D2B; border-color: #E11D2B; }
         .detail-btn.is-copied { color: #15803D; border-color: #15803D; }
 
         .detail-title { font-size: 32px; line-height: 1.1; }
@@ -423,7 +424,7 @@
         .chip:hover { border-color: #1A1A1A; transform: translateY(-1px); }
         .chip:active { transform: translateY(0); }
         .chip.is-accent { background: #1A1A1A; color: #FAF7F2; border-color: #1A1A1A; }
-        .chip.is-accent:hover { background: #C2410C; border-color: #C2410C; }
+        .chip.is-accent:hover { background: #E11D2B; border-color: #E11D2B; }
 
         /* search -> results: hero collapses so results lead */
         body.mode-results #hero-desc { display: none; }
@@ -445,7 +446,7 @@
         }
 
         /* refined benefit pills (replace the green dots) */
-        .hero-pill { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #C2410C; background: #FEE7D6; border-radius: 999px; padding: 5px 12px; font-weight: 500; }
+        .hero-pill { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: #E11D2B; background: #FEE7D6; border-radius: 999px; padding: 5px 12px; font-weight: 500; }
 
         /* clear-X inside the search bar */
         .clear-x { color: #B0A795; font-size: 17px; line-height: 1; padding: 0 10px; background: transparent; border: 0; cursor: pointer; transition: color .12s; align-self: center; }
@@ -453,13 +454,13 @@
 
         /* save (heart) button */
         .save-btn { background: transparent; border: 1px solid #E5DFD3; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: #B0A795; transition: all .15s ease; flex-shrink: 0; }
-        .save-btn:hover { border-color: #C2410C; color: #C2410C; transform: scale(1.08); }
-        .save-btn.is-saved { color: #C2410C; border-color: #C2410C; background: #FEE7D6; }
+        .save-btn:hover { border-color: #E11D2B; color: #E11D2B; transform: scale(1.08); }
+        .save-btn.is-saved { color: #E11D2B; border-color: #E11D2B; background: #FEE7D6; }
 
         /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #6B6258; border: 1px solid #E5DFD3; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
         .saved-trigger:hover { border-color: #1A1A1A; color: #1A1A1A; }
-        .saved-trigger .cnt { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #C2410C; }
+        .saved-trigger .cnt { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #E11D2B; }
 
         /* slide-in drawer */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(26,26,26,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
@@ -474,20 +475,20 @@
         .drawer-sec-h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6B6258; }
         .saved-row { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid #EFEADF; }
         .saved-row .grow { cursor: pointer; min-width: 0; flex: 1; }
-        .saved-row:hover .saved-row-title { color: #C2410C; }
+        .saved-row:hover .saved-row-title { color: #E11D2B; }
         .saved-row img { width: 58px; height: 44px; object-fit: cover; border-radius: 6px; background: #ECE6DA; flex-shrink: 0; }
         .saved-row-title { font-size: 14px; color: #1A1A1A; line-height: 1.3; }
         .saved-row-price { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #15803D; margin-top: 2px; }
         .row-x { color: #B0A795; border: 0; background: transparent; cursor: pointer; font-size: 14px; padding: 4px 2px; }
-        .row-x:hover { color: #C2410C; }
+        .row-x:hover { color: #E11D2B; }
         .hist-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #E5DFD3; border-radius: 999px; font-size: 13px; color: #1A1A1A; background: #fff; cursor: pointer; }
         .hist-chip:hover { border-color: #1A1A1A; }
         .drawer-empty { color: #6B6258; font-size: 13px; padding: 6px 0; }
         .drawer-clear { font-size: 12px; color: #6B6258; text-decoration: underline; text-decoration-color: #E5DFD3; background: 0; border: 0; cursor: pointer; }
-        .drawer-clear:hover { color: #C2410C; }
+        .drawer-clear:hover { color: #E11D2B; }
 
         .notfound { text-align: center; padding: 80px 20px 100px; }
-        .notfound-code { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 92px; font-weight: 700; color: #C2410C; line-height: 1; }
+        .notfound-code { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 92px; font-weight: 700; color: #E11D2B; line-height: 1; }
         .notfound-msg { color: #6B6258; font-size: 18px; margin: 14px 0 26px; }
 
         .recent-row { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -499,7 +500,7 @@
         .chip-del { display: flex; align-items: center; border: 1px solid #E5DFD3; border-left: 0; background: #fff; color: #B0A795; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
         /* მთელი chip ერთად რეაგირებს hover-ზე — ნახევრად outline აღარ ჩანს */
         .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del { border-color: #1A1A1A; }
-        .chip-wrap:hover .chip-del { color: #C2410C; }
+        .chip-wrap:hover .chip-del { color: #E11D2B; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -518,7 +519,7 @@
             <div id="count-pill" class="count-pill hidden">
                 <span class="num" id="nav-listings-count">—</span>
             </div>
-            <button class="saved-trigger" onclick="openSaved()"><span>♥</span> <span data-i18n="saved_btn"></span> <span class="cnt" id="saved-count">0</span></button>
+            <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><span>♥</span> <span class="cnt" id="saved-count">0</span></button>
             <div class="flex items-center gap-1">
                 <button class="lang-btn" data-lang="ka">KA</button>
                 <span class="text-line">·</span>
@@ -556,7 +557,7 @@
                        data-i18n-placeholder="ph_query" autocomplete="off">
                 <button id="clear-search" class="clear-x hidden" type="button" aria-label="clear" onclick="clearSearchInput()">✕</button>
                 <button id="btn-search"
-                        class="bg-ink text-bg px-6 py-3 text-sm uppercase tracking-wider font-medium hover:bg-accent transition disabled:opacity-50"
+                        class="bg-accent text-white px-7 py-3 text-sm uppercase tracking-wider font-medium rounded-full hover:bg-accent-dark transition disabled:opacity-50"
                         data-i18n="btn_search"></button>
             </div>
 
