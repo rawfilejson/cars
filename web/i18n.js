@@ -18,7 +18,7 @@ const TRANSLATIONS = {
         saved_done: "შენახულია",
         saved_searches_h: "შენახული ძიებები",
 
-        hero_title: "იპოვე მანქანა — VIN-ით, ნომრით ან ტექსტით.",
+        hero_title: "იპოვე მანქანის გაყიდვის ისტორია.",
         hero_desc:
             "ქართული მანქანების სრული ბაზა — ეძებე VIN-ით, ნომრით " +
             "ან კონკრეტული აღწერით.",
@@ -95,8 +95,11 @@ const TRANSLATIONS = {
 
         section_description: "აღწერა",
         translate_btn: "თარგმნა",
+        translating: "ვთარგმნი",
+        translation: "თარგმანი",
         section_vin: "VIN",
         section_phone: "ტელეფონი",
+        section_seller: "გამყიდველი",
         see_more: "ვრცლად",
         see_less: "დაკეცვა",
 
@@ -139,7 +142,7 @@ const TRANSLATIONS = {
         saved_done: "Saved",
         saved_searches_h: "Saved searches",
 
-        hero_title: "Find a car — by VIN, plate, or text.",
+        hero_title: "Find a car's sales history.",
         hero_desc:
             "A unified index of Georgian car listings — searchable by VIN, " +
             "phone number, or a specific description.",
@@ -216,8 +219,11 @@ const TRANSLATIONS = {
 
         section_description: "Description",
         translate_btn: "Translate",
+        translating: "Translating",
+        translation: "Translation",
         section_vin: "VIN",
         section_phone: "Phone",
+        section_seller: "Seller",
         see_more: "See more",
         see_less: "See less",
 
