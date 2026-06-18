@@ -110,7 +110,7 @@
         .shell { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 22px; align-items: start; }
         .filters-toggle { display: none; }
         .sidebar { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 18px;
-            position: sticky; top: 16px; }
+            position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; overscroll-behavior: contain; }
 
         /* ===== custom rounded dropdown ===== */
         .cdd { position: relative; flex: 1 1 0; min-width: 0; }
@@ -125,7 +125,7 @@
         .cdd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cdd-chev { color: #8D99AE; font-size: 11px; transition: transform .15s; flex-shrink: 0; }
         .cdd.open .cdd-chev { transform: rotate(180deg); }
-        .cdd-panel { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 45;
+        .cdd-panel { display: none; position: fixed; z-index: 60;
             background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; box-shadow: 0 14px 36px rgba(43,45,66,.18);
             padding: 6px; max-height: 290px; overflow-y: auto; }
         .cdd.open .cdd-panel { display: block; animation: cddIn .14s ease both; }
@@ -133,6 +133,7 @@
         .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
+        .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .sidebar-head h3 { font-size: 16px; font-weight: 700; color: #2B2D42; }
         .sidebar .mt-5 { margin-top: 0; }
@@ -168,9 +169,18 @@
         .dt-ptop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .dt-title { font-size: 24px; font-weight: 800; letter-spacing: -.01em; color: #2B2D42; line-height: 1.15; }
         .dt-loc { color: #8D99AE; font-size: 14px; margin-top: 4px; }
-        .dt-pricebox { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; padding: 16px 18px; background: #F3F6F8; border-radius: 14px; }
-        .dt-price { font-size: 28px; font-weight: 800; color: #2B2D42; }
+        .dt-pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 2px; }
+        .dt-actions { display: flex; align-items: center; gap: 8px; }
+        .dt-fav { width: 40px; height: 40px; }
+        .dt-pricebox { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0; padding: 16px 20px; background: #FEF2F3; border: 1px solid #FBDADE; border-radius: 14px; }
+        .dt-price { font-size: 30px; font-weight: 800; color: #EF233C; letter-spacing: -.01em; }
         .dt-specs { border-top: 1px solid #DCE3EA; }
+        .dt-contact { margin-top: 18px; background: #F3F6F8; border-radius: 14px; padding: 4px 16px; }
+        .dt-cline { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2E8EE; font-size: 14px; }
+        .dt-cline:last-child { border-bottom: 0; }
+        .dt-clabel { color: #8D99AE; }
+        .dt-cval { font-weight: 700; color: #2B2D42; text-align: right; display: inline-flex; align-items: center; gap: 6px; }
+        .dt-cval.mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
         .dt-srow { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 14px; border-bottom: 1px solid #DCE3EA; }
         .dt-srow .k { color: #8D99AE; }
         .dt-srow .v { font-weight: 600; color: #2B2D42; text-align: right; }
@@ -432,10 +442,29 @@
 
         .desc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .desc-translate {
-            background: none; border: 0; padding: 0; cursor: pointer;
-            font-size: 12px; color: #8D99AE; text-transform: none; letter-spacing: 0;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: none; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer;
+            font-size: 12.5px; color: #8D99AE; transition: color .15s, background .15s, border-color .15s, transform .12s;
         }
-        .desc-translate:hover { color: #EF233C; }
+        .desc-translate:hover { color: #EF233C; border-color: #FBDADE; background: #FDE6E8; }
+        .desc-translate:active { transform: scale(.96); }
+        .desc-translate.is-on { color: #EF233C; border-color: #FBDADE; background: #FDE6E8; }
+        .tr-ic { flex-shrink: 0; }
+        .tr-pop { margin-top: 14px; border: 1px solid #DCE3EA; border-radius: 12px; background: #F8FAFB; overflow: hidden; animation: trIn .2s cubic-bezier(.2,.7,.2,1) both; }
+        @keyframes trIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+        .tr-pop-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-bottom: 1px solid #DCE3EA; font-size: 11px; color: #8D99AE; text-transform: uppercase; letter-spacing: .06em; }
+        .tr-pop-x { background: none; border: 0; color: #8D99AE; cursor: pointer; font-size: 14px; line-height: 1; transition: color .15s; }
+        .tr-pop-x:hover { color: #EF233C; }
+        .tr-pop-body { padding: 14px; font-size: 14.5px; line-height: 1.7; color: #2B2D42; white-space: pre-wrap; }
+        .tr-pop-load { padding: 14px; color: #8D99AE; font-size: 13px; }
+
+        /* პატარა press-ანიმაცია ყველა ღილაკზე */
+        .btn-search, .apply-btn, .dt-call, .dt-source, .chip, .pager-btn, .detail-btn,
+        .save-btn, .saved-trigger, .cdd-btn, .filter-clear, .dt-thumb {
+            transition: transform .12s ease, background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+        }
+        .btn-search:active, .apply-btn:active, .dt-call:active, .dt-source:active, .chip:active,
+        .pager-btn:active, .detail-btn:active, .saved-trigger:active, .cdd-btn:active { transform: scale(.96); }
         .description {
             color: #2B2D42; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
@@ -519,8 +548,11 @@
         .rcard-title { font-size: 19px; font-weight: 700; color: #2B2D42; letter-spacing: -.01em; line-height: 1.2; }
         .rcard-title:hover { color: #EF233C; }
         .rcard-loc { color: #8D99AE; font-size: 13px; margin-top: 3px; }
-        .rcard-specs { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0; }
-        .spec-pill { background: #F3F6F8; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: #2B2D42; }
+        .rcard-specs { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 9px; }
+        .rcard-vin { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A9B4C2; letter-spacing: .03em; margin-bottom: 10px; }
+        .rcard-vin span { color: #8D99AE; }
+        .spec-pill { display: inline-flex; align-items: center; gap: 5px; background: #F3F6F8; border-radius: 999px; padding: 5px 11px; font-size: 12.5px; color: #2B2D42; }
+        .pill-ic { width: 14px; height: 14px; color: #8D99AE; flex-shrink: 0; }
         .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
         .rcard-price { font-size: 23px; font-weight: 800; color: #2B2D42; }
         .rcard-badges { display: flex; gap: 7px; flex-shrink: 0; align-items: center; }
@@ -864,6 +896,8 @@
     document.addEventListener('langchange', () => {
         loadStats();
         refillFacets();
+        refreshDropdowns();
+        renderRecent();
         if (parseRoute().view === 'detail' && _detailCar) {
             renderDetail(_detailCar);
             return;
@@ -995,7 +1029,6 @@
         }
         updateFilterResets();
         refreshDropdowns();
-        if (lastResponse) doSearch();
     };
 
     function updateFilterResets() {
@@ -1018,10 +1051,19 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        document.getElementById('f-brand').insertAdjacentHTML('beforeend',
-            Object.keys(_makes).map(n =>
-                `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''));
+        const all = Object.keys(_makes);
+        const pinned = POPULAR_BRANDS.filter(b => _makes[b]);
+        const rest = all.filter(b => !pinned.includes(b));
+        const opt = (n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
+        let html = pinned.map(opt).join('');
+        if (pinned.length && rest.length) html += '<option disabled>·</option>';
+        html += rest.map(opt).join('');
+        const brand = document.getElementById('f-brand');
+        brand.insertAdjacentHTML('beforeend', html);
+        if (brand._cdd) brand._cdd.render();
     }
+
+    const POPULAR_BRANDS = ['BMW', 'Mercedes-Benz', 'Toyota', 'Hyundai', 'Ford', 'Honda', 'Lexus', 'Nissan', 'Volkswagen', 'Chevrolet'];
 
     let _facets = {};
 
@@ -1061,12 +1103,13 @@
         runBrandSearch();
     }
 
+    // ბრენდი/მოდელი ანახლებს ძიების ტექსტს — ძებნა მხოლოდ ღილაკზე ხდება (auto-search არა)
     function runBrandSearch() {
         const brand = document.getElementById('f-brand').value;
         const model = document.getElementById('f-model').value;
-        if (!brand) return;
-        document.getElementById('search-input').value = [brand, model].filter(Boolean).join(' ');
-        doSearch();
+        const el = document.getElementById('search-input');
+        if (brand) el.value = [brand, model].filter(Boolean).join(' ');
+        el.dispatchEvent(new Event('input'));
     }
 
     document.getElementById('f-brand').addEventListener('change', onBrandChange);
@@ -1163,16 +1206,10 @@
     document.querySelectorAll('#search-input, .filter-input, .filter-select').forEach((el) => {
         el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
     });
+    // ფილტრის შეცვლა მხოლოდ reset-ღილაკებს და count-ს ანახლებს — ძებნა მხოლოდ ღილაკზე
     document.querySelectorAll('.filter-input, .filter-select').forEach((el) => {
         el.addEventListener('change', updateFilterResets);
         el.addEventListener('input', updateFilterResets);
-    });
-    document.getElementById('f-sort').addEventListener('change', () => {
-        if (lastResponse) doSearch();
-    });
-    // ფასეტ-ფილტრის შეცვლა — თუ უკვე არის შედეგი, მაშინვე ხელახლა ვეძებთ (auto.ru-ს მსგავსად)
-    document.querySelectorAll('.facet-select').forEach((el) => {
-        el.addEventListener('change', () => { if (lastResponse) doSearch(); });
     });
 
     window.goToPage = function (page) {
@@ -1388,15 +1425,42 @@
         return s;
     }
 
+    // სათაური დუბლირებული სიტყვებით (ბინძური წყარო: manufacturer და model ერთი და იგივე)
+    function carTitle(car) {
+        const words = [car.manufacturer, car.model].filter(Boolean).join(' ').split(/\s+/);
+        const seen = new Set();
+        const out = [];
+        for (const w of words) {
+            const k = w.toLowerCase();
+            if (k && !seen.has(k)) { seen.add(k); out.push(w); }
+        }
+        let title = out.join(' ');
+        if (car.year) title += ' ' + car.year;
+        return title;
+    }
+
+    const _PIC = (d) => `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    const _PILL_IC = {
+        body:  _PIC('<path d="M5 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M5 17h-2v-5l2-4h9l4 4h1a1 1 0 0 1 1 1v4h-2M9 17h6"/>'),
+        gauge: _PIC('<path d="M13.4 13.4l2.6 -2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>'),
+        engine:_PIC('<path d="M6 9v6M9 6v3M9 15v3M6 12h-3M18 8h2a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-2l-3 3h-5a1 1 0 0 1 -1 -1v-9a1 1 0 0 1 1 -1h5z"/>'),
+        bolt:  _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>'),
+        fuel:  _PIC('<path d="M12 3c3 4 5 6.4 5 9a5 5 0 0 1 -10 0c0 -2.6 2 -5 5 -9z"/>'),
+        gear:  _PIC('<path d="M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0 -6"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1 .1a2 2 0 1 1 -2.8 2.8l-.1 -.1a1.6 1.6 0 0 0 -2.7 1.1v.2a2 2 0 1 1 -4 0v-.1a1.6 1.6 0 0 0 -2.7 -1.2l-.1 .1a2 2 0 1 1 -2.8 -2.8l.1 -.1a1.6 1.6 0 0 0 -1.1 -2.7h-.2a2 2 0 1 1 0 -4h.1a1.6 1.6 0 0 0 1.2 -2.7l-.1 -.1a2 2 0 1 1 2.8 -2.8l.1 .1a1.6 1.6 0 0 0 1.8 .3h.1a1.6 1.6 0 0 0 1 -1.5v-.2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.2l.1 -.1a2 2 0 1 1 2.8 2.8l-.1 .1a1.6 1.6 0 0 0 -.3 1.8v.1a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0 -1.5 1z"/>'),
+        drive: _PIC('<path d="M12 4a8 8 0 1 0 0 16a8 8 0 0 0 0 -16"/><path d="M12 4v16M4 12h16"/>'),
+    };
+
     function carSpecPills(car) {
-        const km = getLang() === 'en' ? ' km' : ' კმ';
+        const en = getLang() === 'en';
         const pills = [];
-        if (car.mileage_km)      pills.push(car.mileage_km.toLocaleString() + km);
-        if (car.engine_volume_l) pills.push(car.engine_volume_l + ' L');
-        if (car.engine_type)     pills.push(tval(car.engine_type));
-        if (car.gearbox)         pills.push(tval(car.gearbox));
-        if (car.drive_wheels)    pills.push(tval(car.drive_wheels));
-        return pills.map(x => `<span class="spec-pill">${escapeHtml(x)}</span>`).join('');
+        if (car.body_type)       pills.push([_PILL_IC.body, tval(car.body_type)]);
+        if (car.mileage_km)      pills.push([_PILL_IC.gauge, car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
+        if (car.engine_volume_l) pills.push([_PILL_IC.engine, car.engine_volume_l + ' L']);
+        if (car.power_hp)        pills.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.')]);
+        if (car.engine_type)     pills.push([_PILL_IC.fuel, tval(car.engine_type)]);
+        if (car.gearbox)         pills.push([_PILL_IC.gear, tval(car.gearbox)]);
+        if (car.drive_wheels)    pills.push([_PILL_IC.drive, tval(car.drive_wheels)]);
+        return pills.map(([ic, x]) => `<span class="spec-pill">${ic}${escapeHtml(x)}</span>`).join('');
     }
 
     function renderResults(data) {
@@ -1421,7 +1485,7 @@
 
         results.innerHTML = data.results.map((car, i) => {
             const cardId = `c${i}`;
-            const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
+            const title = carTitle(car);
             const slides = buildSlides(car);
             _slidesByCard[cardId] = slides;
             const carKey = `${car.source}-${car.source_id}`;
@@ -1444,6 +1508,7 @@
                       <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
                     </div>
                     <div class="rcard-specs">${carSpecPills(car)}</div>
+                    ${car.vin ? `<div class="rcard-vin">VIN <span>${escapeHtml(car.vin)}</span></div>` : ''}
                     <div class="rcard-bot">
                       <div class="rcard-price">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—'}</div>
                       <div class="rcard-badges">${customsBadge}<span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span></div>
@@ -1486,24 +1551,41 @@
         if (!desc) return '';
         const long = desc.length > 180 || (desc.match(/\n/g) || []).length > 4;
         return `
-            <div class="border-t border-line pt-4 mb-4">
-              <div class="desc-head mb-2">
+            <div class="desc-block">
+              <div class="desc-head">
                 <span class="spec-label">${t('section_description')}</span>
-                <button class="desc-translate" onclick="translateDesc(this)">${t('translate_btn')} ↗</button>
+                <button class="desc-translate" onclick="translateDesc(this)" title="${t('translate_btn')}">
+                  <svg class="tr-ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M11.5 21l4.5 -11l4.5 11"/><path d="M14.5 17.5l4.5 0"/></svg>
+                  <span>${t('translate_btn')}</span>
+                </button>
               </div>
               <div class="description${long ? ' clamped' : ''}">${escapeHtml(desc)}</div>
               ${long ? `<button class="see-more" onclick="toggleDesc(this)">${t('see_more')}</button>` : ''}
+              <div class="tr-pop" hidden></div>
             </div>`;
     }
 
-    // აღწერას Google Translate-ში ხსნის მიმდინარე ენაზე (ტექსტი public-ია)
-    window.translateDesc = function (btn) {
-        const box = btn.closest('div').parentElement.querySelector('.description');
-        const text = (box && box.textContent || '').trim();
+    // აღწერას ადგილზევე თარგმნის (Google Translate gtx endpoint) — ლამაზი pop-up
+    window.translateDesc = async function (btn) {
+        const block = btn.closest('.desc-block');
+        const box = block.querySelector('.description');
+        const pop = block.querySelector('.tr-pop');
+        const text = (box.textContent || '').trim();
         if (!text) return;
-        const url = 'https://translate.google.com/?sl=auto&tl=' +
-            encodeURIComponent(getLang()) + '&op=translate&text=' + encodeURIComponent(text);
-        window.open(url, '_blank', 'noopener');
+        if (!pop.hidden) { pop.hidden = true; btn.classList.remove('is-on'); return; }
+        btn.classList.add('is-on');
+        pop.hidden = false;
+        pop.innerHTML = `<div class="tr-pop-load">${t('translating')}…</div>`;
+        try {
+            const tl = getLang() === 'en' ? 'en' : 'ka';
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const out = (data[0] || []).map(s => s[0]).join('');
+            pop.innerHTML = `<div class="tr-pop-head"><span>${t('translation')}</span><button class="tr-pop-x" onclick="this.closest('.tr-pop').hidden=true" aria-label="close">✕</button></div><div class="tr-pop-body">${escapeHtml(out)}</div>`;
+        } catch (e) {
+            pop.innerHTML = `<div class="tr-pop-body">${t('err_unknown')}</div>`;
+        }
     };
 
     window.toggleDesc = function (btn) {
@@ -1622,7 +1704,7 @@
     function renderDetail(car) {
         _detailCar = car;
         _detailMainIdx = 0;
-        const title = [car.manufacturer, car.model, car.year].filter(Boolean).join(' ');
+        const title = carTitle(car);
         const slides = buildSlides(car);
         _detailSlides = slides;
         const km = getLang() === 'en' ? ' km' : ' კმ';
@@ -1659,11 +1741,23 @@
         const dateLine = car.posted_date && car.posted_date.trim()
             ? t('posted_on', { date: escapeHtml(car.posted_date.trim()) })
             : t('scraped_on_note', { date: formatDate(car.created_at) });
+        const carKey = `${car.source}-${car.source_id}`;
+        _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
+        const saved = isCarSaved(carKey);
+        const pills = carSpecPills(car);
+        const contact = [
+            car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
+            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button></span></div>` : '',
+            phones.length ? `<div class="dt-cline"><span class="dt-clabel">${t('section_phone')}</span><span class="dt-cval">${phones.map(p => escapeHtml(p)).join(', ')}</span></div>` : '',
+        ].filter(Boolean).join('');
 
         document.getElementById('results').innerHTML = `
             <div class="dt-bar">
               <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
-              <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
+              <div class="dt-actions">
+                <button class="save-btn dt-fav ${saved ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${saved ? '♥' : '♡'}</button>
+                <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
+              </div>
             </div>
             <div class="dt-grid">
               ${gallery}
@@ -1675,11 +1769,11 @@
                   </div>
                   <span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span>
                 </div>
+                ${pills ? `<div class="dt-pills">${pills}</div>` : ''}
                 <div class="dt-pricebox"><span class="dt-price">${price}</span>${customs}</div>
                 <div class="dt-specs">${specs.join('')}</div>
-                ${car.vin ? `<div class="dt-vin"><span class="spec-label">${t('section_vin')}</span> <code>${escapeHtml(car.vin)}</code><button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button></div>` : ''}
                 ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
-                ${car.seller_name ? `<div class="dt-seller">${escapeHtml(car.seller_name)}</div>` : ''}
+                ${contact ? `<div class="dt-contact">${contact}</div>` : ''}
                 ${car.url ? `<a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="dt-source">${t('detail_open_source')} ↗</a>` : ''}
               </div>
             </div>
@@ -1704,8 +1798,11 @@
         if (_detailSlides.length) openLightbox(_detailSlides, idx);
     };
 
+    let _searchScrollY = 0;
+
     window.goToCarDetail = function (key, ev) {
         if (ev) ev.preventDefault();
+        _searchScrollY = window.scrollY;
         history.pushState({ view: 'detail', key }, '', `/car/${key}`);
         showDetailView(key);
         window.scrollTo(0, 0);
@@ -1716,7 +1813,7 @@
         if (ev) ev.preventDefault();
         history.pushState({ view: 'search' }, '', '/');
         showSearchView();
-        window.scrollTo(0, 0);
+        requestAnimationFrame(() => window.scrollTo(0, _searchScrollY));
         return false;
     };
 
@@ -1921,9 +2018,9 @@
 
     window.addEventListener('popstate', () => {
         const route = parseRoute();
-        if (route.view === 'detail') showDetailView(route.key);
+        if (route.view === 'detail') { showDetailView(route.key); window.scrollTo(0, 0); }
         else if (route.view === 'notfound') showNotFound();
-        else showSearchView();
+        else { showSearchView(); requestAnimationFrame(() => window.scrollTo(0, _searchScrollY)); }
     });
 
     (function bootRoute() {
@@ -1935,9 +2032,10 @@
     /* ===== custom rounded dropdowns — native <select> popups can't be styled ===== */
     function enhanceDropdowns() {
         document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
-        });
+        const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
+        document.addEventListener('click', closeAll);
+        window.addEventListener('scroll', closeAll, true);
+        window.addEventListener('resize', closeAll);
     }
 
     function enhanceSelect(sel) {
@@ -1957,15 +2055,25 @@
             wrap.classList.toggle('disabled', sel.disabled);
             const cur = sel.options[sel.selectedIndex];
             btn.innerHTML = `<span class="cdd-label">${escapeHtml(cur ? cur.textContent : '')}</span><span class="cdd-chev">▾</span>`;
-            panel.innerHTML = Array.from(sel.options).map((o, i) =>
-                `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`).join('');
+            panel.innerHTML = Array.from(sel.options).map((o, i) => o.disabled
+                ? `<div class="cdd-sep"></div>`
+                : `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`).join('');
+        };
+        // fixed-position panel — sidebar-ის overflow-ს არ ეჭიდება (clip არ ხდება)
+        const positionPanel = () => {
+            const r = btn.getBoundingClientRect();
+            const below = window.innerHeight - r.bottom - 12;
+            panel.style.left = r.left + 'px';
+            panel.style.width = r.width + 'px';
+            panel.style.top = (r.bottom + 6) + 'px';
+            panel.style.maxHeight = Math.min(290, Math.max(150, below)) + 'px';
         };
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sel.disabled) return;
             const wasOpen = wrap.classList.contains('open');
             document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
-            if (!wasOpen) { render(); wrap.classList.add('open'); panel.scrollTop = 0; }
+            if (!wasOpen) { render(); positionPanel(); wrap.classList.add('open'); panel.scrollTop = 0; }
         });
         panel.addEventListener('click', (e) => {
             const opt = e.target.closest('.cdd-opt');

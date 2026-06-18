@@ -10,7 +10,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
-  "connect-src 'self' https://cars-api-w7pz.onrender.com https://cloudflareinsights.com https://static.cloudflareinsights.com",
+  "connect-src 'self' https://cars-api-w7pz.onrender.com https://cloudflareinsights.com https://static.cloudflareinsights.com https://translate.googleapis.com",
   "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
