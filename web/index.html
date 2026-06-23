@@ -104,8 +104,6 @@
             font-size: 15px; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: background .15s; }
         .btn-search:hover { background: #D90429; }
         .btn-search:disabled { opacity: .5; cursor: default; }
-        .hero-stats { margin-top: 14px; color: #8D99AE; font-size: 14px; }
-        .hero-stat b { color: #2B2D42; font-family: 'JetBrains Mono', monospace; }
 
         .shell { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 22px; align-items: start; }
         .filters-toggle { display: none; }
@@ -503,10 +501,6 @@
         .card-title-link:hover { color: #EF233C; }
 
 
-        .detail-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
-        }
         .detail-btn {
             display: inline-flex; align-items: center; justify-content: center;
             background: #fff; border: 1px solid #DCE3EA; color: #8D99AE;
@@ -527,34 +521,6 @@
         .footer-link { color: #2B2D42; font-size: 14px; transition: color .12s; }
         .footer-link:hover { color: #EF233C; }
 
-        .detail-title { font-size: 32px; line-height: 1.1; }
-        @media (min-width: 640px) { .detail-title { font-size: 40px; } }
-
-
-        .gallery {
-            display: grid; gap: 8px; grid-template-columns: 1fr;
-            margin: 24px 0;
-        }
-        @media (min-width: 640px) { .gallery { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
-        @media (min-width: 900px) { .gallery { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
-        .gallery-tile {
-            aspect-ratio: 4/3; overflow: hidden; cursor: pointer;
-            background: #2B2D42; border: 0; padding: 0;
-        }
-        .gallery-tile img {
-            width: 100%; height: 100%; object-fit: cover; display: block;
-            transition: transform 200ms;
-        }
-        .gallery-tile:hover img { transform: scale(1.03); }
-        .gallery-tile.is-video {
-            position: relative;
-        }
-        .gallery-tile.is-video::after {
-            content: '▶'; position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            color: #EDF2F4; font-size: 32px;
-            background: rgba(0,0,0,0.25); pointer-events: none;
-        }
         /* product polish — elevation, motion, quick chips */
         #results .rcard { animation: cardIn .42s cubic-bezier(.2,.7,.2,1) both; }
         @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -1254,10 +1220,6 @@
             .replace(/'/g, '&#39;');
     }
 
-    function specRow(label, value) {
-        return `<div class="spec-label">${escapeHtml(label)}</div><div class="spec-value">${escapeHtml(value)}</div>`;
-    }
-
     function splitPhones(phone) {
         if (!phone) return [];
         const digits = phone.replace(/\D/g, '');
@@ -1573,22 +1535,6 @@
         return slides;
     }
 
-    function priceRowHtml(car) {
-        const customsBadge = car.customs_cleared === true
-            ? `<span class="customs-badge customs-yes ml-auto">${t('cleared')}</span>`
-            : car.customs_cleared === false
-            ? `<span class="customs-badge customs-no ml-auto">${t('not_cleared')}</span>`
-            : '';
-        return `
-            <div class="flex items-baseline gap-3 mb-5">
-              <span class="font-mono text-2xl font-medium text-price">
-                ${car.price_amount > 0 ? car.price_amount.toLocaleString() : '—'}
-              </span>
-              <span class="text-muted text-sm uppercase tracking-wider">${escapeHtml(car.price_currency || '')}</span>
-              ${customsBadge}
-            </div>`;
-    }
-
     function descriptionHtml(desc) {
         if (!desc) return '';
         const long = desc.length > 180 || (desc.match(/\n/g) || []).length > 4;
@@ -1635,50 +1581,6 @@
         const clamped = desc.classList.toggle('clamped');
         btn.textContent = t(clamped ? 'see_more' : 'see_less');
     };
-
-    function carBodyHtml(car) {
-        const specs = [];
-        if (car.mileage_km)      specs.push(specRow(t('spec_mileage'), car.mileage_km.toLocaleString() + ' km'));
-        if (car.engine_volume_l) specs.push(specRow(t('spec_engine'),  car.engine_volume_l + ' L'));
-        if (car.engine_type)     specs.push(specRow(t('spec_fuel'),    tval(car.engine_type)));
-        if (car.gearbox)         specs.push(specRow(t('spec_gearbox'), tval(car.gearbox)));
-        if (car.drive_wheels)    specs.push(specRow(t('spec_drive'),   tval(car.drive_wheels)));
-        if (car.color)           specs.push(specRow(t('spec_color'),   tval(car.color)));
-        if (car.steering)        specs.push(specRow(t('spec_steering'), tval(car.steering)));
-
-        const phones = splitPhones(car.phone || '');
-        const phoneBlock = phones.length ? `
-            <div class="border-t border-line pt-4 mb-4">
-              <div class="spec-label mb-2">${t('section_phone')}</div>
-              <div class="phone-list">
-                ${phones.map(p => `<a href="tel:${escapeHtml(p.replace(/\s/g, ''))}">${escapeHtml(p)}</a>`).join('')}
-              </div>
-              ${car.seller_name ? `<div class="text-muted text-xs mt-2">${escapeHtml(car.seller_name)}</div>` : ''}
-            </div>` : '';
-
-        const hasPostedDate = car.posted_date && car.posted_date.trim();
-        const dateBlock = hasPostedDate
-            ? `<div class="meta-line">${t('posted_on', { date: escapeHtml(car.posted_date.trim()) })}</div>`
-            : `<div class="meta-note">${t('scraped_on_note', { date: formatDate(car.created_at) })}</div>`;
-
-        return `
-            ${specs.length ? `<div class="spec-grid mb-5">${specs.join('')}</div>` : ''}
-
-            ${descriptionHtml(car.description)}
-
-            ${car.vin ? `
-              <div class="border-t border-line pt-4 mb-4">
-                <div class="spec-label mb-2">${t('section_vin')}</div>
-                <code class="font-mono text-sm text-ink">${escapeHtml(car.vin)}</code><button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button>
-              </div>` : ''}
-
-            ${phoneBlock}
-
-            <div class="border-t border-line pt-4">
-              ${dateBlock}
-            </div>`;
-    }
-
 
     const _CAR_KEY_RE = /^\/car\/((?:autopapa|myauto)-\d+)\/?$/;
 

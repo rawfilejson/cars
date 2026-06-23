@@ -6,9 +6,6 @@ const TRANSLATIONS = {
         brand_sub: "მანქანების ბაზა",
         nav_listings_count: "{n} განცხადება",
         stat_cars: "მანქანა ბაზაში",
-        stat_free: "სრულიად უფასო",
-        stat_nosignup: "რეგისტრაცია არ სჭირდება",
-        saved_btn: "შენახული",
         saved_title: "შენახული",
         saved_cars_h: "მანქანები",
         recent_h: "ბოლო ძიებები",
@@ -122,19 +119,13 @@ const TRANSLATIONS = {
         detail_gallery:    "ფოტოები",
 
         footer_about: "განცხადებების არქივი.",
-        footer_terms: "წესები",
-        footer_privacy: "კონფიდენციალურობა",
         footer_legal: "წესები და კონფიდენციალურობა",
-        footer_contact: "კონტაქტი:",
     },
     en: {
         brand_name: "Car-DB",
         brand_sub: "Georgian car listings",
         nav_listings_count: "{n} listings",
         stat_cars: "cars indexed",
-        stat_free: "100% free",
-        stat_nosignup: "no sign-up",
-        saved_btn: "Saved",
         saved_title: "Saved",
         saved_cars_h: "Cars",
         recent_h: "Recent searches",
@@ -248,10 +239,7 @@ const TRANSLATIONS = {
         detail_gallery:    "Photos",
 
         footer_about: "Listings archive.",
-        footer_terms: "Terms",
-        footer_privacy: "Privacy",
         footer_legal: "Terms & Privacy",
-        footer_contact: "Contact:",
     },
 };
 
