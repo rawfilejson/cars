@@ -319,25 +319,20 @@
 
 
         .source-badge {
-            font-family: 'JetBrains Mono', monospace; font-size: 10px;
-            text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500;
-            padding: 2px 9px; border-radius: 999px; line-height: 1.7;
+            font-size: 11.5px; font-weight: 600; letter-spacing: .01em;
+            padding: 4px 11px; border-radius: 9px; line-height: 1.4; white-space: nowrap;
         }
-        .source-autopapa { color: #9A3412; background: #F4E5D9; }
-        .source-myauto   { color: #1E40AF; background: #E4ECFB; }
-
+        .source-autopapa { color: #9A3412; background: #F7EADF; }
+        .source-myauto   { color: #1E40AF; background: #E8EFFC; }
 
         .customs-badge {
             display: inline-flex; align-items: center; gap: 5px;
-            font-family: 'JetBrains Mono', monospace; font-size: 10px;
-            text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
-            padding: 2px 9px; border-radius: 999px; white-space: nowrap; line-height: 1.7;
+            font-size: 11.5px; font-weight: 600; letter-spacing: .01em;
+            padding: 4px 11px; border-radius: 9px; white-space: nowrap; line-height: 1.4;
         }
-        .customs-badge::before {
-            content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor;
-        }
+        .customs-badge svg { width: 13px; height: 13px; flex-shrink: 0; }
         .customs-yes { color: #15803D; background: #E5F5EB; }
-        .customs-no  { color: #B91C1C; background: #FAE8E8; }
+        .customs-no  { color: #B91C1C; background: #FBE9E9; }
 
 
         .card { border: 1px solid #DCE3EA; background: white; border-radius: 18px; overflow: hidden; transition: border-color 150ms, box-shadow 150ms; }
@@ -371,6 +366,22 @@
             letter-spacing: 0.05em;
             pointer-events: none;
         }
+        /* ფოტოს ისრები — fullscreen-ის გარეშე გადასვლა (ბარათზე და გვერდზე) */
+        .ph-nav {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
+            width: 34px; height: 34px; border-radius: 50%; border: 0;
+            background: rgba(255,255,255,.92); color: #2B2D42; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; line-height: 1; padding: 0 0 3px;
+            box-shadow: 0 2px 10px rgba(43,45,66,.28);
+            opacity: 0; transition: opacity .15s, background .15s, color .15s, transform .1s;
+        }
+        .carousel:hover .ph-nav, .dt-main:hover .ph-nav { opacity: 1; }
+        .ph-nav:hover { background: #fff; color: #EF233C; }
+        .ph-nav:active { transform: translateY(-50%) scale(.9); }
+        .ph-prev { left: 8px; }
+        .ph-next { right: 8px; }
+        @media (hover: none) { .ph-nav { opacity: .9; } }
 
 
         .thumb-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
@@ -528,9 +539,10 @@
         /* product polish — elevation, motion, quick chips */
         #results .rcard { animation: cardIn .42s cubic-bezier(.2,.7,.2,1) both; }
         @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        .rcard { display: flex; background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; overflow: hidden; margin-bottom: 14px; transition: box-shadow .15s, transform .15s; }
+        .rcard { display: flex; align-items: stretch; min-height: 188px; background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; overflow: hidden; margin-bottom: 14px; transition: box-shadow .15s, transform .15s; }
         .rcard:hover { box-shadow: 0 12px 34px rgba(43,45,66,.12); transform: translateY(-2px); }
-        .rcard-photo { width: 300px; flex-shrink: 0; }
+        .rcard-photo { width: 290px; flex-shrink: 0; align-self: stretch; position: relative; }
+        .rcard-photo .carousel { aspect-ratio: auto; height: 100%; min-height: 100%; }
         .rcard-body { flex: 1; min-width: 0; padding: 16px 20px; display: flex; flex-direction: column; }
         .rcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .rcard-title { font-size: 19px; font-weight: 700; color: #2B2D42; letter-spacing: -.01em; line-height: 1.2; }
@@ -539,10 +551,11 @@
         .rcard-specs { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 9px; }
         .rcard-vin { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A9B4C2; letter-spacing: .03em; margin-bottom: 10px; }
         .rcard-vin span { color: #8D99AE; }
-        .spec-pill { display: inline-flex; align-items: center; gap: 5px; background: #F3F6F8; border-radius: 999px; padding: 5px 11px; font-size: 12.5px; color: #2B2D42; }
-        .pill-ic { width: 14px; height: 14px; color: #8D99AE; flex-shrink: 0; }
+        .spec-pill { display: inline-flex; align-items: center; gap: 6px; background: #F3F6F8; border: 1px solid #E7ECF1; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #2B2D42; }
+        .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
+        .spec-pill:hover .pill-ic { color: #EF233C; }
         .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
-        .rcard-price { font-size: 23px; font-weight: 800; color: #2B2D42; }
+        .rcard-price { font-size: 25px; font-weight: 800; color: #2B2D42; letter-spacing: -.02em; }
         .rcard-badges { display: flex; gap: 7px; flex-shrink: 0; align-items: center; }
         @media (max-width: 560px) { .rcard { flex-direction: column; } .rcard-photo { width: 100%; } }
 
@@ -1292,25 +1305,30 @@
             ? `<div class="carousel-counter" id="${cardId}-counter">${t('photo_counter', { i: 1, n: slides.length })}</div>`
             : '';
 
+        const arrows = slides.length > 1 ? `
+                <button class="ph-nav ph-prev" onclick="event.stopPropagation(); cardSlideBy('${cardId}', -1)" aria-label="prev">‹</button>
+                <button class="ph-nav ph-next" onclick="event.stopPropagation(); cardSlideBy('${cardId}', 1)" aria-label="next">›</button>` : '';
         const main = `
             <div class="carousel w-full" id="${cardId}" data-index="0" onclick="openCardLightbox('${cardId}')">
                 <div class="carousel-stage" id="${cardId}-stage">${slideStage(slides[0])}</div>
+                ${arrows}
                 ${counter}
             </div>
         `;
 
-        if (slides.length === 1) return main;
-
-        const visible = slides.slice(0, 8);
-        const thumbsHtml = visible.map((s, i) => `
-            <button class="thumb ${i === 0 ? 'is-active' : ''} ${s.type === 'video' ? 'is-video' : ''}"
-                    onclick="event.stopPropagation(); switchCardSlide('${cardId}', ${i})">
-                <img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">
-            </button>
-        `).join('');
-
-        return main + `<div class="thumb-strip">${thumbsHtml}</div>`;
+        // ბარათზე thumb-strip აღარ — ისრები (‹ ›) და მთვლელი საკმარისია
+        return main;
     }
+
+    window.cardSlideBy = function (cardId, delta) {
+        const slides = _slidesByCard[cardId];
+        if (!slides || !slides.length) return;
+        const carousel = document.getElementById(cardId);
+        let idx = (+carousel.dataset.index || 0) + delta;
+        if (idx < 0) idx = slides.length - 1;
+        if (idx >= slides.length) idx = 0;
+        switchCardSlide(cardId, idx);
+    };
 
     window.switchCardSlide = function (cardId, idx) {
         const slides = _slidesByCard[cardId];
@@ -1448,27 +1466,78 @@
     }
 
     const _PIC = (d) => `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    // სტატიკური ხატულები
     const _PILL_IC = {
-        body:  _PIC('<path d="M5 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M5 17h-2v-5l2-4h9l4 4h1a1 1 0 0 1 1 1v4h-2M9 17h6"/>'),
-        gauge: _PIC('<path d="M13.4 13.4l2.6 -2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>'),
-        engine:_PIC('<path d="M6 9v6M9 6v3M9 15v3M6 12h-3M18 8h2a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-2l-3 3h-5a1 1 0 0 1 -1 -1v-9a1 1 0 0 1 1 -1h5z"/>'),
-        bolt:  _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>'),
-        fuel:  _PIC('<path d="M12 3c3 4 5 6.4 5 9a5 5 0 0 1 -10 0c0 -2.6 2 -5 5 -9z"/>'),
-        gear:  _PIC('<path d="M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0 -6"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1 .1a2 2 0 1 1 -2.8 2.8l-.1 -.1a1.6 1.6 0 0 0 -2.7 1.1v.2a2 2 0 1 1 -4 0v-.1a1.6 1.6 0 0 0 -2.7 -1.2l-.1 .1a2 2 0 1 1 -2.8 -2.8l.1 -.1a1.6 1.6 0 0 0 -1.1 -2.7h-.2a2 2 0 1 1 0 -4h.1a1.6 1.6 0 0 0 1.2 -2.7l-.1 -.1a2 2 0 1 1 2.8 -2.8l.1 .1a1.6 1.6 0 0 0 1.8 .3h.1a1.6 1.6 0 0 0 1 -1.5v-.2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.2l.1 -.1a2 2 0 1 1 2.8 2.8l-.1 .1a1.6 1.6 0 0 0 -.3 1.8v.1a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0 -1.5 1z"/>'),
-        drive: _PIC('<path d="M12 4a8 8 0 1 0 0 16a8 8 0 0 0 0 -16"/><path d="M12 4v16M4 12h16"/>'),
+        gauge:  _PIC('<path d="M13.4 13.4l2.6 -2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>'),
+        engine: _PIC('<rect x="9" y="3" width="6" height="6" rx="1"/><path d="M10 9v4M14 9v4"/><path d="M8.5 13h7v5a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1z"/>'),
+        bolt:   _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>'),
     };
+    // body-type — ფორმა ტიპის მიხედვით (სედანი / ჯიპი / ჰეტჩბეკი / უნივერსალი / პიკაპი / კუპე)
+    function _bodyIcon(v) {
+        const s = (v || '').toLowerCase();
+        if (/ჯიპ|ყველგ|კროსოვ|suv|jeep/.test(s))
+            return _PIC('<path d="M3 13l1.4-4.2A2 2 0 0 1 6.3 7.5h8.8a2 2 0 0 1 1.6.8l2.2 3 1.6.5a1.4 1.4 0 0 1 1 1.3V16h-2.2"/><path d="M3 16v-3h18M6 16h2m6 0h2"/><circle cx="8" cy="16.5" r="1.7"/><circle cx="16" cy="16.5" r="1.7"/>');
+        if (/ჰეტ|ჰეჩ|ჰეტჩ|hatch|ლიფტ/.test(s))
+            return _PIC('<path d="M3 16v-3l2.4-4.6A2 2 0 0 1 7.2 7.2h5.6l5 5.3h1a1.4 1.4 0 0 1 1.2 1.4V16h-1.5"/><path d="M3 16h2.5m5 0h8M13 7.5V13H3"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16" cy="16.5" r="1.7"/>');
+        if (/კუპე|coupe|კაბრ|convert|როდსტ/.test(s))
+            return _PIC('<path d="M3 16v-2l3.2-3.8c2-1 8-1 11 .6l2.8 2.4a1.4 1.4 0 0 1 1 1.3V16"/><path d="M3 16h3m5 0h10"/><circle cx="8" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
+        if (/უნივ|wagon|ფურგ|მინივ|van|მიკრო/.test(s))
+            return _PIC('<path d="M3 16V9.2A1.4 1.4 0 0 1 4.4 8h12.4l3.2 3.4V16h-2"/><path d="M3 16h2.5m5 0h9M9 8v8"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
+        if (/პიკაპ|pickup/.test(s))
+            return _PIC('<path d="M3 16v-4h7l1.4-3h3.2l1.4 3H21v4h-2"/><path d="M3 16h2m6 0h8"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
+        // სედანი (default)
+        return _PIC('<path d="M3 15v-1.6l2.2-3.4A2.4 2.4 0 0 1 7.2 8.8h6.5c.8 0 1.5.3 2 .9l2.4 2.8 1.9.6a1.3 1.3 0 0 1 1 1.3V15h-2"/><path d="M3 15h2.5m5 0h10M7.4 9v3.8H18"/><circle cx="7.5" cy="15.5" r="1.8"/><circle cx="16.5" cy="15.5" r="1.8"/>');
+    }
+    // საწვავი — ბენზინი/დიზელი=პისტოლეტი, ჰიბრიდი=წვეთი+ელვა, ელექტრო=ელვა, გაზი=წვეთი
+    function _fuelIcon(v) {
+        const s = (v || '').toLowerCase();
+        if (/ელექტ|electric|\bev\b/.test(s))
+            return _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>');
+        if (/ჰიბრ|hybrid/.test(s))
+            return _PIC('<path d="M12 3.5c2.8 3.8 4.6 6 4.6 8.5a4.6 4.6 0 0 1 -9.2 0c0 -2.5 1.8 -4.7 4.6 -8.5z"/><path d="M12.5 9l-2 3.2h2.4l-1.4 2.8" stroke-width="1.3"/>');
+        if (/გაზ|gas|lpg|cng|მეთან|პროპან/.test(s))
+            return _PIC('<path d="M12 3.5c2.8 3.8 4.6 6 4.6 8.5a4.6 4.6 0 0 1 -9.2 0c0 -2.5 1.8 -4.7 4.6 -8.5z"/>');
+        return _PIC('<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5L17 6.5"/>');
+    }
+    // გადაცემათა კოლოფი — gear-shift H-pattern
+    function _gearIcon(v) {
+        return _PIC('<circle cx="6" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="18" cy="5" r="1.6"/><path d="M6 6.6v4h12v-4M12 10.6v8.4M10 19h4"/>');
+    }
+    // წამყვანი თვლები — 4 თვალი, წამყვანი ღერძი მუქი
+    function _driveIcon(v) {
+        const s = (v || '').toLowerCase();
+        const on = '', off = ' opacity=".35"';
+        let tl = on, tr = on, bl = on, br = on;
+        if (/4x4|4wd|awd|ოთხ|სრულ|all|სავ/.test(s)) { /* ყველა მუქი */ }
+        else if (/უკან|rear|\brwd\b|უკანა/.test(s)) { tl = off; tr = off; }
+        else { bl = off; br = off; } // წინა (default)
+        return _PIC(`<rect x="4" y="4" width="6" height="6" rx="1.5"${tl}/><rect x="14" y="4" width="6" height="6" rx="1.5"${tr}/><rect x="4" y="14" width="6" height="6" rx="1.5"${bl}/><rect x="14" y="14" width="6" height="6" rx="1.5"${br}/>`);
+    }
 
     function carSpecPills(car) {
         const en = getLang() === 'en';
         const pills = [];
-        if (car.body_type)       pills.push([_PILL_IC.body, tval(car.body_type)]);
+        if (car.body_type)       pills.push([_bodyIcon(car.body_type), tval(car.body_type)]);
         if (car.mileage_km)      pills.push([_PILL_IC.gauge, car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
         if (car.engine_volume_l) pills.push([_PILL_IC.engine, car.engine_volume_l + ' L']);
         if (car.power_hp)        pills.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.')]);
-        if (car.engine_type)     pills.push([_PILL_IC.fuel, tval(car.engine_type)]);
-        if (car.gearbox)         pills.push([_PILL_IC.gear, tval(car.gearbox)]);
-        if (car.drive_wheels)    pills.push([_PILL_IC.drive, tval(car.drive_wheels)]);
+        if (car.engine_type)     pills.push([_fuelIcon(car.engine_type), tval(car.engine_type)]);
+        if (car.gearbox)         pills.push([_gearIcon(car.gearbox), tval(car.gearbox)]);
+        if (car.drive_wheels)    pills.push([_driveIcon(car.drive_wheels), tval(car.drive_wheels)]);
         return pills.map(([ic, x]) => `<span class="spec-pill">${ic}${escapeHtml(x)}</span>`).join('');
+    }
+
+    function customsBadgeHtml(car) {
+        if (car.customs_cleared === true)
+            return `<span class="customs-badge customs-yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4l10 -11"/></svg>${t('cleared')}</span>`;
+        if (car.customs_cleared === false)
+            return `<span class="customs-badge customs-no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12M6 6l12 12"/></svg>${t('not_cleared')}</span>`;
+        return '';
+    }
+
+    function sourceBadgeHtml(car) {
+        const name = car.source === 'myauto' ? 'myauto.ge' : car.source === 'autopapa' ? 'autopapa.ge' : car.source;
+        return `<span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(name)}</span>`;
     }
 
     function renderResults(data) {
@@ -1499,10 +1568,7 @@
             const carKey = `${car.source}-${car.source_id}`;
             _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
 
-            const customsBadge = car.customs_cleared === true
-                ? `<span class="customs-badge customs-yes">${t('cleared')}</span>`
-                : car.customs_cleared === false
-                ? `<span class="customs-badge customs-no">${t('not_cleared')}</span>` : '';
+            const customsBadge = customsBadgeHtml(car);
             return `
                 <article class="rcard" style="animation-delay:${Math.min(i, 8) * 45}ms">
                   <div class="rcard-photo">${photoBlockHtml(cardId, slides)}</div>
@@ -1519,7 +1585,7 @@
                     ${car.vin ? `<div class="rcard-vin">VIN <span>${escapeHtml(car.vin)}</span></div>` : ''}
                     <div class="rcard-bot">
                       <div class="rcard-price">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—'}</div>
-                      <div class="rcard-badges">${customsBadge}<span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span></div>
+                      <div class="rcard-badges">${customsBadge}${sourceBadgeHtml(car)}</div>
                     </div>
                   </div>
                 </article>`;
@@ -1678,7 +1744,9 @@
             <div class="dt-gallery">
               <button class="dt-main" id="dt-main-btn" onclick="openDetailLightbox(0)">
                 <img id="dt-main-img" src="${escapeHtml(mainSrc(slides[0]))}" alt="" decoding="async" onerror="this.style.opacity=.2">
-                ${slides.length > 1 ? `<span class="dt-count">${t('photo_counter', { i: 1, n: slides.length })}</span>` : ''}
+                ${slides.length > 1 ? `<span class="dt-count">${t('photo_counter', { i: 1, n: slides.length })}</span>
+                <span class="ph-nav ph-prev" onclick="event.stopPropagation(); dtSlideBy(-1)" role="button" aria-label="prev">‹</span>
+                <span class="ph-nav ph-next" onclick="event.stopPropagation(); dtSlideBy(1)" role="button" aria-label="next">›</span>` : ''}
               </button>
               ${slides.length > 1 ? `<div class="dt-thumbs">${slides.slice(0, 14).map((s, i) =>
                   `<button class="dt-thumb ${i === 0 ? 'on' : ''}" onclick="dtSetMain(${i})"><img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" onerror="this.style.opacity=.2"></button>`).join('')}</div>` : ''}
@@ -1699,8 +1767,7 @@
         const calls = phones.length
             ? phones.map(p => `<a class="dt-call" href="tel:${escapeHtml(p.replace(/\s/g, ''))}">☎ ${escapeHtml(p)}</a>`).join('')
             : '';
-        const customs = car.customs_cleared === true ? `<span class="customs-badge customs-yes">${t('cleared')}</span>`
-            : car.customs_cleared === false ? `<span class="customs-badge customs-no">${t('not_cleared')}</span>` : '';
+        const customs = customsBadgeHtml(car);
         const price = car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—';
         const dateLine = car.posted_date && car.posted_date.trim()
             ? t('posted_on', { date: escapeHtml(car.posted_date.trim()) })
@@ -1731,7 +1798,7 @@
                     <h1 class="dt-title">${escapeHtml(title)}</h1>
                     ${car.location ? `<p class="dt-loc">${escapeHtml(tval(car.location))}</p>` : ''}
                   </div>
-                  <span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(car.source)}</span>
+                  ${sourceBadgeHtml(car)}
                 </div>
                 ${pills ? `<div class="dt-pills">${pills}</div>` : ''}
                 <div class="dt-pricebox"><span class="dt-price">${price}</span>${customs}</div>
@@ -1761,6 +1828,14 @@
         const c = document.querySelector('.dt-count');
         if (c) c.textContent = t('photo_counter', { i: i + 1, n: _detailSlides.length });
         document.querySelectorAll('.dt-thumb').forEach((el, j) => el.classList.toggle('on', j === i));
+    };
+
+    window.dtSlideBy = function (delta) {
+        if (_detailSlides.length < 2) return;
+        let i = _detailMainIdx + delta;
+        if (i < 0) i = _detailSlides.length - 1;
+        if (i >= _detailSlides.length) i = 0;
+        dtSetMain(i);
     };
 
     window.openDetailLightbox = function (idx) {
