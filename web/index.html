@@ -2051,8 +2051,20 @@
         document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
         const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
         document.addEventListener('click', closeAll);
-        window.addEventListener('scroll', closeAll, true);
         window.addEventListener('resize', closeAll);
+        // სქროლზე ღია panel-ს ღილაკზე ვადევნებთ თვალს (იხურება მხოლოდ თუ ღილაკი ეკრანს გადის)
+        window.addEventListener('scroll', () => {
+            const open = document.querySelector('.cdd.open');
+            if (!open) return;
+            const btn = open.querySelector('.cdd-btn'), panel = open.querySelector('.cdd-panel');
+            const r = btn.getBoundingClientRect();
+            if (r.bottom < 4 || r.top > window.innerHeight - 4) { open.classList.remove('open'); return; }
+            const below = window.innerHeight - r.bottom - 12;
+            panel.style.left = r.left + 'px';
+            panel.style.width = r.width + 'px';
+            panel.style.top = (r.bottom + 6) + 'px';
+            panel.style.maxHeight = Math.min(290, Math.max(150, below)) + 'px';
+        }, true);
     }
 
     function enhanceSelect(sel) {
