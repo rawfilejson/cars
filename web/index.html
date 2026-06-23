@@ -457,7 +457,11 @@
         .tr-ic { flex-shrink: 0; }
         .tr-pop { margin-top: 14px; border: 1px solid #DCE3EA; border-radius: 12px; background: #F8FAFB; overflow: hidden; animation: trIn .2s cubic-bezier(.2,.7,.2,1) both; }
         @keyframes trIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-        .tr-pop-head { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-bottom: 1px solid #DCE3EA; font-size: 11px; color: #8D99AE; text-transform: uppercase; letter-spacing: .06em; }
+        .tr-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-bottom: 1px solid #DCE3EA; }
+        .tr-langs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .tr-lang { background: none; border: 1px solid #DCE3EA; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: #8D99AE; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+        .tr-lang:hover { color: #EF233C; }
+        .tr-lang.on { background: #FDE6E8; color: #D90429; border-color: #FBDADE; font-weight: 600; }
         .tr-pop-x { background: none; border: 0; color: #8D99AE; cursor: pointer; font-size: 14px; line-height: 1; transition: color .15s; }
         .tr-pop-x:hover { color: #EF233C; }
         .tr-pop-body { padding: 14px; font-size: 14.5px; line-height: 1.7; color: #2B2D42; white-space: pre-wrap; }
@@ -1553,28 +1557,43 @@
             </div>`;
     }
 
-    // აღწერას ადგილზევე თარგმნის (Google Translate gtx endpoint) — ლამაზი pop-up
-    window.translateDesc = async function (btn) {
+    // აღწერას ადგილზევე თარგმნის — ენის არჩევანით (English / Русский / Қазақша)
+    const _TR_LANGS = [['en', 'English'], ['ru', 'Русский'], ['kk', 'Қазақша']];
+    window.translateDesc = function (btn) {
         const block = btn.closest('.desc-block');
-        const box = block.querySelector('.description');
         const pop = block.querySelector('.tr-pop');
-        const text = (box.textContent || '').trim();
-        if (!text) return;
         if (!pop.hidden) { pop.hidden = true; btn.classList.remove('is-on'); return; }
         btn.classList.add('is-on');
         pop.hidden = false;
-        pop.innerHTML = `<div class="tr-pop-load">${t('translating')}…</div>`;
+        pop.innerHTML =
+            `<div class="tr-pop-head">
+               <div class="tr-langs">${_TR_LANGS.map((l, i) => `<button class="tr-lang${i === 0 ? ' on' : ''}" data-tl="${l[0]}">${l[1]}</button>`).join('')}</div>
+               <button class="tr-pop-x" onclick="this.closest('.tr-pop').hidden=true" aria-label="close">✕</button>
+             </div>
+             <div class="tr-pop-body" id="tr-body"></div>`;
+        pop.querySelectorAll('.tr-lang').forEach((b) => b.onclick = () => {
+            pop.querySelectorAll('.tr-lang').forEach((x) => x.classList.toggle('on', x === b));
+            doTranslate(block, b.dataset.tl);
+        });
+        doTranslate(block, 'en');
+    };
+
+    async function doTranslate(block, tl) {
+        const box = block.querySelector('.description');
+        const body = block.querySelector('.tr-pop-body');
+        const text = (box.textContent || '').trim();
+        if (!text || !body) return;
+        body.innerHTML = `<span class="tr-pop-load">${t('translating')}…</span>`;
         try {
-            const tl = getLang() === 'en' ? 'en' : 'ka';
             const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
             const resp = await fetch(url);
             const data = await resp.json();
-            const out = (data[0] || []).map(s => s[0]).join('');
-            pop.innerHTML = `<div class="tr-pop-head"><span>${t('translation')}</span><button class="tr-pop-x" onclick="this.closest('.tr-pop').hidden=true" aria-label="close">✕</button></div><div class="tr-pop-body">${escapeHtml(out)}</div>`;
+            const out = (data[0] || []).map((s) => s[0]).join('');
+            body.textContent = out || t('err_unknown');
         } catch (e) {
-            pop.innerHTML = `<div class="tr-pop-body">${t('err_unknown')}</div>`;
+            body.textContent = t('err_unknown');
         }
-    };
+    }
 
     window.toggleDesc = function (btn) {
         const desc = btn.parentElement.querySelector('.description');
@@ -2047,23 +2066,37 @@
     })();
 
     /* ===== custom rounded dropdowns — native <select> popups can't be styled ===== */
+    // panel-ს ღილაკთან ათავსებს; თუ ქვემოთ ადგილი არ არის — ზემოთ გადააბრუნებს
+    function _placeCddPanel(btn, panel) {
+        const r = btn.getBoundingClientRect();
+        panel.style.left = r.left + 'px';
+        panel.style.width = r.width + 'px';
+        const below = window.innerHeight - r.bottom - 10;
+        const above = r.top - 10;
+        const ph = Math.min(300, panel.scrollHeight || 300);
+        if (below >= ph || below >= above) {
+            panel.style.top = (r.bottom + 6) + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.maxHeight = Math.max(120, Math.min(300, below)) + 'px';
+        } else {
+            panel.style.top = 'auto';
+            panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+            panel.style.maxHeight = Math.max(120, Math.min(300, above)) + 'px';
+        }
+    }
+
     function enhanceDropdowns() {
         document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
         const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
         document.addEventListener('click', closeAll);
         window.addEventListener('resize', closeAll);
-        // სქროლზე ღია panel-ს ღილაკზე ვადევნებთ თვალს (იხურება მხოლოდ თუ ღილაკი ეკრანს გადის)
         window.addEventListener('scroll', () => {
             const open = document.querySelector('.cdd.open');
             if (!open) return;
             const btn = open.querySelector('.cdd-btn'), panel = open.querySelector('.cdd-panel');
             const r = btn.getBoundingClientRect();
             if (r.bottom < 4 || r.top > window.innerHeight - 4) { open.classList.remove('open'); return; }
-            const below = window.innerHeight - r.bottom - 12;
-            panel.style.left = r.left + 'px';
-            panel.style.width = r.width + 'px';
-            panel.style.top = (r.bottom + 6) + 'px';
-            panel.style.maxHeight = Math.min(290, Math.max(150, below)) + 'px';
+            _placeCddPanel(btn, panel);
         }, true);
     }
 
@@ -2088,21 +2121,12 @@
                 ? `<div class="cdd-sep"></div>`
                 : `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`).join('');
         };
-        // fixed-position panel — sidebar-ის overflow-ს არ ეჭიდება (clip არ ხდება)
-        const positionPanel = () => {
-            const r = btn.getBoundingClientRect();
-            const below = window.innerHeight - r.bottom - 12;
-            panel.style.left = r.left + 'px';
-            panel.style.width = r.width + 'px';
-            panel.style.top = (r.bottom + 6) + 'px';
-            panel.style.maxHeight = Math.min(290, Math.max(150, below)) + 'px';
-        };
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sel.disabled) return;
             const wasOpen = wrap.classList.contains('open');
             document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
-            if (!wasOpen) { render(); positionPanel(); wrap.classList.add('open'); panel.scrollTop = 0; }
+            if (!wasOpen) { render(); wrap.classList.add('open'); _placeCddPanel(btn, panel); panel.scrollTop = 0; }
         });
         panel.addEventListener('click', (e) => {
             const opt = e.target.closest('.cdd-opt');
