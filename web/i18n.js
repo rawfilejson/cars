@@ -12,6 +12,7 @@ const TRANSLATIONS = {
         saved_title: "შენახული",
         saved_cars_h: "მანქანები",
         recent_h: "ბოლო ძიებები",
+        viewed_h: "ნანახი მანქანები",
         no_saved: "ჯერ არაფერი შეგინახავს",
         clear_all: "გასუფთავება",
         save_search: "ამ ძიების შენახვა",
@@ -123,6 +124,7 @@ const TRANSLATIONS = {
         footer_about: "განცხადებების არქივი.",
         footer_terms: "წესები",
         footer_privacy: "კონფიდენციალურობა",
+        footer_legal: "წესები და კონფიდენციალურობა",
         footer_contact: "კონტაქტი:",
     },
     en: {
@@ -136,6 +138,7 @@ const TRANSLATIONS = {
         saved_title: "Saved",
         saved_cars_h: "Cars",
         recent_h: "Recent searches",
+        viewed_h: "Recently viewed",
         no_saved: "Nothing saved yet",
         clear_all: "Clear all",
         save_search: "Save this search",
@@ -247,6 +250,7 @@ const TRANSLATIONS = {
         footer_about: "Listings archive.",
         footer_terms: "Terms",
         footer_privacy: "Privacy",
+        footer_legal: "Terms & Privacy",
         footer_contact: "Contact:",
     },
 };

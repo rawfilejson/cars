@@ -501,13 +501,24 @@
             gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
         }
         .detail-btn {
-            background: transparent; border: 1px solid #DCE3EA; color: #8D99AE;
-            padding: 8px 14px; font-size: 13px; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: #fff; border: 1px solid #DCE3EA; color: #8D99AE;
+            padding: 9px 16px; font-size: 13px; cursor: pointer; border-radius: 999px;
             font-family: inherit; text-decoration: none;
-            transition: color 100ms, border-color 100ms;
+            transition: color .12s, border-color .12s, background .12s, transform .12s;
         }
-        .detail-btn:hover { color: #EF233C; border-color: #EF233C; }
+        .detail-btn:hover { color: #EF233C; border-color: #FBDADE; background: #FDE6E8; }
+        .detail-btn:active { transform: scale(.96); }
         .detail-btn.is-copied { color: #15803D; border-color: #15803D; }
+        .detail-icon-btn { width: 40px; height: 40px; padding: 0; }
+        .hist-chip.pinned { border-color: #FBDADE; color: #D90429; }
+        .hist-chip.pinned:hover { border-color: #EF233C; background: #FDE6E8; }
+        .footer-inner { display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+        @media (min-width: 768px) { .footer-inner { flex-direction: row; justify-content: space-between; text-align: left; } }
+        .footer-about { color: #8D99AE; font-size: 14px; }
+        .footer-links { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: center; }
+        .footer-link { color: #2B2D42; font-size: 14px; transition: color .12s; }
+        .footer-link:hover { color: #EF233C; }
 
         .detail-title { font-size: 32px; line-height: 1.1; }
         @media (min-width: 640px) { .detail-title { font-size: 40px; } }
@@ -841,16 +852,11 @@
 </div>
 
 <footer class="border-t border-line">
-    <div class="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-sm text-muted">
-        <p data-i18n="footer_about"></p>
-        <p class="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <a href="/terms.html" class="text-ink underline decoration-line hover:decoration-accent" data-i18n="footer_terms"></a>
-            <a href="/privacy.html" class="text-ink underline decoration-line hover:decoration-accent" data-i18n="footer_privacy"></a>
-            <span>
-                <span data-i18n="footer_contact"></span>
-                <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener"
-                   class="text-ink underline decoration-line hover:decoration-accent">@deme.brn</a>
-            </span>
+    <div class="footer-inner max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <p class="footer-about" data-i18n="footer_about"></p>
+        <p class="footer-links">
+            <a href="/terms.html" class="footer-link" data-i18n="footer_legal"></a>
+            <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener" class="footer-link">@deme.brn</a>
         </p>
     </div>
 </footer>
@@ -1704,6 +1710,7 @@
     function renderDetail(car) {
         _detailCar = car;
         _detailMainIdx = 0;
+        pushViewed(car);
         const title = carTitle(car);
         const slides = buildSlides(car);
         _detailSlides = slides;
@@ -1885,9 +1892,22 @@
 
     // --- saved cars / searches / history (localStorage; no account needed) ---
     const _carData = {};
-    const LS_CARS = 'cdb_saved', LS_SEARCHES = 'cdb_searches', LS_HIST = 'cdb_history';
+    const LS_CARS = 'cdb_saved', LS_SEARCHES = 'cdb_searches', LS_HIST = 'cdb_history', LS_VIEWED = 'cdb_viewed';
     function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (_) { return []; } }
     function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
+
+    // ნანახი მანქანების ისტორია
+    function pushViewed(car) {
+        const item = {
+            key: `${car.source}-${car.source_id}`, title: carTitle(car),
+            price: car.price_amount, currency: car.price_currency,
+            thumb: (car.image_urls && car.image_urls[0]) || '',
+        };
+        let v = lsGet(LS_VIEWED).filter((x) => x.key !== item.key);
+        v.unshift(item);
+        lsSet(LS_VIEWED, v.slice(0, 40));
+    }
+    window.clearViewed = function () { lsSet(LS_VIEWED, []); renderSaved(); };
 
     function getSavedCars() { return lsGet(LS_CARS); }
     function isCarSaved(key) { return getSavedCars().some(c => c.key === key); }
@@ -1908,28 +1928,60 @@
         });
     }
 
+    // შენახული ძიების ლამაზი წარწერა ყველა პარამეტრით
+    function describeSearch(p) {
+        const en = getLang() === 'en';
+        const parts = [];
+        if (p.query) parts.push(p.query);
+        if (p.year_from || p.year_to) parts.push((p.year_from || '…') + '–' + (p.year_to || '…'));
+        if (p.price_from || p.price_to) parts.push('$' + (p.price_from || '0') + '–' + (p.price_to || '∞'));
+        if (p.mileage_from || p.mileage_to) parts.push((p.mileage_from || '0') + '–' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ'));
+        if (p.body_type)    parts.push(tval(p.body_type));
+        if (p.fuel_type)    parts.push(tval(p.fuel_type));
+        if (p.gearbox)      parts.push(tval(p.gearbox));
+        if (p.drive_wheels) parts.push(tval(p.drive_wheels));
+        if (p.customs_cleared === true)  parts.push(t('cleared'));
+        if (p.customs_cleared === false) parts.push(t('not_cleared'));
+        if (p.sort) parts.push(t('sort_' + p.sort));
+        return parts.join(' · ') || t('save_search');
+    }
+
     window.saveCurrentSearch = function (btn) {
-        const q = (document.getElementById('search-input').value || '').trim();
-        const sort = document.getElementById('f-sort').value || '';
+        const payload = buildSearchPayload();
+        delete payload.page;
+        if (Object.keys(payload).length === 0) return;
+        const key = JSON.stringify(payload);
         let s = lsGet(LS_SEARCHES);
-        const exists = s.some((x) => x.q === q && x.sort === sort);
-        s = s.filter((x) => !(x.q === q && x.sort === sort));
+        const exists = s.some((x) => JSON.stringify(x.payload) === key);
+        s = s.filter((x) => JSON.stringify(x.payload) !== key);
         if (exists) {
             if (btn) btn.textContent = '♡ ' + t('save_search');
         } else {
-            s = [{ q: q, sort: sort, label: q || ((lastResponse && lastResponse.query_type) || 'search') }, ...s];
+            s = [{ payload: payload, label: describeSearch(payload) }, ...s];
             if (btn) btn.textContent = '♥ ' + t('saved_done');
         }
         lsSet(LS_SEARCHES, s.slice(0, 40));
         updateSavedCount();
+        renderRecent();
     };
-    function runSavedSearch(q, sort) {
+
+    function _setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); }
+    function runSavedSearch(item) {
         closeSaved();
-        document.getElementById('search-input').value = q || '';
-        document.getElementById('f-sort').value = sort || '';
+        const p = (item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : {});
+        _setVal('search-input', p.query);
+        _setVal('f-year-from', p.year_from); _setVal('f-year-to', p.year_to);
+        _setVal('f-price-from', p.price_from); _setVal('f-price-to', p.price_to);
+        _setVal('f-mileage-from', p.mileage_from); _setVal('f-mileage-to', p.mileage_to);
+        _setVal('f-body', p.body_type); _setVal('f-fuel', p.fuel_type);
+        _setVal('f-gearbox', p.gearbox); _setVal('f-drive', p.drive_wheels);
+        document.getElementById('f-customs').value = p.customs_cleared === true ? 'yes' : p.customs_cleared === false ? 'no' : '';
+        _setVal('f-sort', p.sort);
+        refreshDropdowns(); updateFilterResets();
+        document.getElementById('search-input').dispatchEvent(new Event('input'));
         doSearch();
     }
-    function runHistory(q) { closeSaved(); document.getElementById('search-input').value = q; doSearch(); }
+    function runHistory(q) { closeSaved(); const el = document.getElementById('search-input'); el.value = q; el.dispatchEvent(new Event('input')); doSearch(); }
 
     function pushHistory(q) {
         q = (q || '').trim();
@@ -1943,12 +1995,24 @@
     function renderRecent() {
         const row = document.getElementById('recent-row');
         if (!row) return;
-        const h = lsGet(LS_HIST).slice(0, 8);
-        row.innerHTML = h.length
-            ? `<span class="recent-label">${t('recent_h')}</span>` + h.map((q, i) => `<button class="hist-chip" data-i="${i}">${escapeHtml(q)}</button>`).join('')
-            : '';
+        const saved = lsGet(LS_SEARCHES).slice(0, 6);
+        const hist = lsGet(LS_HIST).slice(0, 8);
+        if (!saved.length && !hist.length) { row.innerHTML = ''; return; }
+        let html = '';
+        if (saved.length) {
+            html += `<span class="recent-label">${t('saved_searches_h')}</span>` +
+                saved.map((s, i) => `<button class="hist-chip pinned" data-kind="saved" data-i="${i}">♥ ${escapeHtml(s.label)}</button>`).join('');
+        }
+        if (hist.length) {
+            html += `<span class="recent-label">${t('recent_h')}</span>` +
+                hist.map((q, i) => `<button class="hist-chip" data-kind="hist" data-i="${i}">${escapeHtml(q)}</button>`).join('');
+        }
+        row.innerHTML = html;
         row.querySelectorAll('.hist-chip').forEach((b) => {
-            b.onclick = () => { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); };
+            b.onclick = () => {
+                if (b.dataset.kind === 'saved') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
+                else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
+            };
         });
     }
     window.clearHistory = function () { lsSet(LS_HIST, []); renderSaved(); renderRecent(); };
@@ -1982,13 +2046,23 @@
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
         h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(q)}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
+        const viewed = lsGet(LS_VIEWED);
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('viewed_h')} · ${viewed.length}</span>${viewed.length ? `<button class="drawer-clear" onclick="clearViewed()">${t('clear_all')}</button>` : ''}</div>`;
+        h += viewed.length ? viewed.map(c => `
+            <div class="saved-row">
+              <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
+                <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
+                <div class="min-w-0"><div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>${c.price ? `<div class="saved-row-price">${Number(c.price).toLocaleString()} ${escapeHtml(c.currency || '')}</div>` : ''}</div>
+              </div>
+            </div>`).join('') : `<div class="drawer-empty">—</div>`;
+
         const body = document.getElementById('saved-body');
         body.innerHTML = h;
         body.querySelectorAll('[data-act="open"]').forEach(el => el.onclick = (e) => { goToCarDetail(el.dataset.key, e); closeSaved(); });
         body.querySelectorAll('[data-act="remove"]').forEach(el => el.onclick = () => { toggleSave(el.dataset.key); renderSaved(); });
         body.querySelectorAll('.hist-chip').forEach(b => {
             b.onclick = () => {
-                if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s.q, s.sort); }
+                if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
                 else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
             };
         });
