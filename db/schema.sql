@@ -102,6 +102,22 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
+-- ნომრით ძიება ნორმალიზებულ ციფრებზე `LIKE '%suffix'`-ია — leading wildcard +
+-- ფუნქცია b-tree-ს ვერ იყენებს (ყოველი ძიება full scan). trigram GIN ინდექსი
+-- ზუსტად იმ გამოსახულებაზე, რასაც search.py ეძებს, ამ scan-ს ხსნის.
+--
+-- ფრეშ ბაზაზე: ქვემოთ მოცემული `CREATE INDEX IF NOT EXISTS` საკმარისია (init_db
+-- schema.sql-ს ერთ ტრანზაქციაში უშვებს, ცარიელ ცხრილზე build მყისიერია).
+-- არსებულ დიდ ბაზაზე: ქვემოთ ფორმა ცხრილს build-ის დროს დაბლოკავს — ამის ნაცვლად
+-- გაუშვი ეს ცალკე (schema.sql-ის გარეთ, init_db-ის შემდეგ), CONCURRENTLY-ით
+-- (ტრანზაქციაში ვერ ჯდება, ამიტომ აქ ვერ ჩავსვამთ):
+--   CREATE INDEX CONCURRENTLY cars_phone_digits_trgm_idx
+--     ON cars USING gin (regexp_replace(phone, '\D', '', 'g') gin_trgm_ops)
+--     WHERE phone IS NOT NULL AND phone <> '';
+CREATE INDEX IF NOT EXISTS cars_phone_digits_trgm_idx
+    ON cars USING gin (regexp_replace(phone, '\D', '', 'g') gin_trgm_ops)
+    WHERE phone IS NOT NULL AND phone <> '';
+
 -- rate-limit იდენტობა: client_id (ბრაუზერის ანონ. token) მთავარია, user_ip — backstop.
 CREATE TABLE IF NOT EXISTS searches (
     id              BIGSERIAL PRIMARY KEY,

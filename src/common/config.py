@@ -16,6 +16,11 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
 
+# მხარდაჭერილი წყაროები — ერთი წყარო permalink-ის/ვალიდაციის ლოგიკისთვის,
+# რომ ახალი parser-ის დამატებისას ენუმერაცია ერთ ადგილას შეიცვალოს.
+SOURCES: tuple[str, ...] = ("autopapa", "myauto")
+
+
 DATABASE_URL: str = os.getenv(
     "DATABASE_URL",
     "postgresql://cars:cars@localhost:5432/cars",
@@ -54,6 +59,16 @@ PAGE_TIMEOUT_MS: int = int(os.getenv("PAGE_TIMEOUT_MS", "25000"))
 SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "0"))
 SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "10"))
 SEARCH_LIMIT_PER_IP_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_IP_HOUR", "3000"))
+
+
+# ვალუტის კურსები USD-ში — ფასების შედარების/სორტირების ერთადერთი წყარო.
+# ბაზაში ფასი source-ის ვალუტაშია; აქედან ვაკონვერტებთ შესადარებლად. კურსები
+# დროთა განმავლობაში იცვლება, ამიტომ env-იდანაც გადაიწერება (კოდის შეცვლის გარეშე).
+FX_RATES_TO_USD: dict[str, float] = {
+    "USD": 1.0,
+    "EUR": float(os.getenv("FX_EUR_USD", "1.08")),
+    "GEL": float(os.getenv("FX_GEL_USD", "0.37")),
+}
 
 
 CONTACT_INSTAGRAM: str = os.getenv("CONTACT_INSTAGRAM", "@deme.brn")

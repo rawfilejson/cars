@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 
 from fastapi import APIRouter, Response
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/facets", tags=["facets"])
 _CACHE_TTL_SECONDS = 3600.0
 _MIN_COUNT = 5
 _cache: tuple[float, "FacetsResponse"] | None = None
+_cache_lock = threading.Lock()
 
 # პასუხის key → ცხრილის სვეტი (ფიქსირებული — user input არ ერევა SQL-ში)
 _FIELDS = {
@@ -82,8 +84,11 @@ def get_facets(response: Response) -> FacetsResponse:
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()
-    if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
-        return _cache[1]
-    data = _load_facets()
-    _cache = (now, data)
-    return data
+    # double-checked locking — ერთდროული cold-cache request-ები ერთ DB load-ს
+    # აკეთებენ (stampede-ის ნაცვლად). load იშვიათია (საათობრივი TTL).
+    with _cache_lock:
+        if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
+            return _cache[1]
+        data = _load_facets()
+        _cache = (now, data)
+        return data

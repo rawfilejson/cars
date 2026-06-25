@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import threading
 import time
 
 from fastapi import APIRouter, Response
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/makes", tags=["makes"])
 _CACHE_TTL_SECONDS = 3600.0
 _MIN_COUNT = 3
 _cache: tuple[float, "MakesResponse"] | None = None
+_cache_lock = threading.Lock()
 
 # trim/ძარა/გადაცემათა-კოლოფის სიტყვები, რაც მოდელის სახელის ნაწილი არ არის
 _JUNK = {
@@ -103,8 +105,11 @@ def get_makes(response: Response) -> MakesResponse:
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()
-    if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
-        return _cache[1]
-    data = _load_makes()
-    _cache = (now, data)
-    return data
+    # double-checked locking — ერთდროული cold-cache request-ები ერთ DB load-ს
+    # აკეთებენ (stampede-ის ნაცვლად). load იშვიათია (საათობრივი TTL).
+    with _cache_lock:
+        if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
+            return _cache[1]
+        data = _load_makes()
+        _cache = (now, data)
+        return data

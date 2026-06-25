@@ -10,7 +10,9 @@
 from __future__ import annotations
 
 import re
+import threading
 import time
+from collections import OrderedDict
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response, status, HTTPException
 
@@ -18,7 +20,7 @@ from src.api.db_pool import connection
 from src.api.facets import facet_variants
 from src.api.rate_limit import check_rate_limit, log_search
 from src.api.schemas import CarPublic, SearchRequest, SearchResponse
-from src.common.config import R2_PUBLIC_URL
+from src.common.config import FX_RATES_TO_USD, R2_PUBLIC_URL, SOURCES
 
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -27,7 +29,9 @@ car_router = APIRouter(prefix="/car", tags=["car"])
 
 PAGE_SIZE = 25
 
-_CAR_KEY_RE = re.compile(r"^(autopapa|myauto)-(\d+)$")
+# წყაროების ენუმერაცია config.SOURCES-დან — ახალი parser ავტომატურად მუშაობს
+# permalink-ში. re.escape — დაცვა მომავალი metachar-იანი სახელისგან.
+_CAR_KEY_RE = re.compile(r"^(" + "|".join(re.escape(s) for s in SOURCES) + r")-(\d+)$")
 
 
 _SEARCH_BLOB = "search_blob"
@@ -45,19 +49,26 @@ _VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 # არასწორ ფასებს (0, უარყოფითი — myauto-ს "შეთანხმებით" sentinel) NULL-ად ვთვლით,
 # რომ price-sort/filter-ში არ მოხვდნენ (NULLS LAST). ~42k ასეთი ჩანაწერია ბაზაში.
 _MIN_PRICE_USD = 100
-_PRICE_USD_RAW = (
-    "(CASE price_currency "
-    "WHEN 'USD' THEN price_amount::float "
-    "WHEN 'EUR' THEN price_amount::float * 1.08 "
-    "WHEN 'GEL' THEN price_amount::float * 0.37 "
-    "END)"
-)
+
+
+# ვალუტა→USD კონვერსიის SQL CASE — config.FX_RATES_TO_USD-დან აიგება, რომ SQL-ისა
+# და Python-ის (_clean_price) კურსები ვერასდროს აიცდინონ ერთმანეთს. მნიშვნელობები
+# სანდო კონსტანტებია (არა user input), ამიტომ f-string-ით ჩაკერვა უსაფრთხოა.
+def _build_price_usd_sql() -> str:
+    whens = " ".join(
+        f"WHEN '{cur}' THEN price_amount::float * {rate}"
+        for cur, rate in FX_RATES_TO_USD.items()
+    )
+    return f"(CASE price_currency {whens} END)"
+
+
+_PRICE_USD_RAW = _build_price_usd_sql()
 # junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → NULL, რომ price-sort/filter არ აირიოს
 _PRICE_IN_USD = (
     f"(CASE WHEN price_amount > 0 AND {_PRICE_USD_RAW} >= {_MIN_PRICE_USD} "
     f"THEN {_PRICE_USD_RAW} END)"
 )
-_FX_TO_USD = {"USD": 1.0, "EUR": 1.08, "GEL": 0.37}
+_FX_TO_USD = FX_RATES_TO_USD
 
 
 def _clean_price(amount: int | None, currency: str | None) -> int | None:
@@ -293,24 +304,39 @@ def _row_to_public(row: dict) -> CarPublic:
 
 # ერთიდაიგივე ძიების შედეგს ვაქეშებთ — Supabase free-tier-ის ნელი დისკი ერთხელ
 # იკითხება, შემდეგ პოპულარული ძიება (BMW, Mercedes…) მყისიერია. TTL 10 წთ.
-_RESULT_CACHE: dict[str, tuple[float, list]] = {}
+_RESULT_CACHE: "OrderedDict[str, tuple[float, list]]" = OrderedDict()
 _RESULT_TTL = 600.0
 _RESULT_CACHE_MAX = 600
+# sync endpoint-ები threadpool-ში გადიან — ცვლა lock-ქვეშ, რომ eviction loop
+# პარალელურ წვდომას არ გადაეჯაჭვოს.
+_RESULT_CACHE_LOCK = threading.Lock()
+
+
+def _cache_put(key: str, rows: list, now: float) -> None:
+    """ქეშში ჩაწერა + capacity-ის შენარჩუნება. ზედმეტ ჩანაწერებს უძველესიდან
+    ვაცლით (clear()-ის ნაცვლად), რომ პოპულარული ძიების ქეში ცივ-სტარტში
+    ერთიანად არ დაიკარგოს."""
+    with _RESULT_CACHE_LOCK:
+        _RESULT_CACHE[key] = (now, rows)
+        _RESULT_CACHE.move_to_end(key)
+        while len(_RESULT_CACHE) > _RESULT_CACHE_MAX:
+            _RESULT_CACHE.popitem(last=False)
 
 
 def _query_rows(sql: str, params: tuple) -> list:
     key = sql + "\x00" + repr(params)
     now = time.monotonic()
-    hit = _RESULT_CACHE.get(key)
-    if hit is not None and now - hit[0] < _RESULT_TTL:
-        return hit[1]
+    # read lock-ქვეშ — eviction-ი (move_to_end/popitem) რომ პარალელურ get-ს
+    # არ გადაეჯაჭვოს. DB query lock-ის გარეთ რჩება (ძიება ხშირია, არ ვასერიალებთ).
+    with _RESULT_CACHE_LOCK:
+        hit = _RESULT_CACHE.get(key)
+        if hit is not None and now - hit[0] < _RESULT_TTL:
+            return hit[1]
     with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
-    if len(_RESULT_CACHE) >= _RESULT_CACHE_MAX:
-        _RESULT_CACHE.clear()
-    _RESULT_CACHE[key] = (now, rows)
+    _cache_put(key, rows, now)
     return rows
 
 

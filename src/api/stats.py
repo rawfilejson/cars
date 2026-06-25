@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 
 from fastapi import APIRouter, Response
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 _CACHE_TTL_SECONDS = 60.0
 _cache: tuple[float, "Stats"] | None = None
+_cache_lock = threading.Lock()
 
 
 class Stats(BaseModel):
@@ -63,8 +65,11 @@ def get_stats(response: Response) -> Stats:
     global _cache
     response.headers["Cache-Control"] = "public, max-age=60"
     now = time.monotonic()
-    if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
-        return _cache[1]
-    stats = _get_stats_sync()
-    _cache = (now, stats)
-    return stats
+    # double-checked locking — ერთდროული cold-cache request-ები ერთ COUNT-ს
+    # აკეთებენ (stampede-ის ნაცვლად). load იშვიათია (60წმ TTL).
+    with _cache_lock:
+        if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
+            return _cache[1]
+        stats = _get_stats_sync()
+        _cache = (now, stats)
+        return stats
