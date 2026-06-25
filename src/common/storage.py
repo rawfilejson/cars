@@ -83,7 +83,12 @@ async def download_to_local(
                 log.warning("download %s — HTTP %d (no retry)", url, resp.status_code)
                 return False
             resp.raise_for_status()
-            path.write_bytes(resp.content)
+            # ატომური ჩაწერა: ჯერ `.part`, შემდეგ rename. შეწყვეტილი/მოკლული
+            # ჩაწერა `path`-ზე ნახევარ ფაილს ვერ ტოვებს (st_size>0 check რომ
+            # კორუმპირებულ სურათს არ ჩათვალოს „ჩამოწერილად").
+            tmp = path.with_name(path.name + ".part")
+            tmp.write_bytes(resp.content)
+            tmp.replace(path)
             return True
         except (httpx.RequestError, httpx.HTTPStatusError) as exc:
             last_exc = exc

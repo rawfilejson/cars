@@ -7,9 +7,12 @@ robots.txt ჰოსტზე ერთხელ იკითხება და
 from __future__ import annotations
 
 import asyncio
+import logging
 import urllib.robotparser
 from urllib.parse import urlsplit
 
+
+log = logging.getLogger(__name__)
 
 _cache: dict[str, urllib.robotparser.RobotFileParser] = {}
 
@@ -19,7 +22,8 @@ def _load_sync(origin: str) -> urllib.robotparser.RobotFileParser:
     rp.set_url(f"{origin}/robots.txt")
     try:
         rp.read()
-    except Exception:
+    except Exception as exc:
+        log.warning("robots.txt read failed for %s (%s) — defaulting to allow", origin, exc)
         rp.parse([])
     return rp
 

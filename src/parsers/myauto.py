@@ -141,7 +141,7 @@ def _build_description_from_api(item: dict) -> str:
     if flags:
         parts.append("ოპციები: " + ", ".join(flags))
     if item.get("airbags"):
-        parts.append(f"აირბაგები: {item['airbags']}")
+        parts.append(f"აირბაგები: {item.get('airbags')}")
     return "\n\n".join(parts)
 
 
@@ -602,7 +602,9 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
         engine_type=str(spec_fields.get("engine_type") or ""),
         cylinders=spec_fields.get("cylinders"),
         power_hp=spec_fields.get("power_hp"),
-        has_turbo=any("ტურბო" in f.lower() for f in features) or None,
+        # tri-state: features ნანახია → True/False; features ცარიელია → None (უცნობი).
+        # `or None` False-საც None-ად აქცევდა — tri-state იკარგებოდა.
+        has_turbo=(any("ტურბო" in f.lower() for f in features) if features else None),
         gearbox=str(spec_fields.get("gearbox") or ""),
         drive_wheels=str(spec_fields.get("drive_wheels") or ""),
         mileage_km=spec_fields.get("mileage_km"),
@@ -681,7 +683,7 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
         data = await asyncio.wait_for(_fetch(), timeout=25.0)
         if data is None:
             return [], 0
-    except (asyncio.TimeoutError, Exception) as exc:
+    except Exception as exc:  # incl. asyncio.TimeoutError — ერთნაირად ვამუშავებთ
         print(f"  API page {page_num} error: {type(exc).__name__}: {str(exc)[:80]}", flush=True)
         return [], 0
 

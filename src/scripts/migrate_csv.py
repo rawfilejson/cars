@@ -25,14 +25,12 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import csv
 from typing import Iterable
 
 from src.common.db import upsert_cars
 from src.common.models import Car
 from src.common.normalize import (
-    clean_decimal,
     clean_engine_volume,
     clean_int,
     clean_text,

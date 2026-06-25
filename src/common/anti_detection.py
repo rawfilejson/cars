@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import random
 
-from playwright.async_api import BrowserContext, Playwright, Route
+from playwright.async_api import Playwright, Route
 
 from .config import PROXY_URL
 
