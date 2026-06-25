@@ -7,6 +7,8 @@ Run: uv run pytest tests/test_security.py -q
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from src.api.schemas import SearchRequest
@@ -63,6 +65,25 @@ def test_sort_is_whitelisted():
 ])
 def test_car_key_regex_rejects_injection(key, ok):
     assert bool(_CAR_KEY_RE.match(key)) is ok
+
+
+def test_car_key_regex_accepts_every_known_source():
+    """The permalink regex is built from config.SOURCES — every supported
+    source must round-trip, so adding a parser can't silently break /car/."""
+    from src.common.config import SOURCES
+
+    for source in SOURCES:
+        assert _CAR_KEY_RE.match(f"{source}-123")
+
+
+def test_car_key_regex_escapes_source_metacharacters():
+    """Sources are re.escape()'d into the permalink regex, so a future source with
+    regex metacharacters matches literally rather than as a pattern."""
+    sources = ("au.to", "my+auto")
+    rx = re.compile(r"^(" + "|".join(re.escape(s) for s in sources) + r")-(\d+)$")
+    assert rx.match("au.to-123")
+    assert rx.match("my+auto-9")
+    assert not rx.match("auXto-123")   # '.' stays literal, not "any char"
 
 
 @pytest.mark.parametrize("vin,ok", [

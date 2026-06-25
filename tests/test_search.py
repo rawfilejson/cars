@@ -74,11 +74,17 @@ def test_smart_route_short_text_ok():
 
 
 def test_smart_route_multi_word_AND():
-    """Each word gets its own LIKE clause joined with AND."""
+    """Each word gets its own LIKE clause joined with AND.
+
+    Param order: the word patterns come first (the WHERE clause), then the
+    similarity-rank text. The two-phase paging CTE references the ORDER BY
+    in both the inner and outer SELECT, so the rank text is bound twice.
+    """
     sql, params, qtype = _build_query(SearchRequest(query="Toyota Camry 2020"))
     assert qtype == "search"
     assert sql.count("search_blob LIKE") == 3
-    assert params == ("Toyota Camry 2020", "%toyota%", "%camry%", "%2020%")
+    assert params[:3] == ("%toyota%", "%camry%", "%2020%")
+    assert params[3:] and all(p == "Toyota Camry 2020" for p in params[3:])
 
 
 def test_smart_route_georgian_query():
@@ -86,7 +92,8 @@ def test_smart_route_georgian_query():
     .lower() is a no-op for these chars."""
     sql, params, qtype = _build_query(SearchRequest(query="თბილისი"))
     assert qtype == "search"
-    assert params == ("თბილისი", "%თბილისი%")
+    assert params[0] == "%თბილისი%"
+    assert params[1:] and all(p == "თბილისი" for p in params[1:])
 
 
 def test_smart_route_empty_query():
@@ -136,3 +143,31 @@ def test_empty_request_rejected():
     with pytest.raises(HTTPException) as exc:
         _build_query(SearchRequest())
     assert exc.value.status_code == 400
+
+
+def test_result_cache_evicts_oldest_not_all():
+    """Over capacity the cache drops the OLDEST entries (FIFO/LRU), not the
+    whole thing — a full wipe would stampede Supabase on the next burst."""
+    from src.api import search as s
+
+    s._RESULT_CACHE.clear()
+    try:
+        overflow = s._RESULT_CACHE_MAX + 50
+        for i in range(overflow):
+            s._cache_put(f"k{i}", [i], float(i))
+        assert len(s._RESULT_CACHE) == s._RESULT_CACHE_MAX  # capped, not cleared
+        assert "k0" not in s._RESULT_CACHE                  # oldest evicted
+        assert f"k{overflow - 1}" in s._RESULT_CACHE        # newest retained
+    finally:
+        s._RESULT_CACHE.clear()
+
+
+def test_fx_rates_single_source_of_truth():
+    """The SQL price-conversion CASE and the Python _clean_price helper must use
+    the same FX rates — both derive from config.FX_RATES_TO_USD, never drift."""
+    from src.common.config import FX_RATES_TO_USD
+    from src.api.search import _PRICE_USD_RAW, _FX_TO_USD
+
+    assert _FX_TO_USD is FX_RATES_TO_USD
+    for cur, rate in FX_RATES_TO_USD.items():
+        assert f"WHEN '{cur}' THEN price_amount::float * {rate}" in _PRICE_USD_RAW

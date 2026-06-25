@@ -74,6 +74,20 @@ async def test_download_to_local_writes_file(temp_photos_dir, fast_retries):
     assert file.read_bytes() == b"fake-jpeg-bytes"
 
 
+async def test_download_to_local_atomic_no_part_file_left(temp_photos_dir, fast_retries):
+    """Success writes the complete final file via a temp `.part`, then renames —
+    no half-written file and no leftover `.part` on success."""
+    def handler(request):
+        return httpx.Response(200, content=b"complete-bytes")
+
+    async with make_mock_client(handler) as client:
+        ok = await storage.download_to_local(client, "https://x/a.jpg", "src/9/1.jpg")
+    assert ok
+    final = temp_photos_dir / "src/9/1.jpg"
+    assert final.read_bytes() == b"complete-bytes"
+    assert not (temp_photos_dir / "src/9/1.jpg.part").exists()
+
+
 async def test_download_to_local_skips_if_exists(temp_photos_dir, fast_retries):
     target = temp_photos_dir / "src/123/1.jpg"
     target.parent.mkdir(parents=True)
