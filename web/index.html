@@ -185,8 +185,12 @@
         .ad-slot { margin-top: 16px; border: 1px dashed #A9B4C2; border-radius: 12px; min-height: 200px;
             display: flex; align-items: center; justify-content: center; color: #8D99AE; font-size: 12px; background: #F3F6F8; text-align: center; }
         .results-col { min-width: 0; }
-        .results-meta { font-size: 14px; color: #8D99AE; margin-bottom: 14px; min-height: 20px; }
+        .results-meta { font-size: 14px; color: #8D99AE; min-height: 20px; }
         .results-meta .text-accent { color: #EF233C; }
+        .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .sort-wrap { display: none; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+        body.mode-results .sort-wrap { display: flex; }
+        .sort-wrap .cdd { flex: 0 0 auto; min-width: 180px; }
         body.mode-detail .search-band, body.mode-detail .sidebar, body.mode-detail .filters-toggle,
         body.mode-detail #recent-row, body.mode-detail .results-meta { display: none; }
         body.mode-detail .shell { grid-template-columns: 1fr; }
@@ -812,18 +816,6 @@
                     <input type="hidden" id="f-mileage-to">
                     <button class="filter-reset" type="button" onclick="resetFilter('mileage')" aria-label="reset">↺</button>
                 </div>
-                <div class="filter-group" data-filter="sort">
-                    <span class="filter-label" data-i18n="filter_sort"></span>
-                    <select class="filter-select" id="f-sort">
-                        <option value=""             data-i18n="sort_default"></option>
-                        <option value="price_desc"   data-i18n="sort_price_desc"></option>
-                        <option value="price_asc"    data-i18n="sort_price_asc"></option>
-                        <option value="year_desc"    data-i18n="sort_year_desc"></option>
-                        <option value="year_asc"     data-i18n="sort_year_asc"></option>
-                        <option value="mileage_desc" data-i18n="sort_mileage_desc"></option>
-                        <option value="mileage_asc"  data-i18n="sort_mileage_asc"></option>
-                    </select>
-                </div>
             </div>
 
             <button type="button" class="more-toggle" onclick="toggleMoreFilters()">
@@ -872,7 +864,20 @@
 
         <div class="results-col">
             <div id="recent-row" class="recent-row"></div>
-            <p id="search-meta" class="results-meta"></p>
+            <div class="results-bar">
+                <p id="search-meta" class="results-meta"></p>
+                <div id="sort-wrap" class="sort-wrap">
+                    <select class="filter-select" id="f-sort">
+                        <option value=""             data-i18n="sort_default"></option>
+                        <option value="price_desc"   data-i18n="sort_price_desc"></option>
+                        <option value="price_asc"    data-i18n="sort_price_asc"></option>
+                        <option value="year_desc"    data-i18n="sort_year_desc"></option>
+                        <option value="year_asc"     data-i18n="sort_year_asc"></option>
+                        <option value="mileage_desc" data-i18n="sort_mileage_desc"></option>
+                        <option value="mileage_asc"  data-i18n="sort_mileage_asc"></option>
+                    </select>
+                </div>
+            </div>
             <div id="results"></div>
             <div id="empty-state" class="empty-state" data-i18n="empty_state"></div>
         </div>
@@ -1264,6 +1269,11 @@
 
     document.getElementById('f-brand').addEventListener('change', onBrandChange);
     document.getElementById('f-model').addEventListener('change', updateFilterResets);
+
+    // sort lives above the cards — changing it re-sorts the current results immediately
+    document.getElementById('f-sort').addEventListener('change', () => {
+        if (document.body.classList.contains('mode-results')) doSearch();
+    });
 
     const ERROR_CODES = new Set([
         'query_too_vague', 'query_empty', 'phone_too_short',
