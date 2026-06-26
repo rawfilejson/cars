@@ -19,7 +19,7 @@ from fastapi import APIRouter, BackgroundTasks, Request, Response, status, HTTPE
 from src.api.db_pool import connection
 from src.api.facets import facet_variants
 from src.api.rate_limit import check_rate_limit, log_search
-from src.api.schemas import CarPublic, SearchRequest, SearchResponse
+from src.api.schemas import CarPublic, SearchCount, SearchRequest, SearchResponse
 from src.common.config import FX_RATES_TO_USD, R2_PUBLIC_URL, SOURCES
 
 
@@ -409,6 +409,20 @@ def search(req: SearchRequest, request: Request, background_tasks: BackgroundTas
         page_size=PAGE_SIZE,
         remaining_searches=remaining,
     )
+
+
+@router.post("/count", response_model=SearchCount)
+def search_count(req: SearchRequest) -> SearchCount:
+    """Match count for the current filters (browse) — drives the live count on the
+    search button. No rows, no rate limit; cached like searches. A free-text/VIN/
+    phone query isn't counted here (the real search returns its total)."""
+    frags, params = _filter_clauses(req)
+    if frags:
+        sql = "SELECT COUNT(*) AS n FROM cars WHERE " + " AND ".join(frags)
+        rows = _query_rows(sql, tuple(params))
+    else:
+        rows = _query_rows("SELECT COUNT(*) AS n FROM cars", ())
+    return SearchCount(total_count=int(rows[0]["n"]) if rows else 0)
 
 
 @car_router.get("/{key}", response_model=CarPublic)

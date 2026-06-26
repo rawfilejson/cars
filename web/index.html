@@ -712,9 +712,6 @@
             </a>
         </div>
         <div class="flex items-center gap-3 md:gap-6 pt-1 md:pt-2 flex-shrink-0">
-            <div id="count-pill" class="count-pill hidden">
-                <span class="num" id="nav-listings-count">—</span>
-            </div>
             <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><span>♥</span> <span class="cnt" id="saved-count">0</span></button>
             <div class="flex items-center gap-1">
                 <button class="lang-btn" data-lang="ka">KA</button>
@@ -736,7 +733,7 @@
             <input id="search-input" type="text" class="search-input"
                    data-i18n-placeholder="ph_query" autocomplete="off">
             <button id="clear-search" class="clear-x hidden" type="button" aria-label="clear" onclick="clearSearchInput()">✕</button>
-            <button id="btn-search" class="btn-search" data-i18n="btn_search"></button>
+            <button id="btn-search" class="btn-search" data-search-btn></button>
         </div>
 
         <div class="hero-stats">
@@ -858,7 +855,7 @@
                 </div>
             </div>
 
-            <button class="apply-btn" type="button" onclick="applyFilters()" data-i18n="btn_search"></button>
+            <button class="apply-btn" type="button" onclick="applyFilters()" data-search-btn></button>
             <div class="ad-slot" data-i18n="ad_label"></div>
         </aside>
 
@@ -944,10 +941,35 @@
             const resp = await fetch(`${API_BASE}/stats`);
             if (!resp.ok) return;
             const data = await resp.json();
-            const n = data.total_cars.toLocaleString();
-            document.getElementById('nav-listings-count').textContent = t('nav_listings_count', { n });
-            document.getElementById('count-pill').classList.remove('hidden');
+            _totalCars = data.total_cars;
+            updateSearchBtnCount();
         } catch (_) {  }
+    }
+
+    let _totalCars = 0;
+    let _lastCount = null;
+    function updateSearchBtnCount() {
+        const n = _lastCount != null ? _lastCount : _totalCars;
+        const label = t('btn_search') + (n ? ` (${Number(n).toLocaleString()})` : '');
+        document.querySelectorAll('[data-search-btn]').forEach(b => { b.textContent = label; });
+    }
+
+    // live match-count on the search button as filters change (browse only)
+    let _countTimer = null;
+    function scheduleLiveCount() { clearTimeout(_countTimer); _countTimer = setTimeout(fetchLiveCount, 450); }
+    async function fetchLiveCount() {
+        if (document.getElementById('search-input').value.trim()) return;  // text query → count comes from the search
+        const payload = buildSearchPayload();
+        delete payload.page; delete payload.sort;
+        try {
+            const resp = await fetch(`${API_BASE}/search/count`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!resp.ok) return;
+            _lastCount = (await resp.json()).total_count;
+            updateSearchBtnCount();
+        } catch (_) {}
     }
 
     document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -956,6 +978,7 @@
 
     document.addEventListener('langchange', () => {
         loadStats();
+        updateSearchBtnCount();
         refillFacets();
         refreshDropdowns();
         renderRecent();
@@ -1275,6 +1298,12 @@
         if (document.body.classList.contains('mode-results')) doSearch();
     });
 
+    // live count on the search button as filters change (browse only)
+    document.getElementById('filter-sidebar').addEventListener('change', scheduleLiveCount);
+    const _mrange = document.getElementById('mileage-range');
+    if (_mrange) _mrange.addEventListener('input', scheduleLiveCount);
+    document.getElementById('search-input').addEventListener('input', scheduleLiveCount);
+
     const ERROR_CODES = new Set([
         'query_too_vague', 'query_empty', 'phone_too_short',
         'car_invalid_key', 'car_not_found', 'cooldown', 'rate_limited',
@@ -1357,7 +1386,7 @@
             showSearchError(meta, t('err_fetch', { msg: e.message }));
         } finally {
             btn.disabled = false;
-            btn.textContent = t('btn_search');
+            updateSearchBtnCount();
         }
     }
 
@@ -1710,6 +1739,8 @@
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
+        _lastCount = data.total_count;
+        updateSearchBtnCount();
 
         let metaText = `<strong class="text-ink">${t('results_count', { n: data.total_count })}</strong>`;
         if (data.remaining_searches != null) {
@@ -2447,6 +2478,7 @@
     loadFacets();
     enhanceDropdowns();
     initMileageSlider();
+    updateSearchBtnCount();
 </script>
 
 </body>

@@ -99,6 +99,12 @@ class SearchResponse(BaseModel):
     remaining_searches: int | None
 
 
+class SearchCount(BaseModel):
+    """მხოლოდ რაოდენობა — ცოცხალი counter ძიების ღილაკზე."""
+
+    total_count: int
+
+
 class HealthCheck(BaseModel):
     """რა მუშაობს და რა არა."""
 

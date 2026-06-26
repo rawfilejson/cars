@@ -66,7 +66,7 @@ const TRANSLATIONS = {
         page_of: "გვერდი {p} / {n}",
         page_prev: "← წინა",
         page_next: "შემდეგი →",
-        no_results: "ვერაფერი ვიპოვე",
+        no_results: "თქვენი ძიებით მანქანა ვერ მოიძებნა",
 
         notice_slow: "ხანდახან 10-15 წამი ჭირდება ინფორმაციის მოძიებას. გთხოვთ მოითმინეთ.",
 
@@ -192,7 +192,7 @@ const TRANSLATIONS = {
         page_of: "Page {p} / {n}",
         page_prev: "← Prev",
         page_next: "Next →",
-        no_results: "Nothing found",
+        no_results: "No cars found for your search",
 
         notice_slow: "Searches can take 10-15 seconds. Please be patient.",
 
