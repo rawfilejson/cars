@@ -27,6 +27,16 @@ class SearchRequest(BaseModel):
     drive_wheels: str | None = Field(None, max_length=40)
     customs_cleared: bool | None = None
 
+    # multi-select filters (new filter UI). The singular fields above are kept
+    # for backward compatibility; the server merges both into one IN per column.
+    manufacturers: list[str] | None = Field(None, max_length=60)
+    models:        list[str] | None = Field(None, max_length=80)
+    body_types:    list[str] | None = Field(None, max_length=40)
+    fuels:         list[str] | None = Field(None, max_length=40)
+    gearboxes:     list[str] | None = Field(None, max_length=40)
+    drives:        list[str] | None = Field(None, max_length=40)
+    locations:     list[str] | None = Field(None, max_length=60)
+
     sort: str | None = Field(None, max_length=20)
 
     page: int = Field(1, ge=1, le=200)

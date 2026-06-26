@@ -24,6 +24,7 @@ _FIELDS = {
     "fuel": "engine_type",
     "gearbox": "gearbox",
     "drive": "drive_wheels",
+    "location": "location",
 }
 
 # ბინძური variant → კანონიკური მნიშვნელობა (ბაზაში ერთი და იგივე რამდენ ნაირად წერია)

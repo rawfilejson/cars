@@ -95,6 +95,16 @@ def _normalize_phone_query(raw: str) -> str:
     return digits[-9:] if len(digits) > 9 else digits
 
 
+def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
+    """Merge a legacy single value + the new multi-select list — de-duped, non-empty."""
+    out: list[str] = []
+    if singular:
+        out.append(singular)
+    if plural:
+        out.extend(plural)
+    return list(dict.fromkeys(v for v in out if v))
+
+
 def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     """Filter SQL fragments + their parameter values."""
     fragments: list[str] = []
@@ -117,17 +127,46 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     if req.mileage_to is not None:
         fragments.append("mileage_km <= %s")
         params.append(req.mileage_to)
-    for value, col in (
-        (req.body_type, "body_type"),
-        (req.fuel_type, "engine_type"),
-        (req.gearbox, "gearbox"),
-        (req.drive_wheels, "drive_wheels"),
+
+    # facet filters — legacy single value + new multi-select list, each value
+    # expanded to its canonical variants, all unioned into one IN per column.
+    for singular, plural, col in (
+        (req.body_type, req.body_types, "body_type"),
+        (req.fuel_type, req.fuels, "engine_type"),
+        (req.gearbox, req.gearboxes, "gearbox"),
+        (req.drive_wheels, req.drives, "drive_wheels"),
     ):
-        if value:
-            variants = facet_variants(value)
+        selected = _multi_values(singular, plural)
+        if selected:
+            variants: list[str] = []
+            for value in selected:
+                variants.extend(facet_variants(value))
+            variants = list(dict.fromkeys(variants))
             placeholders = ", ".join(["%s"] * len(variants))
             fragments.append(f"{col} IN ({placeholders})")
             params.extend(variants)
+
+    # manufacturers — exact, case-insensitive multi-select
+    manufacturers = _multi_values(None, req.manufacturers)
+    if manufacturers:
+        placeholders = ", ".join(["%s"] * len(manufacturers))
+        fragments.append(f"lower(manufacturer) IN ({placeholders})")
+        params.extend(m.lower() for m in manufacturers)
+
+    # models — substring match (base-model names live inside the full trim string)
+    models = _multi_values(None, req.models)
+    if models:
+        ors = " OR ".join(["model ILIKE %s"] * len(models))
+        fragments.append(f"({ors})")
+        params.extend(f"%{m}%" for m in models)
+
+    # locations — exact multi-select
+    locations = _multi_values(None, req.locations)
+    if locations:
+        placeholders = ", ".join(["%s"] * len(locations))
+        fragments.append(f"location IN ({placeholders})")
+        params.extend(locations)
+
     if req.customs_cleared is not None:
         fragments.append("customs_cleared = %s")
         params.append(req.customs_cleared)
@@ -144,7 +183,11 @@ def _has_any_filter(req: SearchRequest) -> bool:
         getattr(req, k) is not None
         for k in ("year_from", "year_to", "price_from", "price_to", "mileage_from", "mileage_to")
     )
-    facets = any(getattr(req, k) for k in ("body_type", "fuel_type", "gearbox", "drive_wheels"))
+    facets = any(getattr(req, k) for k in (
+        "body_type", "fuel_type", "gearbox", "drive_wheels",
+        "body_types", "fuels", "gearboxes", "drives",
+        "manufacturers", "models", "locations",
+    ))
     return ranges or facets or req.customs_cleared is not None
 
 

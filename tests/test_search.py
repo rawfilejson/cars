@@ -9,6 +9,12 @@ from src.api.schemas import SearchRequest
 from src.api.search import _build_query, _normalize_phone_query, _looks_like_phone
 
 
+def _build_filter_only(**kwargs):
+    """Build a SearchRequest from kwargs and return its (fragments, params)."""
+    from src.api.search import _filter_clauses
+    return _filter_clauses(SearchRequest(**kwargs))
+
+
 @pytest.mark.parametrize("raw,expected", [
     ("595515141",        "595515141"),
     ("+995595515141",    "595515141"),
@@ -160,6 +166,53 @@ def test_result_cache_evicts_oldest_not_all():
         assert f"k{overflow - 1}" in s._RESULT_CACHE        # newest retained
     finally:
         s._RESULT_CACHE.clear()
+
+
+def test_filter_multi_body_types_one_in_clause():
+    frags, params = _build_filter_only(body_types=["სედანი", "ჯიპი"])
+    body = [f for f in frags if "body_type IN" in f]
+    assert len(body) == 1
+    assert "სედანი" in params and "ჯიპი" in params
+
+
+def test_filter_singular_and_plural_merge():
+    """Legacy single value + new multi-select list collapse into one IN."""
+    frags, params = _build_filter_only(body_type="სედანი", body_types=["ჯიპი"])
+    assert len([f for f in frags if "body_type IN" in f]) == 1
+    assert "სედანი" in params and "ჯიპი" in params
+
+
+def test_filter_manufacturers_case_insensitive():
+    frags, params = _build_filter_only(manufacturers=["BMW", "Toyota"])
+    assert any("lower(manufacturer) IN" in f for f in frags)
+    assert "bmw" in params and "toyota" in params
+
+
+def test_filter_models_ilike():
+    frags, params = _build_filter_only(models=["320", "Camry"])
+    assert any("model ILIKE" in f for f in frags)
+    assert "%320%" in params and "%Camry%" in params
+
+
+def test_filter_locations_exact():
+    frags, params = _build_filter_only(locations=["თბილისი", "ბათუმი"])
+    assert any("location IN" in f for f in frags)
+    assert "თბილისი" in params and "ბათუმი" in params
+
+
+def test_multi_select_counts_as_a_filter_for_browse():
+    from src.api.search import _has_any_filter
+    assert _has_any_filter(SearchRequest(manufacturers=["BMW"]))
+    assert _has_any_filter(SearchRequest(locations=["თბილისი"]))
+    assert _has_any_filter(SearchRequest(fuels=["ბენზინი"]))
+    assert not _has_any_filter(SearchRequest())
+
+
+def test_browse_by_manufacturer_only_routes_to_browse():
+    """No text, just a brand multi-select -> browse query, no 400."""
+    sql, params, qtype = _build_query(SearchRequest(manufacturers=["BMW"]))
+    assert qtype == "browse"
+    assert "lower(manufacturer) IN" in sql
 
 
 def test_fx_rates_single_source_of_truth():
