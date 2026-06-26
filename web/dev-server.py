@@ -23,6 +23,11 @@ class SPAHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
+    def end_headers(self):
+        # dev only — never cache, so edits to config.js/i18n.js show on reload
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
         rel = self.path.split("?", 1)[0].lstrip("/")
         target = WEB_DIR / rel

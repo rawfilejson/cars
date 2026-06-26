@@ -146,6 +146,9 @@
         .cdd-label.is-empty { color: #8D99AE; }
         .cdd-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px;
             padding: 0 5px; border-radius: 999px; background: #EF233C; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .cdd-chips { display: flex; gap: 4px; overflow: hidden; flex: 1 1 auto; min-width: 0; }
+        .cdd-chip { background: #FDE6E8; color: #D90429; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .cdd-group-head { padding: 8px 12px 3px; font-size: 11px; font-weight: 700; text-transform: uppercase;
             letter-spacing: .06em; color: #8D99AE; }
         /* "more filters" expander */
@@ -2330,8 +2333,10 @@
             if (multi) {
                 const s = realSel();
                 if (!s.length) { btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return; }
-                const extra = s.length > 1 ? `<span class="cdd-count">+${s.length - 1}</span>` : '';
-                btn.innerHTML = `<span class="cdd-label">${escapeHtml(s[0].textContent)}</span>${extra}<span class="cdd-chev">▾</span>`;
+                const MAX = 2;
+                const chips = s.slice(0, MAX).map(o => `<span class="cdd-chip">${escapeHtml(o.textContent)}</span>`).join('');
+                const more = s.length > MAX ? `<span class="cdd-count">+${s.length - MAX}</span>` : '';
+                btn.innerHTML = `<span class="cdd-chips">${chips}</span>${more}<span class="cdd-chev">▾</span>`;
             } else {
                 const cur = sel.options[sel.selectedIndex];
                 btn.innerHTML = `<span class="cdd-label">${escapeHtml(cur ? cur.textContent : '')}</span><span class="cdd-chev">▾</span>`;
@@ -2374,6 +2379,7 @@
         panel.addEventListener('click', (e) => {
             const opt = e.target.closest('.cdd-opt');
             if (!opt) return;
+            if (multi) e.stopPropagation();   // keep panel open for multi-select
             const i = +opt.dataset.i;
             if (multi) {
                 const o = sel.options[i];
