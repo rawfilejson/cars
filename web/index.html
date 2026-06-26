@@ -146,6 +146,27 @@
         .cdd-label.is-empty { color: #8D99AE; }
         .cdd-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px;
             padding: 0 5px; border-radius: 999px; background: #EF233C; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .cdd-group-head { padding: 8px 12px 3px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .06em; color: #8D99AE; }
+        /* "more filters" expander */
+        .more-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: none; border: 0;
+            color: #EF233C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 0; }
+        .more-toggle .more-chev { font-size: 11px; transition: transform .18s; }
+        .more-toggle.open .more-chev { transform: rotate(180deg); }
+        .more-filters[hidden] { display: none; }
+        /* mileage dual-range slider */
+        .filter-slider { position: relative; }
+        .mrange { position: relative; flex: 1 1 100%; height: 28px; }
+        .mrange-bar { position: absolute; top: 12px; left: 2px; right: 2px; height: 4px; background: #DCE3EA; border-radius: 4px; }
+        .mrange-fill { position: absolute; top: 0; height: 100%; background: #EF233C; border-radius: 4px; }
+        .mrange-input { position: absolute; top: 0; left: 0; width: 100%; height: 28px; margin: 0; background: none;
+            pointer-events: none; -webkit-appearance: none; appearance: none; }
+        .mrange-input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px;
+            border-radius: 50%; background: #fff; border: 2px solid #EF233C; cursor: pointer; box-shadow: 0 1px 4px rgba(43,45,66,.25); }
+        .mrange-input::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%;
+            background: #fff; border: 2px solid #EF233C; cursor: pointer; }
+        .mrange-vals { display: flex; justify-content: space-between; flex-basis: 100%; margin-top: 2px;
+            font-size: 12px; color: #64748B; font-family: 'JetBrains Mono', monospace; }
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .sidebar-head h3 { font-size: 16px; font-weight: 700; color: #2B2D42; }
         .sidebar .mt-5 { margin-top: 0; }
@@ -771,13 +792,16 @@
                            data-i18n-placeholder="filter_to" min="0">
                     <button class="filter-reset" type="button" onclick="resetFilter('price')" aria-label="reset">↺</button>
                 </div>
-                <div class="filter-group" data-filter="mileage">
+                <div class="filter-group filter-slider" data-filter="mileage">
                     <span class="filter-label" data-i18n="filter_mileage"></span>
-                    <input class="filter-input" type="number" id="f-mileage-from"
-                           data-i18n-placeholder="filter_from" min="0">
-                    <span class="filter-dash">–</span>
-                    <input class="filter-input" type="number" id="f-mileage-to"
-                           data-i18n-placeholder="filter_to" min="0">
+                    <div class="mrange" id="mileage-range">
+                        <div class="mrange-bar"><div class="mrange-fill" id="mileage-fill"></div></div>
+                        <input type="range" class="mrange-input" id="mileage-r-from" min="0" max="1000000" step="5000" value="0" aria-label="mileage from">
+                        <input type="range" class="mrange-input" id="mileage-r-to" min="0" max="1000000" step="5000" value="1000000" aria-label="mileage to">
+                    </div>
+                    <div class="mrange-vals"><span id="mileage-v-from">0</span><span id="mileage-v-to">1,000,000+</span></div>
+                    <input type="hidden" id="f-mileage-from">
+                    <input type="hidden" id="f-mileage-to">
                     <button class="filter-reset" type="button" onclick="resetFilter('mileage')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="sort">
@@ -794,7 +818,10 @@
                 </div>
             </div>
 
-            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <button type="button" class="more-toggle" onclick="toggleMoreFilters()">
+                <span data-i18n="more_filters"></span><span class="more-chev">▾</span>
+            </button>
+            <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 more-filters" id="more-filters" hidden>
                 <div class="filter-group" data-filter="body_type">
                     <span class="filter-label" data-i18n="filter_body"></span>
                     <select class="filter-select facet-select" id="f-body" multiple><option value="" data-i18n="any_opt"></option></select>
@@ -1002,8 +1029,49 @@
         }
     })();
 
+    const MILEAGE_MAX = 1000000;
+    function _fmtKm(n) { return n >= MILEAGE_MAX ? '1,000,000+' : Number(n).toLocaleString(); }
+    function initMileageSlider() {
+        const from = document.getElementById('mileage-r-from');
+        const to = document.getElementById('mileage-r-to');
+        const fill = document.getElementById('mileage-fill');
+        const vFrom = document.getElementById('mileage-v-from');
+        const vTo = document.getElementById('mileage-v-to');
+        const hFrom = document.getElementById('f-mileage-from');
+        const hTo = document.getElementById('f-mileage-to');
+        if (!from || !to) return;
+        const apply = (which) => {
+            let a = +from.value, b = +to.value;
+            if (a > b) { if (which === 'from') { a = b; from.value = a; } else { b = a; to.value = b; } }
+            fill.style.left = (a / MILEAGE_MAX * 100) + '%';
+            fill.style.width = ((b - a) / MILEAGE_MAX * 100) + '%';
+            vFrom.textContent = _fmtKm(a);
+            vTo.textContent = _fmtKm(b);
+            hFrom.value = a > 0 ? a : '';
+            hTo.value = b < MILEAGE_MAX ? b : '';
+            updateFilterResets();
+        };
+        from.addEventListener('input', () => apply('from'));
+        to.addEventListener('input', () => apply('to'));
+        window._resetMileage = () => { from.value = 0; to.value = MILEAGE_MAX; apply('init'); };
+        apply('init');
+    }
+
+    window.toggleMoreFilters = function () {
+        const m = document.getElementById('more-filters');
+        const btn = document.querySelector('.more-toggle');
+        if (!m || !btn) return;
+        const opening = m.hasAttribute('hidden');
+        m.toggleAttribute('hidden', !opening);
+        btn.classList.toggle('open', opening);
+        const lbl = btn.querySelector('span');
+        if (lbl) lbl.textContent = t(opening ? 'less_filters' : 'more_filters');
+        if (opening) refreshDropdowns();
+    };
+
     window.clearFilters = function () {
         for (const id of Object.keys(_FILTER_FIELDS)) document.getElementById('f-' + id).value = '';
+        if (window._resetMileage) window._resetMileage();
         document.getElementById('f-sort').value = '';
         document.getElementById('f-customs').value = '';
         for (const id of ['f-brand', 'f-body', 'f-fuel', 'f-gearbox', 'f-drive', 'f-location']) {
@@ -1059,6 +1127,7 @@
                 if (el.multiple) Array.from(el.options).forEach(o => o.selected = false);
                 else el.value = '';
             });
+            if (kind === 'mileage' && window._resetMileage) window._resetMileage();
         }
         updateFilterResets();
         refreshDropdowns();
@@ -2291,6 +2360,7 @@
     loadMakes();
     loadFacets();
     enhanceDropdowns();
+    initMileageSlider();
 </script>
 
 </body>
