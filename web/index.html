@@ -132,6 +132,20 @@
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
+        /* multi-select dropdown — checkbox rows, search, count badge */
+        .cdd-search { width: 100%; box-sizing: border-box; border: 0; border-bottom: 1px solid #DCE3EA;
+            padding: 8px 10px; margin-bottom: 4px; font-size: 14px; font-family: inherit; outline: 0; color: #2B2D42; }
+        .cdd-rows { display: block; }
+        .cdd-opt.cdd-check { display: flex; align-items: center; gap: 10px; }
+        .cdd-opt.cdd-check.on { background: transparent; color: #2B2D42; font-weight: 600; }
+        .cdd-opt.cdd-check:hover { background: #F3F6F8; }
+        .cdd-box { flex: 0 0 18px; width: 18px; height: 18px; border: 1.6px solid #C3CCD8; border-radius: 6px;
+            display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1;
+            color: #fff; transition: background .12s, border-color .12s; }
+        .cdd-opt.cdd-check.on .cdd-box { background: #EF233C; border-color: #EF233C; }
+        .cdd-label.is-empty { color: #8D99AE; }
+        .cdd-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px;
+            padding: 0 5px; border-radius: 999px; background: #EF233C; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .sidebar-head h3 { font-size: 16px; font-weight: 700; color: #2B2D42; }
         .sidebar .mt-5 { margin-top: 0; }
@@ -725,14 +739,14 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <div class="filter-group" data-filter="brand">
                     <span class="filter-label" data-i18n="filter_brand"></span>
-                    <select class="filter-select" id="f-brand">
+                    <select class="filter-select" id="f-brand" multiple data-search data-search-ph="ph_search">
                         <option value="" data-i18n="brand_any"></option>
                     </select>
                     <button class="filter-reset" type="button" onclick="resetFilter('brand')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="model">
                     <span class="filter-label" data-i18n="filter_model"></span>
-                    <select class="filter-select" id="f-model" disabled>
+                    <select class="filter-select" id="f-model" multiple data-search data-search-ph="ph_search" disabled>
                         <option value="" data-i18n="model_any"></option>
                     </select>
                     <button class="filter-reset" type="button" onclick="resetFilter('model')" aria-label="reset">↺</button>
@@ -783,23 +797,28 @@
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="filter-group" data-filter="body_type">
                     <span class="filter-label" data-i18n="filter_body"></span>
-                    <select class="filter-select facet-select" id="f-body"><option value="" data-i18n="any_opt"></option></select>
+                    <select class="filter-select facet-select" id="f-body" multiple><option value="" data-i18n="any_opt"></option></select>
                     <button class="filter-reset" type="button" onclick="resetFilter('body_type')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="fuel">
                     <span class="filter-label" data-i18n="filter_fuel"></span>
-                    <select class="filter-select facet-select" id="f-fuel"><option value="" data-i18n="any_opt"></option></select>
+                    <select class="filter-select facet-select" id="f-fuel" multiple><option value="" data-i18n="any_opt"></option></select>
                     <button class="filter-reset" type="button" onclick="resetFilter('fuel')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="gearbox">
                     <span class="filter-label" data-i18n="filter_gearbox"></span>
-                    <select class="filter-select facet-select" id="f-gearbox"><option value="" data-i18n="any_opt"></option></select>
+                    <select class="filter-select facet-select" id="f-gearbox" multiple><option value="" data-i18n="any_opt"></option></select>
                     <button class="filter-reset" type="button" onclick="resetFilter('gearbox')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="drive">
                     <span class="filter-label" data-i18n="filter_drive"></span>
-                    <select class="filter-select facet-select" id="f-drive"><option value="" data-i18n="any_opt"></option></select>
+                    <select class="filter-select facet-select" id="f-drive" multiple><option value="" data-i18n="any_opt"></option></select>
                     <button class="filter-reset" type="button" onclick="resetFilter('drive')" aria-label="reset">↺</button>
+                </div>
+                <div class="filter-group" data-filter="location">
+                    <span class="filter-label" data-i18n="filter_location"></span>
+                    <select class="filter-select facet-select" id="f-location" multiple data-search data-search-ph="ph_search"><option value="" data-i18n="location_any"></option></select>
+                    <button class="filter-reset" type="button" onclick="resetFilter('location')" aria-label="reset">↺</button>
                 </div>
                 <div class="filter-group" data-filter="customs">
                     <span class="filter-label" data-i18n="filter_customs"></span>
@@ -927,15 +946,19 @@
             if (!Number.isNaN(n) && n >= 0) payload[key] = n;
         }
 
-        const body    = document.getElementById('f-body').value;
-        const fuel    = document.getElementById('f-fuel').value;
-        const gearbox = document.getElementById('f-gearbox').value;
-        const drive   = document.getElementById('f-drive').value;
+        const MULTI = {
+            'f-brand': 'manufacturers', 'f-model': 'models',
+            'f-body': 'body_types', 'f-fuel': 'fuels',
+            'f-gearbox': 'gearboxes', 'f-drive': 'drives', 'f-location': 'locations',
+        };
+        for (const [id, key] of Object.entries(MULTI)) {
+            const sel = document.getElementById(id);
+            if (!sel) continue;
+            const vals = Array.from(sel.selectedOptions).map(o => o.value).filter(Boolean);
+            if (vals.length) payload[key] = vals;
+        }
+
         const customs = document.getElementById('f-customs').value;
-        if (body)    payload.body_type    = body;
-        if (fuel)    payload.fuel_type    = fuel;
-        if (gearbox) payload.gearbox      = gearbox;
-        if (drive)   payload.drive_wheels = drive;
         if (customs) payload.customs_cleared = (customs === 'yes');
 
         const sort = document.getElementById('f-sort').value;
@@ -980,17 +1003,14 @@
     })();
 
     window.clearFilters = function () {
-        for (const id of Object.keys(_FILTER_FIELDS)) {
-            document.getElementById('f-' + id).value = '';
-        }
+        for (const id of Object.keys(_FILTER_FIELDS)) document.getElementById('f-' + id).value = '';
         document.getElementById('f-sort').value = '';
-        for (const id of ['f-body', 'f-fuel', 'f-gearbox', 'f-drive', 'f-customs']) {
-            document.getElementById(id).value = '';
+        document.getElementById('f-customs').value = '';
+        for (const id of ['f-brand', 'f-body', 'f-fuel', 'f-gearbox', 'f-drive', 'f-location']) {
+            const sel = document.getElementById(id);
+            if (sel) Array.from(sel.options).forEach(o => o.selected = false);
         }
-        const brand = document.getElementById('f-brand');
         const model = document.getElementById('f-model');
-        brand.value = '';
-        model.value = '';
         model.innerHTML = `<option value="">${t('model_any')}</option>`;
         model.disabled = true;
         updateFilterResets();
@@ -1007,6 +1027,7 @@
         fuel:      ['f-fuel'],
         gearbox:   ['f-gearbox'],
         drive:     ['f-drive'],
+        location:  ['f-location'],
         customs:   ['f-customs'],
     };
 
@@ -1027,14 +1048,16 @@
     // თითო ფილტრს ცალკე ასუფთავებს და თავიდან ეძებს
     window.resetFilter = function (kind) {
         if (kind === 'brand') {
-            document.getElementById('f-brand').value = '';
+            Array.from(document.getElementById('f-brand').options).forEach(o => o.selected = false);
             const model = document.getElementById('f-model');
-            model.value = '';
             model.innerHTML = `<option value="">${t('model_any')}</option>`;
             model.disabled = true;
         } else {
             (_RESET_GROUPS[kind] || []).forEach((id) => {
-                document.getElementById(id).value = '';
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.multiple) Array.from(el.options).forEach(o => o.selected = false);
+                else el.value = '';
             });
         }
         updateFilterResets();
@@ -1047,7 +1070,9 @@
             if (!group) continue;
             const hasVal = ids.some((id) => {
                 const el = document.getElementById(id);
-                return el && el.value;
+                if (!el) return false;
+                if (el.multiple) return Array.from(el.selectedOptions).some(o => o.value);
+                return !!el.value;
             });
             group.classList.toggle('has-val', hasVal);
         }
@@ -1087,13 +1112,13 @@
     }
 
     // dropdown-ის option-ებს ავსებს; value = ქართული (DB), ტექსტი = tval (en-ზე ითარგმნება)
-    function fillFacet(id, values) {
+    function fillFacet(id, values, anyKey) {
         const sel = document.getElementById(id);
         if (!sel || !values) return;
-        const cur = sel.value;
-        sel.innerHTML = `<option value="">${t('any_opt')}</option>` +
-            values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(tval(v))}</option>`).join('');
-        sel.value = cur;
+        const keep = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+        sel.innerHTML = `<option value="">${t(anyKey || 'any_opt')}</option>` +
+            values.map(v => `<option value="${escapeHtml(v)}"${keep.has(v) ? ' selected' : ''}>${escapeHtml(tval(v))}</option>`).join('');
+        if (sel._cdd) sel._cdd.render();
     }
 
     function refillFacets() {
@@ -1101,29 +1126,27 @@
         fillFacet('f-fuel', _facets.fuel);
         fillFacet('f-gearbox', _facets.gearbox);
         fillFacet('f-drive', _facets.drive);
+        fillFacet('f-location', _facets.location, 'location_any');
     }
 
     function onBrandChange() {
-        const brand = document.getElementById('f-brand').value;
+        const brand = document.getElementById('f-brand');
         const model = document.getElementById('f-model');
-        const models = _makes[brand] || [];
+        const brands = Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean);
+        // union of models across all selected brands (dedup, source order)
+        const seen = new Set();
+        const models = [];
+        for (const b of brands) for (const m of (_makes[b] || [])) { if (!seen.has(m)) { seen.add(m); models.push(m); } }
+        const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
         model.innerHTML = `<option value="">${t('model_any')}</option>` +
-            models.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-        model.disabled = !brand;
-        runBrandSearch();
-    }
-
-    // ბრენდი/მოდელი ანახლებს ძიების ტექსტს — ძებნა მხოლოდ ღილაკზე ხდება (auto-search არა)
-    function runBrandSearch() {
-        const brand = document.getElementById('f-brand').value;
-        const model = document.getElementById('f-model').value;
-        const el = document.getElementById('search-input');
-        if (brand) el.value = [brand, model].filter(Boolean).join(' ');
-        el.dispatchEvent(new Event('input'));
+            models.map(m => `<option value="${escapeHtml(m)}"${keep.has(m) ? ' selected' : ''}>${escapeHtml(m)}</option>`).join('');
+        model.disabled = brands.length === 0;
+        if (model._cdd) model._cdd.render();
+        updateFilterResets();
     }
 
     document.getElementById('f-brand').addEventListener('change', onBrandChange);
-    document.getElementById('f-model').addEventListener('change', runBrandSearch);
+    document.getElementById('f-model').addEventListener('change', updateFilterResets);
 
     const ERROR_CODES = new Set([
         'query_too_vague', 'query_empty', 'phone_too_short',
@@ -2177,6 +2200,9 @@
 
     function enhanceSelect(sel) {
         if (sel._cdd) return;
+        const multi = sel.multiple;
+        const searchable = sel.dataset.search != null;
+        let _filter = '';
         const wrap = document.createElement('div');
         wrap.className = 'cdd';
         sel.parentNode.insertBefore(wrap, sel);
@@ -2188,31 +2214,71 @@
         panel.className = 'cdd-panel';
         wrap.append(btn, panel);
 
+        const realSel = () => Array.from(sel.selectedOptions).filter(o => o.value);
+        const anyLabel = () => { const a = Array.from(sel.options).find(o => !o.value); return a ? a.textContent : ''; };
+
+        const updateLabel = () => {
+            if (multi) {
+                const s = realSel();
+                if (!s.length) { btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return; }
+                const extra = s.length > 1 ? `<span class="cdd-count">+${s.length - 1}</span>` : '';
+                btn.innerHTML = `<span class="cdd-label">${escapeHtml(s[0].textContent)}</span>${extra}<span class="cdd-chev">▾</span>`;
+            } else {
+                const cur = sel.options[sel.selectedIndex];
+                btn.innerHTML = `<span class="cdd-label">${escapeHtml(cur ? cur.textContent : '')}</span><span class="cdd-chev">▾</span>`;
+            }
+        };
+
+        const rowsHtml = () => Array.from(sel.options).map((o, i) => {
+            if (o.disabled) return `<div class="cdd-sep"></div>`;
+            if (multi) {
+                if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
+                return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
+            }
+            return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
+        }).join('');
+
         const render = () => {
             wrap.classList.toggle('disabled', sel.disabled);
-            const cur = sel.options[sel.selectedIndex];
-            btn.innerHTML = `<span class="cdd-label">${escapeHtml(cur ? cur.textContent : '')}</span><span class="cdd-chev">▾</span>`;
-            panel.innerHTML = Array.from(sel.options).map((o, i) => o.disabled
-                ? `<div class="cdd-sep"></div>`
-                : `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`).join('');
+            updateLabel();
+            const sb = (multi && searchable)
+                ? `<input class="cdd-search" type="text" placeholder="${escapeHtml(t(sel.dataset.searchPh || ''))}" value="${escapeHtml(_filter)}">`
+                : '';
+            panel.innerHTML = sb + `<div class="cdd-rows">${rowsHtml()}</div>`;
+            if (multi && searchable) {
+                const si = panel.querySelector('.cdd-search');
+                si.addEventListener('click', (e) => e.stopPropagation());
+                si.addEventListener('input', () => { _filter = si.value.trim().toLowerCase(); panel.querySelector('.cdd-rows').innerHTML = rowsHtml(); });
+            }
         };
+
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sel.disabled) return;
             const wasOpen = wrap.classList.contains('open');
             document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
-            if (!wasOpen) { render(); wrap.classList.add('open'); _placeCddPanel(btn, panel); panel.scrollTop = 0; }
+            if (!wasOpen) { _filter = ''; render(); wrap.classList.add('open'); _placeCddPanel(btn, panel); panel.scrollTop = 0; }
         });
         panel.addEventListener('click', (e) => {
             const opt = e.target.closest('.cdd-opt');
             if (!opt) return;
-            sel.selectedIndex = +opt.dataset.i;
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
-            wrap.classList.remove('open');
-            render();
+            const i = +opt.dataset.i;
+            if (multi) {
+                const o = sel.options[i];
+                if (!o.value) { Array.from(sel.options).forEach(x => x.selected = false); }
+                else { o.selected = !o.selected; const any = Array.from(sel.options).find(x => !x.value); if (any) any.selected = false; }
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                updateLabel();
+            } else {
+                sel.selectedIndex = i;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                wrap.classList.remove('open');
+                render();
+            }
         });
-        sel.addEventListener('change', render);
-        new MutationObserver(render).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
+        sel.addEventListener('change', () => { wrap.classList.contains('open') ? updateLabel() : render(); });
+        new MutationObserver(() => render()).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
         sel._cdd = { render };
         render();
     }
