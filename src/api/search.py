@@ -387,7 +387,7 @@ def _query_rows(sql: str, params: tuple) -> list:
 def search(req: SearchRequest, request: Request, background_tasks: BackgroundTasks) -> SearchResponse:
     """ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო."""
 
-    remaining = check_rate_limit(request)
+    remaining = check_rate_limit(request, is_pagination=req.page > 1)
 
     sql, params, query_type = _build_query(req)
     rows = _query_rows(sql, params)

@@ -91,8 +91,11 @@ def _limit_error(limit: int) -> HTTPException:
     )
 
 
-def check_rate_limit(request: Request) -> int | None:
+def check_rate_limit(request: Request, is_pagination: bool = False) -> int | None:
     """ცდის ჩატარებამდე rate-limit-ის შემოწმება. აბრუნებს დარჩენილ ცდებს.
+
+    is_pagination=True (page>1) — cooldown-ს არ ვამოწმებთ: არსებული შედეგის
+    გვერდებზე გადასვლა ახალი ძიება არ არის (IP-ის საათობრივი ჭერი მაინც მოქმედებს).
 
     Raises:
         HTTPException 429 — cooldown, token-ის საათობრივი, ან IP-ის ჭერი.
@@ -139,7 +142,7 @@ def check_rate_limit(request: Request) -> int | None:
     )
     count_last_hour = int(row["count_last_hour"] or 0) if row else 0
 
-    if sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
+    if not is_pagination and sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
         raise _cooldown_error(sec_since_last)
 
     # SEARCH_LIMIT_PER_HOUR <= 0 ნიშნავს „საათობრივი ლიმიტი გამორთულია" — მხოლოდ cooldown მოქმედებს
