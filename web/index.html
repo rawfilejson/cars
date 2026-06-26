@@ -590,6 +590,10 @@
         .rcard-specs { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 9px; }
         .rcard-vin { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A9B4C2; letter-spacing: .03em; margin-bottom: 10px; }
         .rcard-vin span { color: #8D99AE; }
+        .rcard-contact { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 14px; margin-bottom: 10px; }
+        .rcard-contact .rc-vin { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748B; letter-spacing: .03em; }
+        .rcard-contact .rc-phone { font-size: 12px; font-weight: 600; color: #EF233C; text-decoration: none; }
+        .rcard-contact .rc-phone:hover { text-decoration: underline; }
         .spec-pill { display: inline-flex; align-items: center; gap: 6px; background: #F3F6F8; border: 1px solid #E7ECF1; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #2B2D42; }
         .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
         .spec-pill:hover .pill-ic { color: #EF233C; }
@@ -1373,6 +1377,23 @@
             .replace(/'/g, '&#39;');
     }
 
+    // fallback extraction from the description text (when the structured field is empty)
+    function vinFromText(text) {
+        if (!text) return '';
+        const cleaned = String(text).toUpperCase().replace(/[A-Z0-9]*\*+[A-Z0-9*]*/g, ' ');
+        const m = cleaned.match(/\b[A-HJ-NPR-Z0-9]{17}\b/);
+        return m ? m[0] : '';
+    }
+    function phoneFromText(text) {
+        if (!text) return '';
+        const m = String(text).match(/(?:\+?\s?995[\s\-.]?)?5\d{2}(?:[\s\-.]?\d){6}/);
+        if (!m) return '';
+        let d = m[0].replace(/\D/g, '');
+        if (d.startsWith('995')) d = d.slice(3);
+        if (d.length !== 9 || d[0] !== '5') return '';
+        return '+995 ' + d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6);
+    }
+
     function splitPhones(phone) {
         if (!phone) return [];
         const digits = phone.replace(/\D/g, '');
@@ -1705,6 +1726,11 @@
             _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
 
             const customsBadge = customsBadgeHtml(car);
+            const cardVin = car.vin || vinFromText(car.description);
+            const cardPhone = car.phone || phoneFromText(car.description);
+            const contactLine = (cardVin || cardPhone)
+                ? `<div class="rcard-contact">${cardVin ? `<span class="rc-vin">VIN ${escapeHtml(cardVin)}</span>` : ''}${cardPhone ? `<a class="rc-phone" href="tel:${escapeHtml(cardPhone.replace(/\s/g, ''))}" onclick="event.stopPropagation()">☎ ${escapeHtml(cardPhone)}</a>` : ''}</div>`
+                : '';
             return `
                 <article class="rcard" style="animation-delay:${Math.min(i, 8) * 45}ms">
                   <div class="rcard-photo">${photoBlockHtml(cardId, slides)}</div>
@@ -1718,7 +1744,7 @@
                       <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
                     </div>
                     <div class="rcard-specs">${carSpecPills(car)}</div>
-                    ${car.vin ? `<div class="rcard-vin">VIN <span>${escapeHtml(car.vin)}</span></div>` : ''}
+                    ${contactLine}
                     <div class="rcard-bot">
                       <div class="rcard-price">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—'}</div>
                       <div class="rcard-badges">${customsBadge}${sourceBadgeHtml(car)}</div>
