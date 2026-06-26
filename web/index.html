@@ -1160,7 +1160,7 @@
         const rest = all.filter(b => !pinned.includes(b));
         const opt = (n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
         let html = pinned.map(opt).join('');
-        if (pinned.length && rest.length) html += '<option disabled>·</option>';
+        if (pinned.length && rest.length) html += '<option disabled></option>';
         html += rest.map(opt).join('');
         const brand = document.getElementById('f-brand');
         brand.insertAdjacentHTML('beforeend', html);
@@ -1198,17 +1198,57 @@
         fillFacet('f-location', _facets.location, 'location_any');
     }
 
+    // derive a class/series label from a base model name (myauto-style grouping)
+    function _seriesOf(brand, model) {
+        const b = brand.toLowerCase(); const m = model.trim();
+        if (b === 'bmw') {
+            if (/^\d/.test(m)) return m[0] + 'er';
+            if (/^x\d?/i.test(m)) return 'X';
+            if (/^m\d?/i.test(m)) return 'M';
+            if (/^i\d?/i.test(m)) return 'i';
+            if (/^z\d?/i.test(m)) return 'Z';
+        } else if (b === 'mercedes-benz' || b === 'mercedes') {
+            const c = m.toUpperCase().match(/^(GLE|GLC|GLS|GLA|GLB|GLK|GL|CLA|CLS|CLK|SLK|SLC|SL|[ABCEGRSVX])\b/);
+            if (c) return c[1] + '-Class';
+        } else if (b === 'audi') {
+            const c = m.match(/^(RS|S|A|Q|TT|R8)/i);
+            if (c) return c[1].toUpperCase();
+        }
+        return null;
+    }
+
+    function _buildModelOptions(brands, keep) {
+        const out = [`<option value="">${escapeHtml(t('model_any'))}</option>`];
+        const multiBrand = brands.length > 1;
+        const opt = (m) => `<option value="${escapeHtml(m)}"${keep.has(m) ? ' selected' : ''}>${escapeHtml(m)}</option>`;
+        for (const b of brands) {
+            const groups = new Map(); const flat = [];
+            for (const m of (_makes[b] || [])) {
+                const s = _seriesOf(b, m);
+                if (s) { if (!groups.has(s)) groups.set(s, []); groups.get(s).push(m); }
+                else flat.push(m);
+            }
+            const prefix = multiBrand ? (b + ' · ') : '';
+            if (groups.size) {
+                for (const [series, ms] of [...groups.entries()].sort((a, c) => a[0].localeCompare(c[0]))) {
+                    out.push(`<option disabled>${escapeHtml(prefix + series)}</option>`);
+                    ms.forEach(m => out.push(opt(m)));
+                }
+                if (flat.length) { out.push(`<option disabled>${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
+            } else {
+                if (multiBrand) out.push(`<option disabled>${escapeHtml(b)}</option>`);
+                flat.forEach(m => out.push(opt(m)));
+            }
+        }
+        return out.join('');
+    }
+
     function onBrandChange() {
         const brand = document.getElementById('f-brand');
         const model = document.getElementById('f-model');
         const brands = Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean);
-        // union of models across all selected brands (dedup, source order)
-        const seen = new Set();
-        const models = [];
-        for (const b of brands) for (const m of (_makes[b] || [])) { if (!seen.has(m)) { seen.add(m); models.push(m); } }
         const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
-        model.innerHTML = `<option value="">${t('model_any')}</option>` +
-            models.map(m => `<option value="${escapeHtml(m)}"${keep.has(m) ? ' selected' : ''}>${escapeHtml(m)}</option>`).join('');
+        model.innerHTML = _buildModelOptions(brands, keep);
         model.disabled = brands.length === 0;
         if (model._cdd) model._cdd.render();
         updateFilterResets();
@@ -2299,7 +2339,10 @@
         };
 
         const rowsHtml = () => Array.from(sel.options).map((o, i) => {
-            if (o.disabled) return `<div class="cdd-sep"></div>`;
+            if (o.disabled) {
+                if (multi && searchable && _filter) return '';   // hide group headers while searching
+                return o.textContent ? `<div class="cdd-group-head">${escapeHtml(o.textContent)}</div>` : `<div class="cdd-sep"></div>`;
+            }
             if (multi) {
                 if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
                 return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
