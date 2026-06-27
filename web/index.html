@@ -670,6 +670,7 @@
             #results .rcard:hover, .spec-pill:hover, .chip:hover, .hist-chip:hover { transform: none; }
             *:active { transform: none !important; }
             .btn-search.is-busy { animation: none !important; }
+            .rcard.is-hiding { animation: none !important; opacity: 0; }
             .sk::after { animation: none; }
         }
 
@@ -684,6 +685,22 @@
         .save-btn { background: transparent; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: #A9B4C2; transition: all .15s ease; flex-shrink: 0; }
         .save-btn:hover { border-color: #EF233C; color: #EF233C; transform: scale(1.08); }
         .save-btn.is-saved { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
+
+        /* hover actions on a card (hide) */
+        .rcard-acts { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .rcard-hide { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #A9B4C2; opacity: 0; transform: scale(.85); pointer-events: none; transition: opacity .15s, transform .15s, color .15s, border-color .15s, background .15s; }
+        .rcard:hover .rcard-hide, .rcard-hide:focus-visible { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .rcard-hide:hover { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
+        .rcard-hide svg { width: 17px; height: 17px; }
+        .rcard.is-hiding { animation: cardHide .28s cubic-bezier(.4,0,.2,1) forwards; }
+        @keyframes cardHide { to { opacity: 0; transform: translateX(26px) scale(.96); } }
+        @media (hover: none) { .rcard-hide { opacity: 1; transform: none; pointer-events: auto; } }
+
+        /* toast */
+        .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(10px); background: #2B2D42; color: #fff; border-radius: 12px; padding: 11px 16px; font-size: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 30px rgba(43,45,66,.28); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1200; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .toast button { background: none; border: 0; color: #FF8A95; font-weight: 500; font-size: 14px; cursor: pointer; padding: 2px 4px; }
+        .toast button:hover { color: #fff; }
 
         /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #8D99AE; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
@@ -1778,6 +1795,37 @@
         return `<span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(name)}</span>`;
     }
 
+    // hidden listings (stored locally) + a small undo toast
+    const ICON_HIDE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.7 2.7"/><path d="M16.7 16.7A9 9 0 0 1 12 18c-5 0-8.3-4-9-6a14 14 0 0 1 3.3-3.8"/><path d="M9.9 5.2A9 9 0 0 1 12 5c5 0 8.3 4 9 6a14 14 0 0 1-1.6 2.4"/></svg>';
+    const HIDDEN_KEY = 'cdb_hidden';
+    function getHidden() { try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]')); } catch { return new Set(); } }
+    function setHiddenSet(set) { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify([...set])); } catch {} }
+
+    window.hideCar = function (key, btn) {
+        const set = getHidden(); set.add(key); setHiddenSet(set);
+        const card = btn.closest('.rcard');
+        if (card) { card.classList.add('is-hiding'); setTimeout(() => card.remove(), 290); }
+        showToast(t('toast_hidden'), t('act_undo'), () => {
+            const s = getHidden(); s.delete(key); setHiddenSet(s);
+            if (lastResponse) renderResults(lastResponse);
+        });
+    };
+
+    let _toastTimer = null;
+    function showToast(msg, actionLabel, actionFn) {
+        let el = document.getElementById('toast');
+        if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
+        el.innerHTML = '<span></span>' + (actionLabel ? '<button type="button"></button>' : '');
+        el.querySelector('span').textContent = msg;
+        if (actionLabel) { const b = el.querySelector('button'); b.textContent = actionLabel; b.onclick = () => { if (actionFn) actionFn(); hideToast(); }; }
+        el.classList.remove('show');
+        void el.offsetWidth;
+        el.classList.add('show');
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(hideToast, 4500);
+    }
+    function hideToast() { const el = document.getElementById('toast'); if (el) el.classList.remove('show'); }
+
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
@@ -1800,7 +1848,9 @@
 
         for (const k in _slidesByCard) delete _slidesByCard[k];
 
-        results.innerHTML = data.results.map((car, i) => {
+        const _hidden = getHidden();
+        const visible = data.results.filter(car => !_hidden.has(`${car.source}-${car.source_id}`));
+        results.innerHTML = visible.map((car, i) => {
             const cardId = `c${i}`;
             const title = carTitle(car);
             const slides = buildSlides(car);
@@ -1824,7 +1874,10 @@
                            onclick="return goToCarDetail('${escapeHtml(carKey)}', event)">${escapeHtml(title)}</a>
                         ${car.location ? `<div class="rcard-loc">${escapeHtml(tval(car.location))}</div>` : ''}
                       </div>
-                      <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
+                      <div class="rcard-acts">
+                        <button class="rcard-hide" onclick="event.stopPropagation(); hideCar('${escapeHtml(carKey)}', this)" title="${t('act_hide')}" aria-label="${t('act_hide')}">${ICON_HIDE}</button>
+                        <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
+                      </div>
                     </div>
                     <div class="rcard-specs">${carSpecPills(car)}</div>
                     ${contactLine}
