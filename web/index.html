@@ -261,6 +261,18 @@
 
         .lang-btn { color: #8D99AE; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
         .lang-btn.is-active { color: #2B2D42; font-weight: 600; }
+        .lang-menu { position: relative; }
+        .lang-trigger { display: inline-flex; align-items: center; gap: 4px; color: #64748B; font-size: 13px;
+            font-weight: 600; letter-spacing: .04em; background: none; border: 0; cursor: pointer; padding: 4px 6px; font-family: inherit; }
+        .lang-trigger:hover { color: #2B2D42; }
+        .lang-chev { font-size: 9px; }
+        .lang-pop { position: absolute; right: 0; top: 100%; margin-top: 6px; background: #fff; border: 1px solid #DCE3EA;
+            border-radius: 12px; box-shadow: 0 12px 30px rgba(43,45,66,.16); padding: 5px; z-index: 70; min-width: 130px; }
+        .lang-pop[hidden] { display: none; }
+        .lang-opt { display: block; width: 100%; text-align: left; background: none; border: 0; cursor: pointer;
+            padding: 8px 12px; border-radius: 8px; font-size: 14px; color: #2B2D42; font-family: inherit; }
+        .lang-opt:hover { background: #F3F6F8; }
+        .lang-opt.is-active { background: #FDE6E8; color: #D90429; font-weight: 600; }
 
 
         .tab { padding: 8px 16px; font-size: 14px; color: #8D99AE; border: 1px solid transparent; border-radius: 999px; cursor: pointer; }
@@ -718,10 +730,16 @@
         </div>
         <div class="flex items-center gap-3 md:gap-6 pt-1 md:pt-2 flex-shrink-0">
             <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><span>♥</span> <span class="cnt" id="saved-count">0</span></button>
-            <div class="flex items-center gap-1">
-                <button class="lang-btn" data-lang="ka">KA</button>
-                <span class="text-line">·</span>
-                <button class="lang-btn" data-lang="en">EN</button>
+            <div class="lang-menu" id="lang-menu">
+                <button class="lang-trigger" onclick="toggleLangMenu(event)" aria-label="language">
+                    <span id="lang-current">KA</span><span class="lang-chev">▾</span>
+                </button>
+                <div class="lang-pop" hidden>
+                    <button class="lang-opt" data-lang="ka" onclick="pickLang('ka')">ქართული</button>
+                    <button class="lang-opt" data-lang="en" onclick="pickLang('en')">English</button>
+                    <button class="lang-opt" data-lang="ru" onclick="pickLang('ru')">Русский</button>
+                    <button class="lang-opt" data-lang="kk" onclick="pickLang('kk')">Қазақша</button>
+                </div>
             </div>
         </div>
     </div>
@@ -977,8 +995,19 @@
         } catch (_) {}
     }
 
-    document.querySelectorAll('.lang-btn').forEach((btn) => {
-        btn.onclick = () => setLang(btn.dataset.lang);
+    window.toggleLangMenu = function (e) {
+        if (e) e.stopPropagation();
+        const pop = document.querySelector('#lang-menu .lang-pop');
+        if (pop) pop.toggleAttribute('hidden');
+    };
+    window.pickLang = function (lang) {
+        setLang(lang);
+        const pop = document.querySelector('#lang-menu .lang-pop');
+        if (pop) pop.setAttribute('hidden', '');
+    };
+    document.addEventListener('click', (e) => {
+        const pop = document.querySelector('#lang-menu .lang-pop');
+        if (pop && !pop.hidden && !e.target.closest('#lang-menu')) pop.setAttribute('hidden', '');
     });
 
     document.addEventListener('langchange', () => {
