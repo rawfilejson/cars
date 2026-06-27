@@ -702,6 +702,44 @@
         .toast button { background: none; border: 0; color: #FF8A95; font-weight: 500; font-size: 14px; cursor: pointer; padding: 2px 4px; }
         .toast button:hover { color: #fff; }
 
+        /* compare button on a card */
+        .rcard-compare { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #A9B4C2; opacity: 0; transform: scale(.85); pointer-events: none; transition: opacity .15s, transform .15s, color .15s, border-color .15s, background .15s; }
+        .rcard:hover .rcard-compare, .rcard-compare:focus-visible, .rcard-compare.on { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .rcard-compare:hover { color: #2B2D42; border-color: #2B2D42; }
+        .rcard-compare.on { color: #fff; background: #EF233C; border-color: #EF233C; }
+        .rcard-compare svg { width: 17px; height: 17px; }
+        @media (hover: none) { .rcard-compare { opacity: 1; transform: none; pointer-events: auto; } }
+
+        /* compare tray (bottom bar) */
+        .cmp-bar { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); display: none; align-items: center; gap: 12px; background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; padding: 10px 12px 10px 16px; box-shadow: 0 14px 40px rgba(43,45,66,.20); z-index: 1150; max-width: calc(100vw - 24px); }
+        .cmp-bar.show { display: flex; animation: cmpBarIn .22s cubic-bezier(.2,.7,.2,1) both; }
+        @keyframes cmpBarIn { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        .cmp-bar-label { font-size: 14px; font-weight: 500; color: #2B2D42; white-space: nowrap; }
+        .cmp-bar-thumbs { display: flex; gap: 6px; }
+        .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; }
+        .cmp-bar-open { background: #EF233C; color: #fff; border: 0; border-radius: 999px; padding: 9px 18px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+        .cmp-bar-clear { background: none; border: 0; color: #8D99AE; font-size: 13px; cursor: pointer; white-space: nowrap; }
+        .cmp-bar-clear:hover { color: #EF233C; }
+
+        /* compare modal */
+        .cmp-modal { position: fixed; inset: 0; background: rgba(43,45,66,.5); z-index: 1300; display: none; align-items: flex-start; justify-content: center; padding: 28px 16px; overflow: auto; }
+        .cmp-modal.show { display: flex; }
+        .cmp-sheet { background: #fff; border-radius: 16px; width: 100%; max-width: 920px; overflow: hidden; box-shadow: 0 24px 70px rgba(43,45,66,.3); animation: cmpSheetIn .22s cubic-bezier(.2,.7,.2,1) both; }
+        @keyframes cmpSheetIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        .cmp-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #ECF0F3; }
+        .cmp-sheet-head h3 { font-size: 17px; font-weight: 600; color: #2B2D42; margin: 0; }
+        .cmp-x { background: none; border: 0; font-size: 20px; line-height: 1; color: #8D99AE; cursor: pointer; }
+        .cmp-x:hover { color: #EF233C; }
+        .cmp-body { overflow-x: auto; }
+        .cmp-table { width: 100%; border-collapse: collapse; }
+        .cmp-table th, .cmp-table td { padding: 11px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #F0F3F5; font-size: 13.5px; color: #2B2D42; }
+        .cmp-rowlabel { color: #8D99AE; font-weight: 500; width: 130px; white-space: nowrap; }
+        .cmp-car-img { width: 150px; aspect-ratio: 4/3; object-fit: cover; border-radius: 9px; background: #F3F6F8; display: block; }
+        .cmp-car-title { font-weight: 500; color: #2B2D42; font-size: 13.5px; margin-top: 6px; max-width: 170px; }
+        .cmp-car-price { color: #EF233C; font-weight: 600; font-size: 15px; margin-top: 3px; }
+        .cmp-remove { margin-top: 6px; background: none; border: 0; color: #A9B4C2; font-size: 12px; cursor: pointer; padding: 0; }
+        .cmp-remove:hover { color: #EF233C; }
+
         /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #8D99AE; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
         .saved-trigger:hover { border-color: #2B2D42; color: #2B2D42; }
@@ -1048,6 +1086,7 @@
         refillFacets();
         refreshDropdowns();
         renderRecent();
+        if (window._refreshCompareUI) _refreshCompareUI();
         if (parseRoute().view === 'detail' && _detailCar) {
             renderDetail(_detailCar);
             return;
@@ -1826,6 +1865,121 @@
     }
     function hideToast() { const el = document.getElementById('toast'); if (el) el.classList.remove('show'); }
 
+    // compare tray — up to 4 cars side by side (stored locally)
+    const ICON_COMPARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8l4-4 4 4M21 16l-4 4-4-4"/></svg>';
+    const COMPARE_KEY = 'cdb_compare';
+    const _carFull = {};
+    function getCompare() { try { return JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); } catch { return []; } }
+    function setCompare(list) { try { localStorage.setItem(COMPARE_KEY, JSON.stringify(list)); } catch {} }
+    function isInCompare(key) { return getCompare().some(c => c.key === key); }
+    function summarizeCar(car) {
+        return {
+            key: `${car.source}-${car.source_id}`,
+            title: carTitle(car),
+            price: car.price_amount, currency: car.price_currency,
+            year: car.year, mileage: car.mileage_km,
+            engine: car.engine_volume_l, power: car.power_hp,
+            fuel: car.engine_type, gearbox: car.gearbox, drive: car.drive_wheels,
+            body: car.body_type, location: car.location,
+            thumb: (car.image_urls && car.image_urls[0]) || '',
+            url: `/car/${car.source}-${car.source_id}`,
+        };
+    }
+    window.toggleCompare = function (carKey, btn) {
+        const list = getCompare();
+        const idx = list.findIndex(c => c.key === carKey);
+        if (idx >= 0) { list.splice(idx, 1); if (btn) btn.classList.remove('on'); }
+        else {
+            if (list.length >= 4) { showToast(t('compare_max')); return; }
+            const car = _carFull[carKey];
+            if (!car) return;
+            list.push(summarizeCar(car));
+            if (btn) btn.classList.add('on');
+        }
+        setCompare(list);
+        renderCompareBar();
+    };
+    function renderCompareBar() {
+        let bar = document.getElementById('cmp-bar');
+        const list = getCompare();
+        if (!bar) { bar = document.createElement('div'); bar.id = 'cmp-bar'; bar.className = 'cmp-bar'; document.body.appendChild(bar); }
+        if (!list.length) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
+        const thumbs = list.map(c => `<img class="cmp-thumb" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2">`).join('');
+        bar.innerHTML =
+            `<span class="cmp-bar-label">${t('compare_title')} · ${list.length}</span>` +
+            `<div class="cmp-bar-thumbs">${thumbs}</div>` +
+            `<button class="cmp-bar-open" onclick="openCompare()">${t('act_compare')}</button>` +
+            `<button class="cmp-bar-clear" onclick="clearCompare()">${t('compare_clear')}</button>`;
+        bar.classList.add('show');
+    }
+    window.clearCompare = function () {
+        setCompare([]);
+        renderCompareBar();
+        document.querySelectorAll('.rcard-compare.on').forEach(b => b.classList.remove('on'));
+        closeCompare();
+    };
+    window.removeFromCompare = function (key) {
+        const list = getCompare().filter(c => c.key !== key);
+        setCompare(list);
+        const btn = document.querySelector(`.rcard-compare[data-key="${(window.CSS && CSS.escape) ? CSS.escape(key) : key}"]`);
+        if (btn) btn.classList.remove('on');
+        renderCompareBar();
+        if (list.length) renderCompareModal(); else closeCompare();
+    };
+    function renderCompareModal() {
+        const list = getCompare();
+        const modal = document.getElementById('cmp-modal');
+        if (!modal || !list.length) return;
+        const en = getLang() === 'en';
+        const dash = '—';
+        const rows = [
+            [t('filter_year'),    c => c.year || dash],
+            [t('spec_mileage'),   c => c.mileage ? c.mileage.toLocaleString() + (en ? ' km' : ' კმ') : dash],
+            [t('spec_engine'),    c => c.engine ? c.engine + ' L' : dash],
+            [t('spec_power'),     c => c.power ? c.power + (en ? ' hp' : ' ც.ძ.') : dash],
+            [t('filter_fuel'),    c => c.fuel ? escapeHtml(tval(c.fuel)) : dash],
+            [t('filter_gearbox'), c => c.gearbox ? escapeHtml(tval(c.gearbox)) : dash],
+            [t('filter_drive'),   c => c.drive ? escapeHtml(tval(c.drive)) : dash],
+            [t('filter_body'),    c => c.body ? escapeHtml(tval(c.body)) : dash],
+            [t('filter_location'),c => c.location ? escapeHtml(tval(c.location)) : dash],
+        ];
+        const head = list.map(c =>
+            `<th><a href="${escapeHtml(c.url)}" onclick="return goToCarDetail('${escapeHtml(c.key)}', event)"><img class="cmp-car-img" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2"></a>` +
+            `<div class="cmp-car-title">${escapeHtml(c.title)}</div>` +
+            `<div class="cmp-car-price">${c.price > 0 ? '$' + c.price.toLocaleString() : dash}</div>` +
+            `<button class="cmp-remove" onclick="removeFromCompare('${escapeHtml(c.key)}')">✕ ${t('act_hide')}</button></th>`
+        ).join('');
+        const body = rows.map(([label, fn]) =>
+            `<tr><td class="cmp-rowlabel">${label}</td>${list.map(c => `<td>${fn(c)}</td>`).join('')}</tr>`
+        ).join('');
+        modal.querySelector('.cmp-body').innerHTML =
+            `<table class="cmp-table"><thead><tr><td class="cmp-rowlabel"></td>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+    window.openCompare = function () {
+        let modal = document.getElementById('cmp-modal');
+        if (!modal) {
+            modal = document.createElement('div'); modal.id = 'cmp-modal'; modal.className = 'cmp-modal';
+            modal.innerHTML = `<div class="cmp-sheet"><div class="cmp-sheet-head"><h3>${escapeHtml(t('compare_title'))}</h3><button class="cmp-x" onclick="closeCompare()" aria-label="close">✕</button></div><div class="cmp-body"></div></div>`;
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeCompare(); });
+            document.body.appendChild(modal);
+        } else {
+            modal.querySelector('h3').textContent = t('compare_title');
+        }
+        renderCompareModal();
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeCompare = function () {
+        const modal = document.getElementById('cmp-modal');
+        if (modal) modal.classList.remove('show');
+        document.body.style.overflow = '';
+    };
+    window._refreshCompareUI = function () {
+        renderCompareBar();
+        const modal = document.getElementById('cmp-modal');
+        if (modal && modal.classList.contains('show')) { modal.querySelector('h3').textContent = t('compare_title'); renderCompareModal(); }
+    };
+
     function renderResults(data) {
         const meta = document.getElementById('search-meta');
         const results = document.getElementById('results');
@@ -1857,6 +2011,7 @@
             _slidesByCard[cardId] = slides;
             const carKey = `${car.source}-${car.source_id}`;
             _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
+            _carFull[carKey] = car;
 
             const customsBadge = customsBadgeHtml(car);
             const cardVin = car.vin || vinFromText(car.description);
@@ -1875,6 +2030,7 @@
                         ${car.location ? `<div class="rcard-loc">${escapeHtml(tval(car.location))}</div>` : ''}
                       </div>
                       <div class="rcard-acts">
+                        <button class="rcard-compare ${isInCompare(carKey) ? 'on' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleCompare('${escapeHtml(carKey)}', this)" title="${t('act_compare')}" aria-label="${t('act_compare')}">${ICON_COMPARE}</button>
                         <button class="rcard-hide" onclick="event.stopPropagation(); hideCar('${escapeHtml(carKey)}', this)" title="${t('act_hide')}" aria-label="${t('act_hide')}">${ICON_HIDE}</button>
                         <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
                       </div>
@@ -2582,6 +2738,14 @@
     enhanceDropdowns();
     initMileageSlider();
     updateSearchBtnCount();
+    renderCompareBar();
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('cmp-modal');
+            if (m && m.classList.contains('show')) closeCompare();
+        }
+    });
 </script>
 
 </body>
