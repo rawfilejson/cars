@@ -102,6 +102,25 @@ def _format_ge(nine_digits: str) -> str:
     return f"+995 {nine_digits[:3]} {nine_digits[3:6]} {nine_digits[6:]}"
 
 
+_PHONE_IN_TEXT_RE = re.compile(r"(?:\+?\s?995[\s\-.]?)?5\d{2}(?:[\s\-.]?\d){6}")
+
+
+def phone_from_text(text: str | None) -> str:
+    """ქართული მობილურის (5XX XXX XXX) ამოღება თავისუფალი ტექსტიდან — როცა
+    გამყიდველმა ნომერი აღწერაში ჩაწერა და არა ცალკე ველში. ფორმატებული ნომერი ან ""."""
+    if not text:
+        return ""
+    match = _PHONE_IN_TEXT_RE.search(str(text))
+    if not match:
+        return ""
+    digits = re.sub(r"\D", "", match.group(0))
+    if digits.startswith("995"):
+        digits = digits[3:]
+    if len(digits) != 9 or digits[0] != "5":
+        return ""
+    return _format_ge(digits)
+
+
 def normalize_steering(text: str | None) -> str:
     if not text:
         return ""

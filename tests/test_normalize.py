@@ -11,6 +11,7 @@ from src.common.normalize import (
     normalize_steering,
     parse_bool_yes_no,
     parse_customs,
+    phone_from_text,
     sane_int,
     split_price,
 )
@@ -60,6 +61,21 @@ def test_format_phone_landline_3():
 def test_format_phone_unknown_keeps_digits():
     """უცნობი ფორმატი — +-ით + ციფრებით (არასოდეს ვკარგავთ ციფრებს)."""
     assert format_phone("12345") == "+12345"
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("დარეკეთ 595 12 34 56 -ზე", "+995 595 123 456"),
+    ("ნომერი +995 599 88 77 66", "+995 599 887 766"),
+    ("call 555123456 now", "+995 555 123 456"),
+    ("995577445566", "+995 577 445 566"),
+    ("გასაყიდია, ფასი 15000, წელი 2020", ""),   # year/price are not a phone
+    ("no phone here", ""),
+    ("", ""),
+    (None, ""),
+])
+def test_phone_from_text(text, expected):
+    """ნომრის ამოღება აღწერიდან — ქართული მობილური (5XX), თორემ ცარიელი."""
+    assert phone_from_text(text) == expected
 
 
 @pytest.mark.parametrize("raw,expected", [

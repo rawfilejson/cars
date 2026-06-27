@@ -35,6 +35,7 @@ from src.common.normalize import (
     clean_text,
     format_phone,
     parse_bool_yes_no,
+    phone_from_text,
     sane_int,
 )
 from src.common.validators import validate_car
@@ -213,7 +214,8 @@ def item_to_car(item: dict) -> Car | None:
         license_plate=(item.get("license_number") or "").strip(),
         location=LOCATION_MAP.get(item.get("location_id"), ""),
         seller_name=(item.get("client_name") or "").strip(),
-        phone=_build_phone_from_api(item),
+        # masked in the listing API — fall back to a number written in the description
+        phone=_build_phone_from_api(item) or phone_from_text(item.get("car_desc") or ""),
         posted_date=(item.get("order_date") or "").strip(),
         views=_to_int(item.get("views")),
         description=_build_description_from_api(item),

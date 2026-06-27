@@ -29,6 +29,7 @@ from src.common.normalize import (
     format_phone,
     normalize_steering,
     parse_customs,
+    phone_from_text,
     sane_int,
     split_price,
 )
@@ -300,6 +301,8 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
     cs_el = await page.query_selector(".comment-seller")
     seller_text = (await cs_el.inner_text()).strip() if cs_el else ""
     description = clean_text(features_text + "\n\n" + seller_text)
+    if not phone:
+        phone = phone_from_text(description)   # fall back to a number in the description
 
     views, posted = await extract_meta(page)
     video_url = await extract_video(page)
