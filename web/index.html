@@ -335,12 +335,13 @@
         .filter-clear:hover { color: #EF233C; text-decoration-color: #EF233C; }
 
         .copy-btn {
-            margin-left: 8px; border: 1px solid #DCE3EA; background: #fff; color: #8D99AE;
-            border-radius: 6px; padding: 1px 8px; font-size: 13px; line-height: 1.4;
-            cursor: pointer; vertical-align: middle; transition: color .12s, border-color .12s;
+            display: inline-flex; align-items: center; justify-content: center; margin-left: 8px;
+            width: 26px; height: 26px; flex-shrink: 0; border: 1px solid #DCE3EA; background: #fff; color: #8D99AE;
+            border-radius: 7px; cursor: pointer; vertical-align: middle; transition: color .12s, border-color .12s, background .12s;
         }
-        .copy-btn:hover { color: #EF233C; border-color: #EF233C; }
-        .copy-btn.is-copied { color: #15803D; border-color: #15803D; }
+        .copy-btn svg { width: 15px; height: 15px; }
+        .copy-btn:hover { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
+        .copy-btn.is-copied { color: #15803D; border-color: #15803D; background: #ECFDF3; }
 
 
         .pager {
@@ -2006,7 +2007,7 @@
         const pills = carSpecPills(car);
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
-            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">⧉</button></span></div>` : '',
+            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">${ICON_COPY}</button></span></div>` : '',
             phones.length ? `<div class="dt-cline"><span class="dt-clabel">${t('section_phone')}</span><span class="dt-cval">${phones.map(p => escapeHtml(p)).join(', ')}</span></div>` : '',
         ].filter(Boolean).join('');
 
@@ -2015,7 +2016,7 @@
               <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
               <div class="dt-actions">
                 <button class="save-btn dt-fav ${saved ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${saved ? '♥' : '♡'}</button>
-                <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">⧉</button>
+                <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">${ICON_COPY}</button>
               </div>
             </div>
             <div class="dt-grid">
@@ -2089,38 +2090,27 @@
         return false;
     };
 
+    const ICON_COPY = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
+    const ICON_CHECK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>';
+
+    function _copyFeedback(btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = ICON_CHECK;
+        btn.classList.add('is-copied');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('is-copied'); }, 1300);
+    }
+
     window.copyDetailLink = function (btn) {
         const url = location.href;
-        const reset = (orig) => setTimeout(() => {
-            btn.textContent = orig;
-            btn.classList.remove('is-copied');
-        }, 1500);
-        const orig = btn.textContent;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(() => {
-                btn.textContent = '✓';
-                btn.classList.add('is-copied');
-                reset(orig);
-            }).catch(() => {
-                window.prompt('', url);
-            });
-        } else {
-            window.prompt('', url);
-        }
+            navigator.clipboard.writeText(url).then(() => _copyFeedback(btn)).catch(() => window.prompt('', url));
+        } else { window.prompt('', url); }
     };
 
     window.copyText = function (text, btn) {
-        const orig = btn.textContent;
-        const done = () => {
-            btn.textContent = '✓';
-            btn.classList.add('is-copied');
-            setTimeout(() => { btn.textContent = orig; btn.classList.remove('is-copied'); }, 1200);
-        };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(done).catch(() => window.prompt('', text));
-        } else {
-            window.prompt('', text);
-        }
+            navigator.clipboard.writeText(text).then(() => _copyFeedback(btn)).catch(() => window.prompt('', text));
+        } else { window.prompt('', text); }
     };
 
     window.quickSearch = function (q) {
