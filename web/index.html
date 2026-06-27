@@ -152,6 +152,11 @@
         .brand-dot { color: #EF233C; font-weight: inherit; }
         .cdd-group-head { padding: 8px 12px 3px; font-size: 11px; font-weight: 700; text-transform: uppercase;
             letter-spacing: .06em; color: #8D99AE; }
+        .cdd-group-head.cdd-grp { display: flex; align-items: center; gap: 7px; padding: 9px 12px; cursor: pointer;
+            user-select: none; border-radius: 9px; }
+        .cdd-group-head.cdd-grp:hover { background: #F3F6F8; color: #2B2D42; }
+        .cdd-group-head.cdd-grp .grp-chev { font-size: 9px; color: #A9B4C2; transition: transform .15s; }
+        .cdd-group-head.cdd-grp.open .grp-chev { transform: rotate(90deg); }
         /* "more filters" expander */
         .more-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: none; border: 0;
             color: #EF233C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 0; }
@@ -2383,6 +2388,7 @@
         const multi = sel.multiple;
         const searchable = sel.dataset.search != null;
         let _filter = '';
+        const _expanded = new Set();   // collapsed-by-default series groups (by header index)
         const wrap = document.createElement('div');
         wrap.className = 'cdd';
         sel.parentNode.insertBefore(wrap, sel);
@@ -2411,17 +2417,27 @@
             }
         };
 
-        const rowsHtml = () => Array.from(sel.options).map((o, i) => {
-            if (o.disabled) {
-                if (multi && searchable && _filter) return '';   // hide group headers while searching
-                return o.textContent ? `<div class="cdd-group-head">${escapeHtml(o.textContent)}</div>` : `<div class="cdd-sep"></div>`;
-            }
-            if (multi) {
-                if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
-                return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
-            }
-            return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
-        }).join('');
+        const rowsHtml = () => {
+            let group = null;   // index of the current series header (or null = ungrouped)
+            return Array.from(sel.options).map((o, i) => {
+                if (o.disabled) {
+                    if (multi && searchable && _filter) return '';   // hide headers while searching
+                    if (o.textContent) {
+                        group = i;
+                        return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" data-group="${i}"><span class="grp-chev">▸</span>${escapeHtml(o.textContent)}</div>`;
+                    }
+                    group = null;
+                    return `<div class="cdd-sep"></div>`;
+                }
+                if (multi) {
+                    const collapsed = group !== null && !_expanded.has(group) && !(searchable && _filter);
+                    if (collapsed) return '';
+                    if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
+                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
+                }
+                return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
+            }).join('');
+        };
 
         const render = () => {
             wrap.classList.toggle('disabled', sel.disabled);
@@ -2445,6 +2461,14 @@
             if (!wasOpen) { _filter = ''; render(); wrap.classList.add('open'); _placeCddPanel(btn, panel); panel.scrollTop = 0; }
         });
         panel.addEventListener('click', (e) => {
+            const grp = e.target.closest('.cdd-grp');
+            if (grp) {
+                e.stopPropagation();
+                const gi = +grp.dataset.group;
+                _expanded.has(gi) ? _expanded.delete(gi) : _expanded.add(gi);
+                const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                return;
+            }
             const opt = e.target.closest('.cdd-opt');
             if (!opt) return;
             if (multi) e.stopPropagation();   // keep panel open for multi-select
@@ -2464,7 +2488,7 @@
             }
         });
         sel.addEventListener('change', () => { wrap.classList.contains('open') ? updateLabel() : render(); });
-        new MutationObserver(() => render()).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
+        new MutationObserver((muts) => { if (muts.some(m => m.type === 'childList')) _expanded.clear(); render(); }).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
         sel._cdd = { render };
         render();
     }
