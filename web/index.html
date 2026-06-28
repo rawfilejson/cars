@@ -132,6 +132,7 @@
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.cdd-active, .cdd-group-head.cdd-active { background: #E7ECF1; box-shadow: inset 2px 0 0 #EF233C; }
         .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; }
+        .cdd-opt .pill-ic { width: 17px; height: 17px; color: #64748B; flex-shrink: 0; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
         /* multi-select dropdown — checkbox rows, search, count badge */
@@ -1334,9 +1335,16 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        // backend returns brands already ordered by listing count (popular first)
+        // backend returns brands ordered by listing count; show the top sellers first,
+        // then the rest alphabetically with a separator between them
+        const all = Object.keys(_makes);
+        const POP_N = 12;
+        const popular = all.slice(0, POP_N);
+        const rest = all.slice(POP_N).sort((a, b) => a.localeCompare(b));
         const opt = (n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
-        const html = Object.keys(_makes).map(opt).join('');
+        let html = popular.map(opt).join('');
+        if (rest.length) html += '<option disabled></option>';   // separator line
+        html += rest.map(opt).join('');
         const brand = document.getElementById('f-brand');
         brand.insertAdjacentHTML('beforeend', html);
         if (brand._cdd) brand._cdd.render();
@@ -2844,7 +2852,12 @@
                     if (collapsed) return '';
                     if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
                     const badge = (sel.id === 'f-brand' && o.value) ? _brandBadge(o.textContent) : '';
-                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${badge}${escapeHtml(o.textContent)}</div>`;
+                    const facetIc = o.value ? (
+                        sel.id === 'f-body'    ? _bodyIcon(o.value) :
+                        sel.id === 'f-fuel'    ? _fuelIcon(o.value) :
+                        sel.id === 'f-gearbox' ? _gearIcon(o.value) :
+                        sel.id === 'f-drive'   ? _driveIcon(o.value) : '') : '';
+                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${badge}${facetIc}${escapeHtml(o.textContent)}</div>`;
                 }
                 return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
             }).join('');
