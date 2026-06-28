@@ -130,6 +130,7 @@
         @keyframes cddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
         .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
+        .cdd-opt.cdd-active, .cdd-group-head.cdd-active { background: #E7ECF1; box-shadow: inset 2px 0 0 #EF233C; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
         /* multi-select dropdown — checkbox rows, search, count badge */
@@ -2660,7 +2661,10 @@
 
     function enhanceDropdowns() {
         document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
-        const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
+        const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => {
+            d.classList.remove('open');
+            const b = d.querySelector('.cdd-btn'); if (b) { b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-activedescendant'); }
+        });
         document.addEventListener('click', closeAll);
         window.addEventListener('resize', closeAll);
         window.addEventListener('scroll', () => {
@@ -2668,7 +2672,7 @@
             if (!open) return;
             const btn = open.querySelector('.cdd-btn'), panel = open.querySelector('.cdd-panel');
             const r = btn.getBoundingClientRect();
-            if (r.bottom < 4 || r.top > window.innerHeight - 4) { open.classList.remove('open'); return; }
+            if (r.bottom < 4 || r.top > window.innerHeight - 4) { open.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); return; }
             _placeCddPanel(btn, panel);
         }, true);
     }
@@ -2689,6 +2693,16 @@
         const panel = document.createElement('div');
         panel.className = 'cdd-panel';
         wrap.append(btn, panel);
+
+        const _uid = 'cdd' + (enhanceSelect._n = (enhanceSelect._n || 0) + 1);
+        const listId = _uid + '-list';
+        btn.id = _uid + '-btn';
+        btn.setAttribute('role', 'combobox');
+        btn.setAttribute('aria-haspopup', 'listbox');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-controls', listId);
+        const _lbl = (sel.closest('.filter-group') || wrap.parentNode || document).querySelector('.filter-label');
+        if (_lbl) { if (!_lbl.id) _lbl.id = _uid + '-lbl'; btn.setAttribute('aria-labelledby', _lbl.id); }
 
         const realSel = () => Array.from(sel.selectedOptions).filter(o => o.value);
         const anyLabel = () => { const a = Array.from(sel.options).find(o => !o.value); return a ? a.textContent : ''; };
@@ -2714,41 +2728,40 @@
                     if (multi && searchable && _filter) return '';   // hide headers while searching
                     if (o.textContent) {
                         group = i;
-                        return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" data-group="${i}"><span class="grp-chev">▸</span>${escapeHtml(o.textContent)}</div>`;
+                        return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" id="${listId}-o${i}" role="option" aria-selected="false" aria-expanded="${_expanded.has(i) ? 'true' : 'false'}" data-group="${i}"><span class="grp-chev">▸</span>${escapeHtml(o.textContent)}</div>`;
                     }
                     group = null;
-                    return `<div class="cdd-sep"></div>`;
+                    return `<div class="cdd-sep" role="presentation"></div>`;
                 }
                 if (multi) {
                     const collapsed = group !== null && !_expanded.has(group) && !(searchable && _filter);
                     if (collapsed) return '';
                     if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
-                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
+                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
                 }
-                return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
+                return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
             }).join('');
         };
 
         const render = () => {
             wrap.classList.toggle('disabled', sel.disabled);
             updateLabel();
+            const _ph = escapeHtml(t(sel.dataset.searchPh || ''));
             const sb = (multi && searchable)
-                ? `<input class="cdd-search" type="text" placeholder="${escapeHtml(t(sel.dataset.searchPh || ''))}" value="${escapeHtml(_filter)}">`
+                ? `<input class="cdd-search" type="text" aria-controls="${listId}" aria-autocomplete="list" aria-label="${_ph}" placeholder="${_ph}" value="${escapeHtml(_filter)}">`
                 : '';
-            panel.innerHTML = sb + `<div class="cdd-rows">${rowsHtml()}</div>`;
+            panel.innerHTML = sb + `<div class="cdd-rows" id="${listId}" role="listbox"${multi ? ' aria-multiselectable="true"' : ''}>${rowsHtml()}</div>`;
             if (multi && searchable) {
                 const si = panel.querySelector('.cdd-search');
                 si.addEventListener('click', (e) => e.stopPropagation());
-                si.addEventListener('input', () => { _filter = si.value.trim().toLowerCase(); panel.querySelector('.cdd-rows').innerHTML = rowsHtml(); });
+                si.addEventListener('input', () => { _filter = si.value.trim().toLowerCase(); panel.querySelector('.cdd-rows').innerHTML = rowsHtml(); if (wrap.classList.contains('open')) setActive(0); });
             }
         };
 
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sel.disabled) return;
-            const wasOpen = wrap.classList.contains('open');
-            document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
-            if (!wasOpen) { _filter = ''; render(); wrap.classList.add('open'); _placeCddPanel(btn, panel); panel.scrollTop = 0; }
+            wrap.classList.contains('open') ? closePanel(false) : openPanel('first');
         });
         panel.addEventListener('click', (e) => {
             const grp = e.target.closest('.cdd-grp');
@@ -2773,10 +2786,76 @@
             } else {
                 sel.selectedIndex = i;
                 sel.dispatchEvent(new Event('change', { bubbles: true }));
-                wrap.classList.remove('open');
+                closePanel(false);
                 render();
             }
         });
+
+        // ── keyboard support (APG combobox/listbox) ──────────────────────
+        let _activeIdx = -1;
+        const focusOwner = () => (multi && searchable) ? panel.querySelector('.cdd-search') : btn;
+        const rowEls = () => Array.from(panel.querySelectorAll('.cdd-rows > .cdd-opt, .cdd-rows > .cdd-grp'));
+        const setActive = (idx) => {
+            const rows = rowEls();
+            if (!rows.length) { _activeIdx = -1; const fo = focusOwner(); if (fo) fo.removeAttribute('aria-activedescendant'); return; }
+            _activeIdx = Math.max(0, Math.min(idx, rows.length - 1));
+            rows.forEach(r => r.classList.remove('cdd-active'));
+            const el = rows[_activeIdx];
+            el.classList.add('cdd-active');
+            const fo = focusOwner(); if (fo) fo.setAttribute('aria-activedescendant', el.id);
+            el.scrollIntoView({ block: 'nearest' });
+        };
+        const openPanel = (at) => {
+            if (sel.disabled) return;
+            document.querySelectorAll('.cdd.open').forEach(d => { d.classList.remove('open'); const b = d.querySelector('.cdd-btn'); if (b) b.setAttribute('aria-expanded', 'false'); });
+            _filter = ''; render(); wrap.classList.add('open'); btn.setAttribute('aria-expanded', 'true');
+            _placeCddPanel(btn, panel); panel.scrollTop = 0;
+            const fo = focusOwner(); if (fo && fo !== btn) fo.focus();
+            setActive(at === 'last' ? rowEls().length - 1 : 0);
+        };
+        const closePanel = (focusBtn) => {
+            wrap.classList.remove('open'); btn.setAttribute('aria-expanded', 'false');
+            const fo = focusOwner(); if (fo) fo.removeAttribute('aria-activedescendant');
+            _activeIdx = -1;
+            if (focusBtn) btn.focus();
+        };
+        const activateRow = () => {
+            const rows = rowEls(); const el = rows[_activeIdx]; if (!el) return;
+            if (el.classList.contains('cdd-grp')) {
+                const gi = +el.dataset.group;
+                _expanded.has(gi) ? _expanded.delete(gi) : _expanded.add(gi);
+                const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                const same = panel.querySelector(`[data-group="${gi}"]`);
+                const ni = rowEls().indexOf(same);
+                setActive(ni >= 0 ? ni : 0);
+            } else if (multi) {
+                el.click();
+                setActive(_activeIdx);   // rows re-render on multi-select; re-anchor highlight
+            } else {
+                el.click();              // single-select click closes the panel
+            }
+        };
+        const onKey = (e) => {
+            if (sel.disabled) return;
+            if (!wrap.classList.contains('open')) {
+                if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel('first'); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); openPanel('last'); }
+                return;
+            }
+            switch (e.key) {
+                case 'ArrowDown': e.preventDefault(); setActive(_activeIdx + 1); break;
+                case 'ArrowUp':   e.preventDefault(); setActive(_activeIdx - 1); break;
+                case 'Home':      e.preventDefault(); setActive(0); break;
+                case 'End':       e.preventDefault(); setActive(rowEls().length - 1); break;
+                case 'Enter':     e.preventDefault(); activateRow(); break;
+                case ' ':
+                    if (e.target.classList && e.target.classList.contains('cdd-search')) return;  // let space type
+                    e.preventDefault(); activateRow(); break;
+                case 'Escape':    e.preventDefault(); closePanel(true); break;
+                case 'Tab':       closePanel(false); break;
+            }
+        };
+        wrap.addEventListener('keydown', onKey);
         sel.addEventListener('change', () => { wrap.classList.contains('open') ? updateLabel() : render(); });
         new MutationObserver((muts) => { if (muts.some(m => m.type === 'childList')) _expanded.clear(); render(); }).observe(sel, { childList: true, attributes: true, attributeFilter: ['disabled'] });
         sel._cdd = { render };
