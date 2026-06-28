@@ -1318,19 +1318,13 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        const all = Object.keys(_makes);
-        const pinned = POPULAR_BRANDS.filter(b => _makes[b]);
-        const rest = all.filter(b => !pinned.includes(b));
+        // backend returns brands already ordered by listing count (popular first)
         const opt = (n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
-        let html = pinned.map(opt).join('');
-        if (pinned.length && rest.length) html += '<option disabled></option>';
-        html += rest.map(opt).join('');
+        const html = Object.keys(_makes).map(opt).join('');
         const brand = document.getElementById('f-brand');
         brand.insertAdjacentHTML('beforeend', html);
         if (brand._cdd) brand._cdd.render();
     }
-
-    const POPULAR_BRANDS = ['BMW', 'Mercedes-Benz', 'Toyota', 'Hyundai', 'Ford', 'Honda', 'Lexus', 'Nissan', 'Volkswagen', 'Chevrolet'];
 
     let _facets = {};
 
@@ -1393,7 +1387,8 @@
             }
             const prefix = multiBrand ? (b + ' · ') : '';
             if (groups.size) {
-                for (const [series, ms] of [...groups.entries()].sort((a, c) => a[0].localeCompare(c[0]))) {
+                // groups were inserted in model order (backend = count desc), so popular series lead
+                for (const [series, ms] of groups.entries()) {
                     out.push(`<option disabled>${escapeHtml(prefix + series)}</option>`);
                     ms.forEach(m => out.push(opt(m)));
                 }

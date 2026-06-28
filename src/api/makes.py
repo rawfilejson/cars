@@ -58,9 +58,29 @@ def _base_model(manufacturer: str, model: str) -> str:
 
 
 class MakesResponse(BaseModel):
-    """{მწარმოებელი: [მოდელები]} — ანბანის რიგზე."""
+    """{მწარმოებელი: [მოდელები]} — პოპულარობის რიგზე (ყველაზე ბევრი → ნაკლები)."""
 
     makes: dict[str, list[str]]
+
+
+def _order_makes(
+    agg: dict[str, dict[str, tuple[str, int]]],
+) -> dict[str, list[str]]:
+    """აგრეგირებული count-ები → {მწარმოებელი: [მოდელები]} პოპულარობის რიგზე.
+
+    მწარმოებლები — ყველაზე ბევრი განცხადება პირველი; თითოეულში მოდელებიც
+    count-ის კლებადობით (ტოლობისას ანბანურად). _MIN_COUNT-ზე ნაკლები ეთიშება.
+    """
+    ranked: list[tuple[str, int, list[str]]] = []
+    for manu, bucket in agg.items():
+        kept = [(disp, cnt) for disp, cnt in bucket.values() if cnt >= _MIN_COUNT]
+        if not kept:
+            continue
+        kept.sort(key=lambda dc: (-dc[1], dc[0].lower()))
+        total = sum(cnt for _, cnt in kept)
+        ranked.append((manu, total, [disp for disp, _ in kept]))
+    ranked.sort(key=lambda mt: (-mt[1], mt[0].lower()))
+    return {manu: models for manu, _total, models in ranked}
 
 
 def _load_makes() -> MakesResponse:
@@ -88,15 +108,7 @@ def _load_makes() -> MakesResponse:
         disp, cnt = bucket.get(key, (base, 0))
         bucket[key] = (disp, cnt + row["c"])
 
-    makes: dict[str, list[str]] = {}
-    for manu, bucket in agg.items():
-        models = sorted(
-            (disp for disp, cnt in bucket.values() if cnt >= _MIN_COUNT),
-            key=str.lower,
-        )
-        if models:
-            makes[manu] = models
-    return MakesResponse(makes=makes)
+    return MakesResponse(makes=_order_makes(agg))
 
 
 @router.get("", response_model=MakesResponse)
