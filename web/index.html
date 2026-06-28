@@ -131,6 +131,7 @@
         .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.cdd-active, .cdd-group-head.cdd-active { background: #E7ECF1; box-shadow: inset 2px 0 0 #EF233C; }
+        .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
         /* multi-select dropdown — checkbox rows, search, count badge */
@@ -1324,6 +1325,33 @@
         const brand = document.getElementById('f-brand');
         brand.insertAdjacentHTML('beforeend', html);
         if (brand._cdd) brand._cdd.render();
+    }
+
+    // self-contained brand markers for the picker: a coloured initials badge,
+    // signature colours for known makes and a deterministic hue for the rest
+    const _BRAND_COLORS = {
+        'BMW':'#0066B1','Mercedes-Benz':'#2B2B2B','Toyota':'#D81E2C','Audi':'#A50E26',
+        'Volkswagen':'#00237A','Honda':'#C4122F','Ford':'#1B3F8B','Hyundai':'#002C5F',
+        'Nissan':'#B3002A','Lexus':'#2A2A2A','Kia':'#0B141B','Mazda':'#1A1A1A',
+        'Porsche':'#8E2420','Chevrolet':'#A37B2C','Mitsubishi':'#C40010','Subaru':'#013C74',
+        'Volvo':'#003057','Land Rover':'#00592C','Jeep':'#16321F','Tesla':'#B00000',
+        'Opel':'#2B2B2B','Renault':'#1A2E4A','Peugeot':'#15244A','Fiat':'#7A1626',
+        'Suzuki':'#C4051A','Skoda':'#0E3A2F','Mini':'#1A1A1A','Jaguar':'#14361F',
+        'Bentley':'#14342A','Maserati':'#14233F','Cadillac':'#7E1A2A','Acura':'#2A2A2A',
+        'Infiniti':'#2A2A2A','Genesis':'#2A2A2A','Dodge':'#8E1520','GMC':'#8E1520','Chrysler':'#14233F',
+    };
+    function _brandColor(name) {
+        if (_BRAND_COLORS[name]) return _BRAND_COLORS[name];
+        let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+        return `hsl(${h % 360} 52% 36%)`;
+    }
+    function _brandInitials(name) {
+        const parts = name.split(/[\s\-]+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.slice(0, 2).toUpperCase();
+    }
+    function _brandBadge(name) {
+        return `<span class="brand-badge" style="background:${_brandColor(name)}">${escapeHtml(_brandInitials(name))}</span>`;
     }
 
     let _facets = {};
@@ -2734,7 +2762,8 @@
                     const collapsed = group !== null && !_expanded.has(group) && !(searchable && _filter);
                     if (collapsed) return '';
                     if (searchable && _filter && o.value && !o.textContent.toLowerCase().includes(_filter)) return '';
-                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${escapeHtml(o.textContent)}</div>`;
+                    const badge = (sel.id === 'f-brand' && o.value) ? _brandBadge(o.textContent) : '';
+                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${badge}${escapeHtml(o.textContent)}</div>`;
                 }
                 return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
             }).join('');
