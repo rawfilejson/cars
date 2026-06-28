@@ -180,8 +180,10 @@
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .sidebar-head h3 { font-size: 16px; font-weight: 700; color: #2B2D42; }
         .sidebar .mt-5 { margin-top: 0; }
-        .sidebar .filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; width: 100%; margin-bottom: 13px; }
-        .sidebar .filter-label { flex-basis: 100%; margin-bottom: 2px; }
+        .sidebar .filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; width: 100%; margin-bottom: 13px; position: relative; }
+        .sidebar .filter-label { flex-basis: 100%; margin-bottom: 2px; padding-left: 20px; }
+        .sidebar .fl-icon { position: absolute; left: 0; top: -1px; width: 14px; height: 14px; color: #64748B; pointer-events: none; }
+        .sidebar .fl-icon svg { width: 14px; height: 14px; display: block; }
         .sidebar .filter-select, .sidebar .filter-input { flex: 1 1 0; min-width: 0; width: auto; max-width: none; height: 42px; }
         .sidebar #f-brand, .sidebar #f-model { max-width: none; }
         .sidebar .filter-reset { flex: 0 0 auto; }
@@ -2866,6 +2868,34 @@
         document.querySelectorAll('select.filter-select').forEach(s => s._cdd && s._cdd.render());
     }
 
+    // small icon next to each sidebar filter label (injected as an absolute
+    // sibling so language switches, which rewrite the label text, leave it intact)
+    const _FILTER_ICONS = {
+        brand:    '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1-.6-1.4V5a1 1 0 0 1 1-1h7a2 2 0 0 1 1.4.6l6.4 6.4a2 2 0 0 1 0 2.8z"/><circle cx="8" cy="8" r="1.4"/>',
+        model:    '<path d="M5 11l1.5-4.2A2 2 0 0 1 8.4 5.5h7.2a2 2 0 0 1 1.9 1.3L19 11M4.5 11h15v3.5a1 1 0 0 1-1 1H17a1 1 0 0 1-1-1v-.5H8v.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="13" r="1"/><circle cx="16.5" cy="13" r="1"/>',
+        year:     '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/>',
+        price:    '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.3A2.4 2.4 0 0 0 12 8c-1.4 0-2.5.9-2.5 2s1.1 1.9 2.5 1.9 2.5.9 2.5 2-1.1 2-2.5 2a2.4 2.4 0 0 1-2.5-1.4M12 6.5v11"/>',
+        mileage:  '<path d="M13.4 13.4l2.6-2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>',
+        body_type:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+        fuel:     '<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5"/>',
+        gearbox:  '<circle cx="6" cy="5" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="18" cy="5" r="1.5"/><path d="M6 6.5v4h12v-4M12 10.5v8.5M10 19h4"/>',
+        drive:    '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
+        location: '<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+        customs:  '<path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    };
+    function addFilterIcons() {
+        document.querySelectorAll('.sidebar .filter-group[data-filter]').forEach(g => {
+            if (g.querySelector(':scope > .fl-icon')) return;
+            const paths = _FILTER_ICONS[g.dataset.filter];
+            if (!paths) return;
+            const span = document.createElement('span');
+            span.className = 'fl-icon';
+            span.setAttribute('aria-hidden', 'true');
+            span.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+            g.insertBefore(span, g.firstChild);
+        });
+    }
+
     loadStats();
     loadMakes();
     loadFacets();
@@ -2873,6 +2903,7 @@
     initMileageSlider();
     updateSearchBtnCount();
     renderCompareBar();
+    addFilterIcons();
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
