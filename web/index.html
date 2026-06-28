@@ -272,6 +272,7 @@
         .lang-trigger { display: inline-flex; align-items: center; gap: 4px; color: #64748B; font-size: 13px;
             font-weight: 600; letter-spacing: .04em; background: none; border: 0; cursor: pointer; padding: 4px 6px; font-family: inherit; }
         .lang-trigger:hover { color: #2B2D42; }
+        .lang-globe { width: 15px; height: 15px; opacity: .9; flex-shrink: 0; }
         .lang-chev { font-size: 9px; }
         .lang-pop { position: absolute; right: 0; top: 100%; margin-top: 6px; background: #fff; border: 1px solid #DCE3EA;
             border-radius: 12px; box-shadow: 0 12px 30px rgba(43,45,66,.16); padding: 5px; z-index: 70; min-width: 130px; }
@@ -814,6 +815,7 @@
             <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><span>♥</span> <span class="cnt" id="saved-count">0</span></button>
             <div class="lang-menu" id="lang-menu">
                 <button class="lang-trigger" onclick="toggleLangMenu(event)" aria-label="language" aria-haspopup="true" aria-expanded="false">
+                    <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.5 4 5.6 4 9s-1.4 6.5-4 9c-2.6-2.5-4-5.6-4-9s1.4-6.5 4-9z"/></svg>
                     <span id="lang-current">KA</span><span class="lang-chev">▾</span>
                 </button>
                 <div class="lang-pop" role="menu" hidden>
