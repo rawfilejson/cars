@@ -221,7 +221,14 @@
         .dt-loc { color: #64748B; font-size: 14px; margin-top: 4px; }
         .dt-pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 2px; }
         .dt-actions { display: flex; align-items: center; gap: 8px; }
-        .dt-fav { width: 40px; height: 40px; }
+        .save-btn.dt-fav { width: 40px; height: 40px; font-size: 17px; }
+        .save-btn.dt-fav:hover { border-color: #FBDADE; color: #EF233C; background: #FDE6E8; transform: none; }
+        .dt-hl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 4px; }
+        .dt-hl-tile { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+        .dt-hl-tile .pill-ic { width: 20px; height: 20px; color: #EF233C; }
+        .dt-hl-v { font-size: 15px; font-weight: 700; color: #2B2D42; line-height: 1.1; }
+        .dt-hl-l { font-size: 10.5px; color: #64748B; text-transform: uppercase; letter-spacing: .04em; }
+        @media (max-width: 560px) { .dt-hl { grid-template-columns: repeat(2, 1fr); } }
         .dt-pricebox { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0; padding: 16px 20px; background: #FEF2F3; border: 1px solid #FBDADE; border-radius: 14px; }
         .dt-price { font-size: 30px; font-weight: 800; color: #EF233C; letter-spacing: -.01em; }
         .dt-specs { border-top: 1px solid #DCE3EA; }
@@ -446,6 +453,7 @@
             opacity: 0; transition: opacity .15s, background .15s, color .15s, transform .1s;
         }
         .carousel:hover .ph-nav, .dt-main:hover .ph-nav { opacity: 1; }
+        .dt-main .ph-nav { opacity: .92; }   /* detail arrows always visible */
         .ph-nav:hover { background: #fff; color: #EF233C; }
         .ph-nav:active { transform: translateY(-50%) scale(.9); }
         .ph-prev { left: 8px; }
@@ -2288,14 +2296,21 @@
                   `<button class="dt-thumb ${i === 0 ? 'on' : ''}" onclick="dtSetMain(${i})"><img src="${escapeHtml(thumbSrc(s))}" alt="" loading="lazy" onerror="this.style.opacity=.2"></button>`).join('')}</div>` : ''}
             </div>` : `<div class="dt-gallery"><div class="no-photo" style="aspect-ratio:4/3;border-radius:14px">${t('no_photos')}</div></div>`;
 
+        const en = getLang() === 'en';
+        // highlighted spec tiles (the headline specs, shown as a grid)
+        const hl = [];
+        if (car.body_type)       hl.push([_bodyIcon(car.body_type), tval(car.body_type), t('filter_body')]);
+        if (car.year)            hl.push([_PIC(_FILTER_ICONS.year), car.year, t('spec_year')]);
+        if (car.mileage_km)      hl.push([_PILL_IC.gauge, car.mileage_km.toLocaleString() + km, t('spec_mileage')]);
+        if (car.engine_volume_l) hl.push([_PILL_IC.engine, car.engine_volume_l + ' L', t('spec_engine')]);
+        if (car.power_hp)        hl.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.'), t('spec_power')]);
+        if (car.engine_type)     hl.push([_fuelIcon(car.engine_type), tval(car.engine_type), t('spec_fuel')]);
+        if (car.gearbox)         hl.push([_gearIcon(car.gearbox), tval(car.gearbox), t('spec_gearbox')]);
+        if (car.drive_wheels)    hl.push([_driveIcon(car.drive_wheels), tval(car.drive_wheels), t('spec_drive')]);
+        const hlGrid = hl.length ? `<div class="dt-hl">${hl.map(([ic, v, l]) => `<div class="dt-hl-tile">${ic}<div class="dt-hl-v">${escapeHtml(String(v))}</div><div class="dt-hl-l">${escapeHtml(l)}</div></div>`).join('')}</div>` : '';
+
         const srow = (k, v) => `<div class="dt-srow"><span class="k">${k}</span><span class="v">${escapeHtml(String(v))}</span></div>`;
         const specs = [];
-        if (car.year)            specs.push(srow(t('spec_year'),     car.year));
-        if (car.mileage_km)      specs.push(srow(t('spec_mileage'),  car.mileage_km.toLocaleString() + km));
-        if (car.engine_volume_l) specs.push(srow(t('spec_engine'),   car.engine_volume_l + ' L'));
-        if (car.engine_type)     specs.push(srow(t('spec_fuel'),     tval(car.engine_type)));
-        if (car.gearbox)         specs.push(srow(t('spec_gearbox'),  tval(car.gearbox)));
-        if (car.drive_wheels)    specs.push(srow(t('spec_drive'),    tval(car.drive_wheels)));
         if (car.color)           specs.push(srow(t('spec_color'),    tval(car.color)));
         if (car.steering)        specs.push(srow(t('spec_steering'), tval(car.steering)));
 
@@ -2311,7 +2326,6 @@
         const carKey = `${car.source}-${car.source_id}`;
         _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
         const saved = isCarSaved(carKey);
-        const pills = carSpecPills(car);
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
             car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" data-copy="${escapeHtml(car.vin)}" onclick="copyText(this)" aria-label="Copy VIN" title="Copy VIN">${ICON_COPY}</button></span></div>` : '',
@@ -2336,9 +2350,9 @@
                   </div>
                   ${sourceBadgeHtml(car)}
                 </div>
-                ${pills ? `<div class="dt-pills">${pills}</div>` : ''}
+                ${hlGrid}
                 <div class="dt-pricebox"><span class="dt-price">${price}</span>${customs}</div>
-                <div class="dt-specs">${specs.join('')}</div>
+                ${specs.length ? `<div class="dt-specs">${specs.join('')}</div>` : ''}
                 ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
                 ${contact ? `<div class="dt-contact">${contact}</div>` : ''}
                 ${car.url ? `<a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="dt-source">${t('detail_open_source')} ↗</a>` : ''}
