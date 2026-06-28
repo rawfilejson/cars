@@ -1051,7 +1051,8 @@
     let _countTimer = null;
     function scheduleLiveCount() { clearTimeout(_countTimer); _countTimer = setTimeout(fetchLiveCount, 450); }
     async function fetchLiveCount() {
-        if (document.getElementById('search-input').value.trim()) return;  // text query → count comes from the search
+        // text query → count comes from the search itself; drop any stale filtered count
+        if (document.getElementById('search-input').value.trim()) { _lastCount = null; updateSearchBtnCount(); return; }
         const payload = buildSearchPayload();
         delete payload.page; delete payload.sort;
         try {
@@ -1449,10 +1450,12 @@
         const _ckey = JSON.stringify(payload);
         const _hit = _searchCache.get(_ckey);
         if (_hit && Date.now() - _hit.t < _SEARCH_TTL) {
-            lastResponse = _hit.data;
+            // quota is server-authoritative — don't replay a stale "searches left" from cache
+            const cached = { ..._hit.data, remaining_searches: null };
+            lastResponse = cached;
             document.body.classList.add('mode-results');
             document.getElementById('empty-state').classList.add('hidden');
-            renderResults(_hit.data);
+            renderResults(cached);
             return;
         }
 
@@ -1843,7 +1846,14 @@
     window.hideCar = function (key, btn) {
         const set = getHidden(); set.add(key); setHiddenSet(set);
         const card = btn.closest('.rcard');
-        if (card) { card.classList.add('is-hiding'); setTimeout(() => card.remove(), 290); }
+        if (card) {
+            card.classList.add('is-hiding');
+            setTimeout(() => {
+                card.remove();
+                // if the last visible card was hidden, fall back to the empty state
+                if (lastResponse && !document.querySelector('#results .rcard')) renderResults(lastResponse);
+            }, 290);
+        }
         showToast(t('toast_hidden'), t('act_undo'), () => {
             const s = getHidden(); s.delete(key); setHiddenSet(s);
             if (lastResponse) renderResults(lastResponse);
@@ -1986,24 +1996,24 @@
         _lastCount = data.total_count;
         updateSearchBtnCount();
 
+        for (const k in _slidesByCard) delete _slidesByCard[k];
+        const _hidden = getHidden();
+        const visible = data.results.filter(car => !_hidden.has(`${car.source}-${car.source_id}`));
+
         let metaText = `<strong class="text-ink">${t('results_count', { n: data.total_count })}</strong>`;
         if (data.remaining_searches != null) {
             metaText += ` <span class="text-muted">· ${t('results_remaining', { n: data.remaining_searches })}</span>`;
         }
-        if (data.results.length) {
+        if (visible.length) {
             metaText += ` <button class="hist-chip" style="margin-left:10px;padding:4px 11px;font-size:12px" onclick="saveCurrentSearch(this)">♥ ${t('save_search')}</button>`;
         }
         meta.innerHTML = metaText;
 
-        if (data.results.length === 0) {
+        if (visible.length === 0) {
             results.innerHTML = `<div class="py-16 text-center text-muted">${t('no_results')}</div>`;
             return;
         }
 
-        for (const k in _slidesByCard) delete _slidesByCard[k];
-
-        const _hidden = getHidden();
-        const visible = data.results.filter(car => !_hidden.has(`${car.source}-${car.source_id}`));
         results.innerHTML = visible.map((car, i) => {
             const cardId = `c${i}`;
             const title = carTitle(car);
@@ -2232,7 +2242,7 @@
         const pills = carSpecPills(car);
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
-            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" onclick="copyText('${escapeHtml(car.vin)}', this)" aria-label="Copy VIN" title="Copy VIN">${ICON_COPY}</button></span></div>` : '',
+            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" data-copy="${escapeHtml(car.vin)}" onclick="copyText(this)" aria-label="Copy VIN" title="Copy VIN">${ICON_COPY}</button></span></div>` : '',
             phones.length ? `<div class="dt-cline"><span class="dt-clabel">${t('section_phone')}</span><span class="dt-cval">${phones.map(p => escapeHtml(p)).join(', ')}</span></div>` : '',
         ].filter(Boolean).join('');
 
@@ -2332,7 +2342,12 @@
         } else { window.prompt('', url); }
     };
 
-    window.copyText = function (text, btn) {
+    window.copyText = function (arg, maybeBtn) {
+        // accept either copyText(text, btn) or copyText(buttonEl) — the element form
+        // reads its value from data-copy, so scraped strings never enter a JS context
+        let text, btn;
+        if (arg && arg.nodeType === 1) { btn = arg; text = arg.getAttribute('data-copy') || ''; }
+        else { text = arg; btn = maybeBtn; }
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => _copyFeedback(btn)).catch(() => window.prompt('', text));
         } else { window.prompt('', text); }
