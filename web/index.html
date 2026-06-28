@@ -201,7 +201,7 @@
         body.mode-results .sort-wrap { display: flex; }
         .sort-wrap .cdd { flex: 0 0 auto; min-width: 180px; }
         body.mode-detail .search-band, body.mode-detail .sidebar, body.mode-detail .filters-toggle,
-        body.mode-detail #recent-row, body.mode-detail .results-meta { display: none; }
+        body.mode-detail #recent-row, body.mode-detail .results-meta, body.mode-detail .sort-wrap { display: none; }
         body.mode-detail .shell { grid-template-columns: 1fr; }
 
         /* ===== detail (inner) page — two-column ===== */
@@ -2718,8 +2718,15 @@
     // panel-ს ღილაკთან ათავსებს; თუ ქვემოთ ადგილი არ არის — ზემოთ გადააბრუნებს
     function _placeCddPanel(btn, panel) {
         const r = btn.getBoundingClientRect();
-        panel.style.left = r.left + 'px';
-        panel.style.width = r.width + 'px';
+        // size to content (at least the button width), capped to the viewport
+        panel.style.width = 'auto';
+        panel.style.minWidth = r.width + 'px';
+        panel.style.maxWidth = Math.min(380, window.innerWidth - 16) + 'px';
+        const pw = Math.min(panel.offsetWidth || r.width, window.innerWidth - 16);
+        let left = r.left;
+        if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;   // clamp right edge
+        if (left < 8) left = 8;
+        panel.style.left = left + 'px';
         const below = window.innerHeight - r.bottom - 10;
         const above = r.top - 10;
         const ph = Math.min(300, panel.scrollHeight || 300);
@@ -2978,6 +2985,11 @@
     updateSearchBtnCount();
     renderCompareBar();
     addFilterIcons();
+
+    // dropdowns are enhanced before translations are applied (DOMContentLoaded),
+    // so re-render once labels exist — otherwise the sort button shows blank until clicked
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshDropdowns);
+    else refreshDropdowns();
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
