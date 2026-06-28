@@ -789,8 +789,13 @@
         .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
         .chip-del { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; background: #fff; color: #6B7280; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
         /* მთელი chip ერთად რეაგირებს hover-ზე — ნახევრად outline აღარ ჩანს */
-        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del { border-color: #2B2D42; }
+        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del, .chip-wrap:hover .chip-save { border-color: #2B2D42; }
         .chip-wrap:hover .chip-del { color: #EF233C; }
+        .chip-save { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; border-right: 0; background: #fff; color: #6B7280; padding: 0 8px; font-size: 12px; cursor: pointer; }
+        .chip-wrap .hist-chip { border-radius: 999px 0 0 999px; border-right: 0; }
+        .chip-save:hover { color: #EF233C; }
+        .recent-clear { color: #6B7280; }
+        .recent-clear:hover { border-color: #EF233C; color: #EF233C; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -1489,7 +1494,7 @@
             showSearchError(document.getElementById('search-meta'), t('err_query_too_vague'));
             return;
         }
-        pushHistory(document.getElementById('search-input').value);
+        pushHistory();
 
         const _ckey = JSON.stringify(payload);
         const _hit = _searchCache.get(_ckey);
@@ -2494,13 +2499,16 @@
         const en = getLang() === 'en';
         const parts = [];
         if (p.query) parts.push(p.query);
+        if (p.manufacturers && p.manufacturers.length) parts.push(p.manufacturers.join(', '));
+        if (p.models && p.models.length) parts.push(p.models.join(', '));
         if (p.year_from || p.year_to) parts.push((p.year_from || '…') + '–' + (p.year_to || '…'));
         if (p.price_from || p.price_to) parts.push('$' + (p.price_from || '0') + '–' + (p.price_to || '∞'));
         if (p.mileage_from || p.mileage_to) parts.push((p.mileage_from || '0') + '–' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ'));
-        if (p.body_type)    parts.push(tval(p.body_type));
-        if (p.fuel_type)    parts.push(tval(p.fuel_type));
-        if (p.gearbox)      parts.push(tval(p.gearbox));
-        if (p.drive_wheels) parts.push(tval(p.drive_wheels));
+        (p.body_types || []).forEach(v => parts.push(tval(v)));
+        (p.fuels || []).forEach(v => parts.push(tval(v)));
+        (p.gearboxes || []).forEach(v => parts.push(tval(v)));
+        (p.drives || []).forEach(v => parts.push(tval(v)));
+        (p.locations || []).forEach(v => parts.push(tval(v)));
         if (p.customs_cleared === true)  parts.push(t('cleared'));
         if (p.customs_cleared === false) parts.push(t('not_cleared'));
         if (p.sort) parts.push(t('sort_' + p.sort));
@@ -2527,6 +2535,12 @@
     };
 
     function _setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v == null ? '' : v); }
+    function _setMulti(id, values) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const set = new Set(values || []);
+        Array.from(sel.options).forEach(o => { o.selected = o.value ? set.has(o.value) : false; });
+    }
     function runSavedSearch(item) {
         closeSaved();
         const p = (item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : {});
@@ -2534,23 +2548,49 @@
         _setVal('f-year-from', p.year_from); _setVal('f-year-to', p.year_to);
         _setVal('f-price-from', p.price_from); _setVal('f-price-to', p.price_to);
         _setVal('f-mileage-from', p.mileage_from); _setVal('f-mileage-to', p.mileage_to);
-        _setVal('f-body', p.body_type); _setVal('f-fuel', p.fuel_type);
-        _setVal('f-gearbox', p.gearbox); _setVal('f-drive', p.drive_wheels);
+        _setMulti('f-brand', p.manufacturers);
+        document.getElementById('f-brand').dispatchEvent(new Event('change', { bubbles: true }));   // rebuild model options
+        _setMulti('f-model', p.models);
+        _setMulti('f-body', p.body_types);
+        _setMulti('f-fuel', p.fuels);
+        _setMulti('f-gearbox', p.gearboxes);
+        _setMulti('f-drive', p.drives);
+        _setMulti('f-location', p.locations);
         document.getElementById('f-customs').value = p.customs_cleared === true ? 'yes' : p.customs_cleared === false ? 'no' : '';
         _setVal('f-sort', p.sort);
         refreshDropdowns(); updateFilterResets();
         document.getElementById('search-input').dispatchEvent(new Event('input'));
         doSearch();
     }
-    function runHistory(q) { closeSaved(); const el = document.getElementById('search-input'); el.value = q; el.dispatchEvent(new Event('input')); doSearch(); }
+    function runHistory(item) {
+        if (item && item.payload) return runSavedSearch(item);
+        const q = typeof item === 'string' ? item : '';
+        closeSaved();
+        const el = document.getElementById('search-input'); el.value = q; el.dispatchEvent(new Event('input')); doSearch();
+    }
 
-    function pushHistory(q) {
-        q = (q || '').trim();
-        if (!q) return;
-        let h = lsGet(LS_HIST).filter(x => x.toLowerCase() !== q.toLowerCase());
-        h.unshift(q);
+    function pushHistory() {
+        const payload = buildSearchPayload();
+        delete payload.page;
+        if (Object.keys(payload).length === 0) return;
+        const key = JSON.stringify(payload);
+        const same = (x) => JSON.stringify((x && x.payload) || { query: x }) === key;
+        let h = lsGet(LS_HIST).filter(x => !same(x));
+        h.unshift({ payload, label: describeSearch(payload) });
         lsSet(LS_HIST, h.slice(0, 12));
         renderRecent();
+    }
+    function _histLabel(item) {
+        return (item && item.label) || (item && item.payload ? describeSearch(item.payload) : String(item || ''));
+    }
+    function _saveHistItem(i) {
+        const item = lsGet(LS_HIST)[i]; if (!item) return;
+        const payload = (item && item.payload) || { query: String(item) };
+        const key = JSON.stringify(payload);
+        const s = lsGet(LS_SEARCHES);
+        if (s.some(x => JSON.stringify(x.payload) === key)) return;   // already saved
+        lsSet(LS_SEARCHES, [{ payload, label: describeSearch(payload) }, ...s].slice(0, 40));
+        updateSavedCount(); renderRecent();
     }
 
     function renderRecent() {
@@ -2559,20 +2599,30 @@
         const saved = lsGet(LS_SEARCHES).slice(0, 6);
         const hist = lsGet(LS_HIST).slice(0, 8);
         if (!saved.length && !hist.length) { row.innerHTML = ''; return; }
+        const rm = escapeHtml(t('remove')), sv = escapeHtml(t('save_search'));
         let html = '';
         if (saved.length) {
             html += `<span class="recent-label">${t('saved_searches_h')}</span>` +
-                saved.map((s, i) => `<button class="hist-chip pinned" data-kind="saved" data-i="${i}">♥ ${escapeHtml(s.label)}</button>`).join('');
+                saved.map((s, i) => `<span class="chip-wrap"><button class="hist-chip pinned" data-kind="saved" data-i="${i}">♥ ${escapeHtml(s.label)}</button><button class="chip-del" data-kind="saved-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('');
         }
         if (hist.length) {
             html += `<span class="recent-label">${t('recent_h')}</span>` +
-                hist.map((q, i) => `<button class="hist-chip" data-kind="hist" data-i="${i}">${escapeHtml(q)}</button>`).join('');
+                hist.map((item, i) => `<span class="chip-wrap"><button class="hist-chip" data-kind="hist" data-i="${i}">${escapeHtml(_histLabel(item))}</button><button class="chip-save" data-kind="hist-save" data-i="${i}" aria-label="${sv}" title="${sv}">♡</button><button class="chip-del" data-kind="hist-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('') +
+                `<button class="hist-chip recent-clear" data-kind="clear-all">✕ ${t('clear_all')}</button>`;
         }
         row.innerHTML = html;
-        row.querySelectorAll('.hist-chip').forEach((b) => {
-            b.onclick = () => {
-                if (b.dataset.kind === 'saved') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
-                else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
+        row.querySelectorAll('[data-kind]').forEach((b) => {
+            b.onclick = (e) => {
+                e.stopPropagation();
+                const i = +b.dataset.i;
+                switch (b.dataset.kind) {
+                    case 'saved': { const s = lsGet(LS_SEARCHES)[i]; if (s) runSavedSearch(s); break; }
+                    case 'saved-del': { const s = lsGet(LS_SEARCHES); s.splice(i, 1); lsSet(LS_SEARCHES, s); updateSavedCount(); renderRecent(); break; }
+                    case 'hist': { const item = lsGet(LS_HIST)[i]; if (item) runHistory(item); break; }
+                    case 'hist-save': _saveHistItem(i); break;
+                    case 'hist-del': { const h = lsGet(LS_HIST); h.splice(i, 1); lsSet(LS_HIST, h); renderRecent(); break; }
+                    case 'clear-all': lsSet(LS_HIST, []); renderRecent(); break;
+                }
             };
         });
     }
