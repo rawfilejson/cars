@@ -636,7 +636,7 @@
         .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
         .spec-pill:hover .pill-ic { color: #EF233C; }
         .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
-        .rcard-price { font-size: 25px; font-weight: 800; color: #2B2D42; letter-spacing: -.02em; }
+        .rcard-price { font-size: 22px; font-weight: 800; color: #EF233C; letter-spacing: -.02em; background: #FEF2F3; border: 1px solid #FBE0E4; border-radius: 10px; padding: 4px 12px; }
         .rcard-badges { display: flex; gap: 7px; flex-shrink: 0; align-items: center; }
         @media (max-width: 560px) { .rcard { flex-direction: column; } .rcard-photo { width: 100%; } }
 
@@ -1855,9 +1855,17 @@
             return _PIC('<path d="M12 3.5c2.8 3.8 4.6 6 4.6 8.5a4.6 4.6 0 0 1 -9.2 0c0 -2.5 1.8 -4.7 4.6 -8.5z"/>');
         return _PIC('<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5L17 6.5"/>');
     }
-    // გადაცემათა კოლოფი — gear-shift H-pattern
+    // გადაცემათა კოლოფი — ცალკე ხატულა ტიპზე (მექანიკა / ავტომატი / ტიპტრონიკი)
     function _gearIcon(v) {
-        return _PIC('<circle cx="6" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="18" cy="5" r="1.6"/><path d="M6 6.6v4h12v-4M12 10.6v8.4M10 19h4"/>');
+        const s = (v || '').toLowerCase();
+        // ტიპტრონიკი/სტეპტრონიკი — ავტომატი მექანიკის რეჟიმით (+/-)
+        if (/ტიპტ|tiptron|სტეპტ|steptron|დსგ|\bdsg\b|რობ|robot/.test(s))
+            return _PIC('<rect x="5" y="3" width="9" height="18" rx="2"/><circle cx="9.5" cy="7" r="1"/><circle cx="9.5" cy="12" r="1"/><circle cx="9.5" cy="17" r="1"/><path d="M17 7.5h3M18.5 6v3M17 16.5h3"/>');
+        // მექანიკა — H-pattern
+        if (/მექ|manual|\bmt\b/.test(s))
+            return _PIC('<circle cx="6" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="18" cy="5" r="1.6"/><path d="M6 6.6v4h12v-4M12 10.6v8.4M10 19h4"/>');
+        // ავტომატი / ვარიატორი (default) — P R N D გეითი
+        return _PIC('<rect x="7" y="3" width="10" height="18" rx="2"/><circle cx="12" cy="6.5" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="12" cy="13.5" r="1"/><circle cx="12" cy="17" r="1"/>');
     }
     // წამყვანი თვლები — 4 თვალი, წამყვანი ღერძი მუქი
     function _driveIcon(v) {
