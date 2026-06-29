@@ -223,6 +223,7 @@
         .dt-pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 2px; }
         .dt-actions { display: flex; align-items: center; gap: 8px; }
         .save-btn.dt-fav { width: 40px; height: 40px; font-size: 17px; }
+        .dt-compare { opacity: 1 !important; transform: none !important; pointer-events: auto !important; width: 40px; height: 40px; }
         .save-btn.dt-fav:hover { border-color: #FBDADE; color: #EF233C; background: #FDE6E8; transform: none; }
         .dt-hl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 4px; }
         .dt-hl-tile { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
@@ -490,17 +491,22 @@
         }
         .lightbox-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .lightbox-stage iframe { width: min(90vw, 1280px); height: min(80vh, 720px); border: 0; }
+        /* same round-white look as the inline detail arrows (.ph-nav) */
         .lightbox-prev, .lightbox-next {
             position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(250,247,242,0.08); color: #EDF2F4;
-            width: 56px; height: 56px; border: 0; cursor: pointer;
-            font-size: 22px; line-height: 1;
+            width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+            background: rgba(255,255,255,.92); color: #2B2D42;
+            font-size: 26px; line-height: 1; padding: 0 0 4px;
             display: flex; align-items: center; justify-content: center;
-            transition: background 100ms;
+            box-shadow: 0 2px 12px rgba(0,0,0,.35);
+            transition: background .15s, color .15s, transform .1s;
         }
-        .lightbox-prev:hover, .lightbox-next:hover, .lightbox-prev:active, .lightbox-next:active { background: rgba(250,247,242,0.22); }
-        .lightbox-prev { left: 8px; }
-        .lightbox-next { right: 8px; }
+        .lightbox-prev:hover, .lightbox-next:hover { background: #fff; color: #EF233C; }
+        .lightbox-prev:active, .lightbox-next:active { transform: translateY(-50%) scale(.9); }
+        .lightbox-prev { left: 16px; }
+        .lightbox-next { right: 16px; }
+        @keyframes photoIn { from { opacity: .35; transform: scale(.985); } to { opacity: 1; transform: none; } }
+        .photo-anim { animation: photoIn .24s cubic-bezier(.2,.7,.2,1); }
         .lightbox-close {
             position: absolute; top: 12px; right: 12px;
             background: rgba(250,247,242,0.18); color: #EDF2F4;
@@ -688,6 +694,7 @@
             *:active { transform: none !important; }
             .btn-search.is-busy { animation: none !important; }
             .rcard.is-hiding { animation: none !important; opacity: 0; }
+            .photo-anim { animation: none !important; }
             .sk::after { animation: none; }
         }
 
@@ -1022,8 +1029,8 @@
     <button class="lightbox-close" onclick="closeLightbox()" aria-label="close">✕</button>
     <div class="lightbox-stage" id="lightbox-stage"
          onclick="if (event.target === this) closeLightbox()"></div>
-    <button class="lightbox-prev" onclick="lightboxGo(-1)" aria-label="prev">◀</button>
-    <button class="lightbox-next" onclick="lightboxGo(1)" aria-label="next">▶</button>
+    <button class="lightbox-prev" onclick="lightboxGo(-1)" aria-label="prev">‹</button>
+    <button class="lightbox-next" onclick="lightboxGo(1)" aria-label="next">›</button>
     <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
 </div>
 
@@ -1776,7 +1783,10 @@
 
     function renderLightbox() {
         const { slides, idx } = _lightbox;
-        document.getElementById('lightbox-stage').innerHTML = slideStage(slides[idx]);
+        const stage = document.getElementById('lightbox-stage');
+        stage.innerHTML = slideStage(slides[idx]);
+        const sImg = stage.querySelector('img');
+        if (sImg) sImg.classList.add('photo-anim');   // fade/zoom in on switch
         document.getElementById('lightbox-counter').textContent = t('photo_counter', { i: idx + 1, n: slides.length });
 
         const thumbs = document.getElementById('lightbox-thumbs');
@@ -2394,6 +2404,7 @@
             : t('scraped_on_note', { date: formatDate(car.created_at) });
         const carKey = `${car.source}-${car.source_id}`;
         _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
+        _carFull[carKey] = car;
         const saved = isCarSaved(carKey);
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
@@ -2405,6 +2416,7 @@
             <div class="dt-bar">
               <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
               <div class="dt-actions">
+                <button class="rcard-compare dt-compare ${isInCompare(carKey) ? 'on' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${isInCompare(carKey) ? 'true' : 'false'}" onclick="toggleCompare('${escapeHtml(carKey)}', this)" title="${t('act_compare')}" aria-label="${t('act_compare')}">${ICON_COMPARE}</button>
                 <button class="save-btn dt-fav ${saved ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${saved ? 'true' : 'false'}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${saved ? '♥' : '♡'}</button>
                 <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">${ICON_COPY}</button>
               </div>
@@ -2441,7 +2453,10 @@
         if (!s) return;
         _detailMainIdx = i;
         const img = document.getElementById('dt-main-img');
-        if (img) img.src = s.type === 'image' ? s.src : thumbSrc(s);
+        if (img) {
+            img.src = s.type === 'image' ? s.src : thumbSrc(s);
+            img.classList.remove('photo-anim'); void img.offsetWidth; img.classList.add('photo-anim');   // animate switch
+        }
         const btn = document.getElementById('dt-main-btn');
         if (btn) btn.setAttribute('onclick', `openDetailLightbox(${i})`);
         const c = document.querySelector('.dt-count');
