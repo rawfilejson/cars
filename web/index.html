@@ -1540,7 +1540,7 @@
         meta.textContent = '';
         empty.classList.add('hidden');
         document.body.classList.add('mode-results');
-        if (currentPage === 1) results.innerHTML = skeletonCards(5);
+        results.innerHTML = skeletonCards(currentPage === 1 ? 5 : 4);   // loading state for every page
 
         try {
             const resp = await fetch(`${API_BASE}/search`, {
@@ -1584,7 +1584,10 @@
     window.goToPage = function (page) {
         currentPage = page;
         doSearch({ resetPage: false });
-        window.scrollTo(0, 0);
+        // ease up to the start of the results instead of hard-jumping to the page top
+        const top = document.querySelector('.results-bar') || document.getElementById('results');
+        if (top && top.scrollIntoView) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     function escapeHtml(text) {
