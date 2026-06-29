@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Car-DB — Georgian car listings</title>
+    <title>Car-DB</title>
     <meta name="description" content="Car listings archive — search by VIN, phone, or text. Free, no signup.">
     <meta name="theme-color" content="#2B2D42">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -798,8 +798,10 @@
         .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; }
         .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
         .chip-del { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; background: #fff; color: #6B7280; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
-        /* მთელი chip ერთად რეაგირებს hover-ზე — ნახევრად outline აღარ ჩანს */
-        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del, .chip-wrap:hover .chip-save { border-color: #2B2D42; }
+        /* მთელი chip ერთად, რბილად რეაგირებს hover-ზე (გადახტომის გარეშე) */
+        .chip-wrap .hist-chip { transition: background .14s, border-color .14s; }
+        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del, .chip-wrap:hover .chip-save { border-color: #C9D2DC; background: #F7F9FB; }
+        .chip-wrap .hist-chip:hover { transform: none; }
         .chip-wrap:hover .chip-del { color: #EF233C; }
         .chip-save { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; border-right: 0; background: #fff; color: #6B7280; padding: 0 8px; font-size: 12px; cursor: pointer; }
         .chip-wrap .hist-chip { border-radius: 999px 0 0 999px; border-right: 0; }
@@ -857,13 +859,14 @@
         </div>
 
         <div class="chips" id="quick-chips">
-            <button class="chip is-accent" onclick="quickSearch('BMW')">BMW</button>
-            <button class="chip" onclick="quickSearch('Mercedes-Benz')">Mercedes-Benz</button>
-            <button class="chip" onclick="quickSearch('Toyota')">Toyota</button>
-            <button class="chip" onclick="quickSearch('Hyundai')">Hyundai</button>
-            <button class="chip" onclick="quickSearch('Ford')">Ford</button>
-            <button class="chip" onclick="quickSearch('Honda')">Honda</button>
-            <button class="chip" onclick="quickSearch('Lexus')">Lexus</button>
+            <button class="chip" onclick="quickSearch('Camry')">Camry</button>
+            <button class="chip" onclick="quickSearch('RAV4')">RAV4</button>
+            <button class="chip" onclick="quickSearch('Accord')">Accord</button>
+            <button class="chip" onclick="quickSearch('Elantra')">Elantra</button>
+            <button class="chip" onclick="quickSearch('Prius')">Prius</button>
+            <button class="chip" onclick="quickSearch('Fusion')">Fusion</button>
+            <button class="chip" onclick="quickSearch('Corolla')">Corolla</button>
+            <button class="chip" onclick="quickSearch('X5')">X5</button>
         </div>
     </section>
 
@@ -1883,7 +1886,7 @@
         if (/4x4|4wd|awd|ოთხ|სრულ|all|სავ/.test(s)) { /* ყველა მუქი */ }
         else if (/უკან|rear|\brwd\b|უკანა/.test(s)) { tl = off; tr = off; }
         else { bl = off; br = off; } // წინა (default)
-        return _PIC(`<rect x="4" y="4" width="6" height="6" rx="1.5"${tl}/><rect x="14" y="4" width="6" height="6" rx="1.5"${tr}/><rect x="4" y="14" width="6" height="6" rx="1.5"${bl}/><rect x="14" y="14" width="6" height="6" rx="1.5"${br}/>`);
+        return _PIC(`<circle cx="6.5" cy="7" r="2.5"${tl}/><circle cx="17.5" cy="7" r="2.5"${tr}/><circle cx="6.5" cy="17" r="2.5"${bl}/><circle cx="17.5" cy="17" r="2.5"${br}/><path d="M6.5 7v10M17.5 7v10" opacity=".45"/>`);
     }
 
     function carSpecPills(car) {
@@ -2997,7 +3000,7 @@
         body_type:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
         fuel:     '<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5"/>',
         gearbox:  '<circle cx="6" cy="5" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="18" cy="5" r="1.5"/><path d="M6 6.5v4h12v-4M12 10.5v8.5M10 19h4"/>',
-        drive:    '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>',
+        drive:    '<circle cx="6.5" cy="7" r="2.5"/><circle cx="17.5" cy="7" r="2.5"/><circle cx="6.5" cy="17" r="2.5"/><circle cx="17.5" cy="17" r="2.5"/><path d="M6.5 7h11M6.5 17h11M6.5 7v10M17.5 7v10"/>',
         location: '<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
         customs:  '<path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
     };
