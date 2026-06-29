@@ -66,6 +66,7 @@ const TRANSLATIONS = {
         save_comparison: "შედარების შენახვა",
         saved_comparisons_h: "შენახული შედარებები",
         cmp_cars_n: "{n} მანქანა",
+        hidden_h: "დამალულები",
         spec_power:     "სიმძლავრე",
         ad_label:       "რეკლამა",
 
@@ -211,6 +212,7 @@ const TRANSLATIONS = {
         save_comparison: "Save comparison",
         saved_comparisons_h: "Saved comparisons",
         cmp_cars_n: "{n} cars",
+        hidden_h: "Hidden",
         spec_power:     "Power",
         ad_label:       "Advertisement",
 
@@ -351,6 +353,7 @@ const TRANSLATIONS = {
         save_comparison: "Сохранить сравнение",
         saved_comparisons_h: "Сохранённые сравнения",
         cmp_cars_n: "{n} авто",
+        hidden_h: "Скрытые",
         spec_power: "Мощность",
         ad_label: "Реклама",
         sort_default: "Сортировка",
@@ -476,6 +479,7 @@ const TRANSLATIONS = {
         save_comparison: "Салыстыруды сақтау",
         saved_comparisons_h: "Сақталған салыстырулар",
         cmp_cars_n: "{n} көлік",
+        hidden_h: "Жасырылған",
         spec_power: "Қуаты",
         ad_label: "Жарнама",
         sort_default: "Сұрыптау",
