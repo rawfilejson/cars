@@ -131,7 +131,9 @@
         .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.cdd-active, .cdd-group-head.cdd-active { background: #E7ECF1; box-shadow: inset 2px 0 0 #EF233C; }
-        .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; }
+        .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; overflow: hidden; }
+        .brand-badge-logo { background: #fff; border: 1px solid #ECF0F3; padding: 2px; }
+        .brand-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
         .cdd-opt .pill-ic { width: 17px; height: 17px; color: #64748B; flex-shrink: 0; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
@@ -1393,9 +1395,18 @@
         if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
         return name.slice(0, 2).toUpperCase();
     }
+    function _brandLogoSlug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
     function _brandBadge(name) {
-        return `<span class="brand-badge" style="background:${_brandColor(name)}">${escapeHtml(_brandInitials(name))}</span>`;
+        // try the real logo; fall back to a coloured monogram if it is missing
+        return `<span class="brand-badge brand-badge-logo"><img class="brand-logo" src="logos/${_brandLogoSlug(name)}.png" alt="" loading="lazy" data-brand="${escapeHtml(name)}" onerror="_logoFail(this)"></span>`;
     }
+    window._logoFail = function (img) {
+        const span = img.parentElement;
+        if (!span) return;
+        span.classList.remove('brand-badge-logo');
+        span.style.background = _brandColor(img.getAttribute('data-brand') || '');
+        span.textContent = _brandInitials(img.getAttribute('data-brand') || '');
+    };
 
     let _facets = {};
 
