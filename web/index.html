@@ -1912,11 +1912,21 @@
         return _PIC(`<circle cx="6.5" cy="7" r="2.5"${tl}/><circle cx="17.5" cy="7" r="2.5"${tr}/><circle cx="6.5" cy="17" r="2.5"${bl}/><circle cx="17.5" cy="17" r="2.5"${br}/><path d="M6.5 7v10M17.5 7v10" opacity=".45"/>`);
     }
 
+    // გარბენი — სპიდომეტრის ისარი მდებარეობით (დაბალი → მარცხნივ, მაღალი → მარჯვნივ)
+    function _mileageGauge(km) {
+        const frac = Math.max(0, Math.min(1, Math.sqrt((km || 0) / 1000000)));
+        const ang = Math.PI * (1 - frac);
+        const cx = 12, cy = 15.5, r = 7;
+        const nx = (cx + r * Math.cos(ang)).toFixed(1);
+        const ny = (cy - r * Math.sin(ang)).toFixed(1);
+        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
+    }
+
     function carSpecPills(car) {
         const en = getLang() === 'en';
         const pills = [];
         if (car.body_type)       pills.push([_bodyIcon(car.body_type), tval(car.body_type)]);
-        if (car.mileage_km)      pills.push([_PILL_IC.gauge, car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
+        if (car.mileage_km)      pills.push([_mileageGauge(car.mileage_km), car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
         if (car.engine_volume_l) pills.push([_PILL_IC.engine, car.engine_volume_l + ' L']);
         if (car.power_hp)        pills.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.')]);
         if (car.engine_type)     pills.push([_fuelIcon(car.engine_type), tval(car.engine_type)]);
@@ -2429,7 +2439,7 @@
         const hl = [];
         if (car.body_type)       hl.push([_bodyIcon(car.body_type), tval(car.body_type), t('filter_body')]);
         if (car.year)            hl.push([_PIC(_FILTER_ICONS.year), car.year, t('spec_year')]);
-        if (car.mileage_km)      hl.push([_PILL_IC.gauge, car.mileage_km.toLocaleString() + km, t('spec_mileage')]);
+        if (car.mileage_km)      hl.push([_mileageGauge(car.mileage_km), car.mileage_km.toLocaleString() + km, t('spec_mileage')]);
         if (car.engine_volume_l) hl.push([_PILL_IC.engine, car.engine_volume_l + ' L', t('spec_engine')]);
         if (car.power_hp)        hl.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.'), t('spec_power')]);
         if (car.engine_type)     hl.push([_fuelIcon(car.engine_type), tval(car.engine_type), t('spec_fuel')]);
