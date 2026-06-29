@@ -768,6 +768,11 @@
         .cmp-wins { font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; }
         .cmp-summary { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 16px; margin: 0 0 14px; font-size: 14px; color: #2B2D42; line-height: 1.5; }
         .cmp-summary strong { color: #15803D; }
+        .cmp-head-acts { display: flex; align-items: center; gap: 10px; }
+        .cmp-save-btn { background: #FDE6E8; color: #EF233C; border: 0; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .cmp-save-btn:hover { background: #EF233C; color: #fff; }
+        .cmp-save-thumbs { display: flex; gap: 3px; }
+        .cmp-save-thumbs img { width: 40px; height: 30px; object-fit: cover; border-radius: 5px; background: #F3F6F8; }
 
         /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #64748B; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
@@ -2032,6 +2037,33 @@
         renderCompareBar();
         if (list.length) renderCompareModal(); else closeCompare();
     };
+    // saved comparisons (snapshots of the compare set)
+    const CMPSAVE_KEY = 'cdb_compsaves';
+    function getCompSaves() { try { return JSON.parse(localStorage.getItem(CMPSAVE_KEY) || '[]'); } catch { return []; } }
+    function setCompSaves(l) { try { localStorage.setItem(CMPSAVE_KEY, JSON.stringify(l)); } catch {} }
+    window.saveComparison = function () {
+        const list = getCompare();
+        if (list.length < 2) return;
+        setCompSaves([{ cars: list }, ...getCompSaves()].slice(0, 12));
+        updateSavedCount();
+        showToast(t('saved_done'));
+    };
+    window.loadComparison = function (i) {
+        const s = getCompSaves()[i]; if (!s) return;
+        setCompare(s.cars);
+        closeSaved();
+        document.querySelectorAll('.rcard-compare').forEach(b => {
+            const on = s.cars.some(c => c.key === b.dataset.key);
+            b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderCompareBar();
+        openCompare();
+    };
+    window.deleteComparison = function (i) {
+        const saves = getCompSaves(); saves.splice(i, 1); setCompSaves(saves);
+        updateSavedCount(); renderSaved();
+    };
+
     function _driveScore(d) {
         const s = (d || '').toLowerCase();
         return /4x4|4wd|awd|ოთხ|სრულ|толық|полн/.test(s) ? 2 : 1;
@@ -2115,7 +2147,7 @@
             modal.setAttribute('role', 'dialog');
             modal.setAttribute('aria-modal', 'true');
             modal.setAttribute('aria-labelledby', 'cmp-title');
-            modal.innerHTML = `<div class="cmp-sheet"><div class="cmp-sheet-head"><h3 id="cmp-title">${escapeHtml(t('compare_title'))}</h3><button class="cmp-x" onclick="closeCompare()" aria-label="close">✕</button></div><div class="cmp-body"></div></div>`;
+            modal.innerHTML = `<div class="cmp-sheet"><div class="cmp-sheet-head"><h3 id="cmp-title">${escapeHtml(t('compare_title'))}</h3><div class="cmp-head-acts"><button class="cmp-save-btn" onclick="saveComparison()">♥ ${escapeHtml(t('save_comparison'))}</button><button class="cmp-x" onclick="closeCompare()" aria-label="close">✕</button></div></div><div class="cmp-body"></div></div>`;
             modal.addEventListener('click', (e) => { if (e.target === modal) closeCompare(); });
             modal.addEventListener('keydown', (e) => {
                 if (e.key !== 'Tab') return;
@@ -2754,8 +2786,19 @@
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
         h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search">♥ ${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
+        const compSaves = getCompSaves();
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
+        h += compSaves.length ? compSaves.map((s, i) => `
+            <div class="saved-row">
+              <div class="grow flex items-center gap-3" data-act="loadcmp" data-i="${i}" style="cursor:pointer">
+                <div class="cmp-save-thumbs">${s.cars.slice(0, 4).map(c => `<img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">`).join('')}</div>
+                <div class="saved-row-title">${t('cmp_cars_n', { n: s.cars.length })}</div>
+              </div>
+              <button class="row-x" data-act="delcmp" data-i="${i}" aria-label="${escapeHtml(t('remove'))}">✕</button>
+            </div>`).join('') : `<div class="drawer-empty">—</div>`;
+
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
-        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(q)}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(_histLabel(q))}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const viewed = lsGet(LS_VIEWED);
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('viewed_h')} · ${viewed.length}</span>${viewed.length ? `<button class="drawer-clear" onclick="clearViewed()">${t('clear_all')}</button>` : ''}</div>`;
@@ -2771,6 +2814,8 @@
         body.innerHTML = h;
         body.querySelectorAll('[data-act="open"]').forEach(el => el.onclick = (e) => { goToCarDetail(el.dataset.key, e); closeSaved(); });
         body.querySelectorAll('[data-act="remove"]').forEach(el => el.onclick = () => { toggleSave(el.dataset.key); renderSaved(); });
+        body.querySelectorAll('[data-act="loadcmp"]').forEach(el => el.onclick = () => loadComparison(+el.dataset.i));
+        body.querySelectorAll('[data-act="delcmp"]').forEach(el => el.onclick = () => deleteComparison(+el.dataset.i));
         body.querySelectorAll('.hist-chip').forEach(b => {
             b.onclick = () => {
                 if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
