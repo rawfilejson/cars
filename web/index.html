@@ -1880,8 +1880,14 @@
             return _PIC('<path d="M3 13l1.4-4.2A2 2 0 0 1 6.3 7.5h8.8a2 2 0 0 1 1.6.8l2.2 3 1.6.5a1.4 1.4 0 0 1 1 1.3V16h-2.2"/><path d="M3 16v-3h18M6 16h2m6 0h2"/><circle cx="8" cy="16.5" r="1.7"/><circle cx="16" cy="16.5" r="1.7"/>');
         if (/ჰეტ|ჰეჩ|ჰეტჩ|hatch|ლიფტ/.test(s))
             return _PIC('<path d="M3 16v-3l2.4-4.6A2 2 0 0 1 7.2 7.2h5.6l5 5.3h1a1.4 1.4 0 0 1 1.2 1.4V16h-1.5"/><path d="M3 16h2.5m5 0h8M13 7.5V13H3"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16" cy="16.5" r="1.7"/>');
-        if (/კუპე|coupe|კაბრ|convert|როდსტ/.test(s))
+        if (/კუპე|coupe|კაბრ|convert|როდსტ|სპორტ|sport/.test(s))
             return _PIC('<path d="M3 16v-2l3.2-3.8c2-1 8-1 11 .6l2.8 2.4a1.4 1.4 0 0 1 1 1.3V16"/><path d="M3 16h3m5 0h10"/><circle cx="8" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
+        if (/სატვირთ|truck|სატვ/.test(s))   // cargo truck
+            return _PIC('<path d="M2 16V9h9v7M11 11h4l3 3v2h-2"/><path d="M2 16h2.3m3.4 0h4.6"/><circle cx="6" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/>');
+        if (/კვადრო|atv|quad|ბაგ/.test(s))   // ATV / quad
+            return _PIC('<circle cx="6" cy="15.5" r="3"/><circle cx="18" cy="15.5" r="3"/><path d="M6 15.5l2.6-5h4l2.8 3.4M8.6 10.5L7.5 8.5H10"/>');
+        if (/სპეცტ|special|ექსკავ|ტექნიკ|ამწე/.test(s))   // special / construction
+            return _PIC('<path d="M3 17v-4h7v4M10 14l4-1 5 3v1h-2"/><path d="M10 13L7 9h2"/><circle cx="6" cy="17.5" r="1.6"/><circle cx="16" cy="17.5" r="1.6"/>');
         if (/უნივ|wagon|ფურგ|მინივ|van|მიკრო/.test(s))
             return _PIC('<path d="M3 16V9.2A1.4 1.4 0 0 1 4.4 8h12.4l3.2 3.4V16h-2"/><path d="M3 16h2.5m5 0h9M9 8v8"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
         if (/პიკაპ|pickup/.test(s))
