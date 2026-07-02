@@ -1,0 +1,43 @@
+# =====================================================================
+# Dead-listing prune — GitHub Actions
+# =====================================================================
+# დღეში ერთხელ ვამოწმებთ ყველაზე დიდი ხნის უნახავ განცხადებებს წყაროსთან
+# და ვშლით მხოლოდ იმას, რასაც წყარო დაადასტურებს რომ აღარ არსებობს.
+# სკრიპტი dry-run-ით იწყება ლოგისთვის, მერე --apply.
+# =====================================================================
+
+name: Prune Dead Listings
+
+on:
+  schedule:
+    - cron: '30 9 * * *'        # ~13:30 თბილისი
+  workflow_dispatch:            # ხელითაც
+
+concurrency:
+  group: prune
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Verify and prune dead listings
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python scripts/prune_dead.py --apply --days 30 --limit 800
