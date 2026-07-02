@@ -276,6 +276,8 @@
             .cmp-bar { bottom: 86px; }
             .toast { bottom: 92px; }
         }
+        /* nothing floats on top of the saved drawer — no stray pills/trays/toasts */
+        body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toast { display: none; }
 
 
         .lang-btn { color: #64748B; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
@@ -486,7 +488,7 @@
         }
 
 
-        .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(15,12,8,0.96); display: flex; flex-direction: column; padding: 16px; }
+        .lightbox { position: fixed; inset: 0; z-index: 1400; background: rgba(15,12,8,0.96); display: flex; flex-direction: column; padding: 16px; }
         .lightbox.hidden { display: none; }
         .lightbox-stage {
             flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
@@ -1311,17 +1313,25 @@
         customs:   ['f-customs'],
     };
 
+    // ერთი საერთო scroll-lock რამდენიმე გადაფარვას (drawer/modal/lightbox/sheet)
+    // ემსახურება — თითო თავისი გასაღებით იკეტება, რომ ერთის დახურვამ მეორის
+    // lock არ წაშალოს
+    const _scrollLocks = new Set();
+    function lockScroll(key) { _scrollLocks.add(key); document.body.style.overflow = 'hidden'; }
+    function unlockScroll(key) { _scrollLocks.delete(key); if (!_scrollLocks.size) document.body.style.overflow = ''; }
+
     // მობილურზე გვერდითა ფილტრების ჩვენება/დამალვა (ფიქსირებული floating ღილაკი)
     window.toggleSidebar = function () {
         const sb = document.getElementById('filter-sidebar');
         if (!sb) return;
         const open = sb.classList.toggle('open');
-        if (window.matchMedia('(max-width: 860px)').matches) document.body.style.overflow = open ? 'hidden' : '';
+        if (window.matchMedia('(max-width: 860px)').matches) { open ? lockScroll('sheet') : unlockScroll('sheet'); }
+        else if (!open) unlockScroll('sheet');
     };
     window.applyFilters = function () {
         const sb = document.getElementById('filter-sidebar');
         if (sb) sb.classList.remove('open');
-        document.body.style.overflow = '';
+        unlockScroll('sheet');
         doSearch();
     };
 
@@ -1765,7 +1775,7 @@
 
     window.openLightbox = function (slides, startIdx) {
         _lightbox = { slides, idx: Math.max(0, Math.min(startIdx || 0, slides.length - 1)) };
-        document.body.style.overflow = 'hidden';
+        lockScroll('lightbox');
         renderLightbox();
         document.getElementById('lightbox').classList.remove('hidden');
     };
@@ -1773,7 +1783,7 @@
     window.closeLightbox = function () {
         document.getElementById('lightbox').classList.add('hidden');
         document.getElementById('lightbox-stage').innerHTML = '';
-        document.body.style.overflow = '';
+        unlockScroll('lightbox');
         _lightbox = null;
     };
 
@@ -2251,7 +2261,7 @@
         }
         renderCompareModal();
         modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+        lockScroll('cmp');
         _cmpOpener = document.activeElement;
         const x = modal.querySelector('.cmp-x');
         if (x) x.focus();
@@ -2259,7 +2269,7 @@
     window.closeCompare = function () {
         const modal = document.getElementById('cmp-modal');
         if (modal) modal.classList.remove('show');
-        document.body.style.overflow = '';
+        unlockScroll('cmp');
         if (_cmpOpener && typeof _cmpOpener.focus === 'function') { _cmpOpener.focus(); }
         _cmpOpener = null;
     };
@@ -2861,8 +2871,8 @@
         if (el) el.textContent = getSavedCars().length + lsGet(LS_SEARCHES).length;
     }
 
-    window.openSaved = function () { renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.style.overflow = 'hidden'; };
-    window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.style.overflow = ''; };
+    window.openSaved = function () { renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
+    window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.classList.remove('saved-open'); unlockScroll('saved'); };
 
     function renderSaved() {
         const cars = getSavedCars(), searches = lsGet(LS_SEARCHES), hist = lsGet(LS_HIST);
@@ -2949,10 +2959,25 @@
         if (el && x) { const tog = () => x.classList.toggle('hidden', !el.value); el.addEventListener('input', tog); tog(); }
         updateSavedCount();
         renderRecent();
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaved(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            // only when the drawer is actually open and nothing sits above it
+            if (!document.querySelector('#saved-drawer.open')) return;
+            if (_lightbox) return;
+            const cm = document.getElementById('cmp-modal');
+            if (cm && cm.classList.contains('show')) return;
+            closeSaved();
+        });
     })();
 
     window.addEventListener('popstate', () => {
+        // Back must not leave an overlay floating over the new view with the scroll locked
+        if (_lightbox) closeLightbox();
+        const cm = document.getElementById('cmp-modal');
+        if (cm && cm.classList.contains('show')) closeCompare();
+        if (document.querySelector('#saved-drawer.open')) closeSaved();
+        const sb = document.getElementById('filter-sidebar');
+        if (sb && sb.classList.contains('open')) { sb.classList.remove('open'); unlockScroll('sheet'); }
         const route = parseRoute();
         if (route.view === 'detail') { showDetailView(route.key); window.scrollTo(0, 0); }
         else if (route.view === 'notfound') showNotFound();
@@ -3255,7 +3280,7 @@
     else refreshDropdowns();
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !_lightbox) {
             const m = document.getElementById('cmp-modal');
             if (m && m.classList.contains('show')) closeCompare();
         }
