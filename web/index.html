@@ -128,12 +128,13 @@
             padding: 6px; max-height: 290px; overflow-y: auto; }
         .cdd.open .cdd-panel { display: block; animation: cddIn .14s ease both; }
         @keyframes cddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-        .cdd-opt { padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
+        .cdd-opt { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
         .cdd-opt.cdd-active, .cdd-group-head.cdd-active { background: #E7ECF1; box-shadow: inset 2px 0 0 #EF233C; }
-        .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; overflow: hidden; }
-        .brand-badge-logo { background: #fff; border: 1px solid #ECF0F3; padding: 2px; }
+        .brand-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; overflow: hidden; }
+        .brand-badge-logo { background: #fff; padding: 1px; }
         .brand-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .cdd-chip .brand-logo { width: 16px; height: 16px; margin-right: 5px; flex-shrink: 0; }
         .cdd-opt .pill-ic { width: 17px; height: 17px; color: #64748B; flex-shrink: 0; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
@@ -152,7 +153,7 @@
         .cdd-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px;
             padding: 0 5px; border-radius: 999px; background: #EF233C; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
         .cdd-chips { display: flex; gap: 4px; overflow: hidden; flex: 1 1 auto; min-width: 0; }
-        .cdd-chip { background: #FDE6E8; color: #D90429; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600;
+        .cdd-chip { display: inline-flex; align-items: center; background: #FDE6E8; color: #D90429; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 600;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .brand-dot { color: #EF233C; font-weight: inherit; }
         .cdd-group-head { padding: 8px 12px 3px; font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -739,10 +740,19 @@
         /* compare tray (bottom bar) */
         .cmp-bar { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); display: none; align-items: center; gap: 12px; background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; padding: 10px 12px 10px 16px; box-shadow: 0 14px 40px rgba(43,45,66,.20); z-index: 1150; max-width: calc(100vw - 24px); }
         .cmp-bar.show { display: flex; animation: cmpBarIn .22s cubic-bezier(.2,.7,.2,1) both; }
+        body.has-cmpbar #results { padding-bottom: 90px; }
         @keyframes cmpBarIn { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .cmp-bar-label { font-size: 14px; font-weight: 500; color: #2B2D42; white-space: nowrap; }
         .cmp-bar-thumbs { display: flex; gap: 6px; }
-        .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; }
+        .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; display: block; }
+        .cmp-thumb-wrap { position: relative; cursor: pointer; }
+        .cmp-thumb-wrap:hover .cmp-thumb { border-color: #EF233C; }
+        .cmp-thumb-x { position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 50%; border: 0;
+            background: #2B2D42; color: #fff; font-size: 9px; line-height: 1; cursor: pointer; display: none;
+            align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 4px rgba(43,45,66,.35); }
+        .cmp-thumb-wrap:hover .cmp-thumb-x { display: inline-flex; }
+        .cmp-thumb-x:hover { background: #EF233C; }
+        @media (hover: none) { .cmp-thumb-x { display: inline-flex; } }
         .cmp-bar-open { background: #EF233C; color: #fff; border: 0; border-radius: 999px; padding: 9px 18px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
         .cmp-bar-clear { background: none; border: 0; color: #64748B; font-size: 13px; cursor: pointer; white-space: nowrap; }
         .cmp-bar-clear:hover { color: #EF233C; }
@@ -1939,6 +1949,17 @@
         return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
     }
 
+    // სორტირების ვარიანტები — რითი ვსორტავთ + მიმართულების ისარი
+    function _sortIcon(v) {
+        const up   = '<path d="M18.5 16V8m0 0l-2.3 2.3M18.5 8l2.3 2.3"/>';
+        const down = '<path d="M18.5 8v8m0 0l-2.3-2.3M18.5 16l2.3 2.3"/>';
+        const dir = /asc/.test(v || '') ? up : down;
+        if (/^price/.test(v || ''))   return _PIC('<rect x="2" y="7.5" width="12.5" height="9" rx="1.5"/><circle cx="8.2" cy="12" r="2"/>' + dir);
+        if (/^year/.test(v || ''))    return _PIC('<rect x="2.5" y="6" width="12" height="11" rx="1.5"/><path d="M2.5 9.5h12M6 4.5v3M11 4.5v3"/>' + dir);
+        if (/^mileage/.test(v || '')) return _PIC('<path d="M2.8 14.5a6 6 0 1 1 12 0"/><path d="M8.8 14.5l2.3-2.3"/>' + dir);
+        return _PIC('<path d="M4 7h13M4 12h9.5M4 17h6"/>');
+    }
+
     // cross-script + fuzzy filter matching (e.g. "цамри" / "ცამრი" → Camry)
     const _CYR = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'i','ь':'','э':'e','ю':'iu','я':'ia' };
     const _GEO = { 'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t','ი':'i','კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh','რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'p','ქ':'k','ღ':'gh','ყ':'k','შ':'sh','ჩ':'ch','ც':'c','ძ':'dz','წ':'c','ჭ':'ch','ხ':'h','ჯ':'j','ჰ':'h' };
@@ -2074,9 +2095,15 @@
     function renderCompareBar() {
         let bar = document.getElementById('cmp-bar');
         const list = getCompare();
+        // pad the results so the fixed tray never covers the pagination
+        document.body.classList.toggle('has-cmpbar', list.length > 0);
         if (!bar) { bar = document.createElement('div'); bar.id = 'cmp-bar'; bar.className = 'cmp-bar'; document.body.appendChild(bar); }
         if (!list.length) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
-        const thumbs = list.map(c => `<img class="cmp-thumb" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2">`).join('');
+        const thumbs = list.map(c =>
+            `<span class="cmp-thumb-wrap" title="${escapeHtml(c.title)}" onclick="goToCarDetail('${escapeHtml(c.key)}', event)">` +
+            `<img class="cmp-thumb" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2">` +
+            `<button class="cmp-thumb-x" onclick="event.stopPropagation(); removeFromCompare('${escapeHtml(c.key)}')" aria-label="${escapeHtml(t('remove'))}">✕</button></span>`
+        ).join('');
         bar.innerHTML =
             `<span class="cmp-bar-label">${t('compare_title')} · ${list.length}</span>` +
             `<div class="cmp-bar-thumbs">${thumbs}</div>` +
@@ -2573,6 +2600,12 @@
 
     window.goToCarDetail = function (key, ev) {
         if (ev) ev.preventDefault();
+        // close whatever overlay we navigated from — otherwise it stays on top
+        // of the detail page with the scroll still locked
+        const cm = document.getElementById('cmp-modal');
+        if (cm && cm.classList.contains('show')) closeCompare();
+        if (document.querySelector('#saved-drawer.open')) closeSaved();
+        if (_lightbox) closeLightbox();
         _searchScrollY = window.scrollY;
         history.pushState({ view: 'detail', key }, '', `/car/${key}`);
         showDetailView(key);
@@ -3012,7 +3045,12 @@
                 const s = realSel();
                 if (!s.length) { btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return; }
                 const MAX = 2;
-                const chips = s.slice(0, MAX).map(o => `<span class="cdd-chip">${escapeHtml(o.textContent)}</span>`).join('');
+                const chips = s.slice(0, MAX).map(o => {
+                    const logo = sel.id === 'f-brand'
+                        ? `<img class="brand-logo" src="logos/${_brandLogoSlug(o.textContent)}.png" alt="" onerror="this.remove()">`
+                        : '';
+                    return `<span class="cdd-chip">${logo}${escapeHtml(o.textContent)}</span>`;
+                }).join('');
                 const more = s.length > MAX ? `<span class="cdd-count">+${s.length - MAX}</span>` : '';
                 btn.innerHTML = `<span class="cdd-chips">${chips}</span>${more}<span class="cdd-chev">▾</span>`;
             } else {
@@ -3039,13 +3077,15 @@
                     if (searchable && _filter && o.value && !_matchFilter(o.textContent, _filter)) return '';
                     const badge = (sel.id === 'f-brand' && o.value) ? _brandBadge(o.textContent) : '';
                     const facetIc = o.value ? (
-                        sel.id === 'f-body'    ? _bodyIcon(o.value) :
-                        sel.id === 'f-fuel'    ? _fuelIcon(o.value) :
-                        sel.id === 'f-gearbox' ? _gearIcon(o.value) :
-                        sel.id === 'f-drive'   ? _driveIcon(o.value) : '') : '';
+                        sel.id === 'f-body'     ? _bodyIcon(o.value) :
+                        sel.id === 'f-fuel'     ? _fuelIcon(o.value) :
+                        sel.id === 'f-gearbox'  ? _gearIcon(o.value) :
+                        sel.id === 'f-drive'    ? _driveIcon(o.value) :
+                        sel.id === 'f-location' ? _PIC('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>') : '') : '';
                     return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${badge}${facetIc}${escapeHtml(o.textContent)}</div>`;
                 }
-                return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${escapeHtml(o.textContent)}</div>`;
+                const singleIc = sel.id === 'f-sort' ? _sortIcon(o.value) : '';
+                return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${singleIc}${escapeHtml(o.textContent)}</div>`;
             }).join('');
         };
 
