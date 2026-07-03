@@ -2072,7 +2072,7 @@
     const ICON_COMPARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8l4-4 4 4M21 16l-4 4-4-4"/></svg>';
     const COMPARE_KEY = 'cdb_compare';
     const _carFull = {};
-    function getCompare() { try { return JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); } catch { return []; } }
+    function getCompare() { try { const v = JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } }
     function setCompare(list) { try { localStorage.setItem(COMPARE_KEY, JSON.stringify(list)); } catch {} }
     function isInCompare(key) { return getCompare().some(c => c.key === key); }
     function summarizeCar(car) {
@@ -2137,7 +2137,7 @@
     };
     // saved comparisons (snapshots of the compare set)
     const CMPSAVE_KEY = 'cdb_compsaves';
-    function getCompSaves() { try { return JSON.parse(localStorage.getItem(CMPSAVE_KEY) || '[]'); } catch { return []; } }
+    function getCompSaves() { try { const v = JSON.parse(localStorage.getItem(CMPSAVE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } }
     function setCompSaves(l) { try { localStorage.setItem(CMPSAVE_KEY, JSON.stringify(l)); } catch {} }
     window.saveComparison = function () {
         const list = getCompare();
@@ -2694,7 +2694,7 @@
     // --- saved cars / searches / history (localStorage; no account needed) ---
     const _carData = {};
     const LS_CARS = 'cdb_saved', LS_SEARCHES = 'cdb_searches', LS_HIST = 'cdb_history', LS_VIEWED = 'cdb_viewed';
-    function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (_) { return []; } }
+    function lsGet(k) { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
     function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
 
     // ნანახი მანქანების ისტორია
@@ -2824,7 +2824,7 @@
         const payload = (item && item.payload) || { query: String(item) };
         const key = JSON.stringify(payload);
         const s = lsGet(LS_SEARCHES);
-        if (s.some(x => JSON.stringify(x.payload) === key)) return;   // already saved
+        if (s.some(x => JSON.stringify(x.payload) === key)) return;
         lsSet(LS_SEARCHES, [{ payload, label: describeSearch(payload) }, ...s].slice(0, 40));
         updateSavedCount(); renderRecent();
     }
