@@ -5,8 +5,13 @@ API-ის request/response მოდელები. Pydantic-ით ვალ�
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
+
+
+# multi-select item — bounded length so a request body can't carry huge strings
+_FilterValue = Annotated[str, StringConstraints(max_length=60)]
 
 
 class SearchRequest(BaseModel):
@@ -29,13 +34,13 @@ class SearchRequest(BaseModel):
 
     # multi-select filters (new filter UI). The singular fields above are kept
     # for backward compatibility; the server merges both into one IN per column.
-    manufacturers: list[str] | None = Field(None, max_length=60)
-    models:        list[str] | None = Field(None, max_length=80)
-    body_types:    list[str] | None = Field(None, max_length=40)
-    fuels:         list[str] | None = Field(None, max_length=40)
-    gearboxes:     list[str] | None = Field(None, max_length=40)
-    drives:        list[str] | None = Field(None, max_length=40)
-    locations:     list[str] | None = Field(None, max_length=60)
+    manufacturers: list[_FilterValue] | None = Field(None, max_length=60)
+    models:        list[_FilterValue] | None = Field(None, max_length=80)
+    body_types:    list[_FilterValue] | None = Field(None, max_length=40)
+    fuels:         list[_FilterValue] | None = Field(None, max_length=40)
+    gearboxes:     list[_FilterValue] | None = Field(None, max_length=40)
+    drives:        list[_FilterValue] | None = Field(None, max_length=40)
+    locations:     list[_FilterValue] | None = Field(None, max_length=60)
 
     sort: str | None = Field(None, max_length=20)
 

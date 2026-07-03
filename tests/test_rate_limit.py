@@ -1,4 +1,4 @@
-"""client identity resolution — CF header trust, XFF public-IP scan, token format.
+"""client identity resolution — XFF rightmost-public scan, token format.
 
 These helpers don't touch the DB, so a fake request (headers + client) is enough.
 """
@@ -20,22 +20,23 @@ def _req(headers: dict | None = None, client_host: str | None = None):
     return SimpleNamespace(headers=Headers(headers or {}), client=client)
 
 
-def test_cf_connecting_ip_takes_precedence():
-    """Cloudflare always sets the real connecting IP — trust it over everything."""
+def test_cf_connecting_ip_not_trusted():
+    """API isn't behind Cloudflare — a client-set cf-connecting-ip must be ignored."""
     req = _req(
         {"cf-connecting-ip": "8.8.8.8", "x-forwarded-for": "1.1.1.1"},
         client_host="9.9.9.9",
     )
-    assert client_ip(req) == "8.8.8.8"
+    assert client_ip(req) == "1.1.1.1"   # rightmost public XFF, not the spoofable header
 
 
-def test_cf_private_ip_still_trusted():
-    """CF can't be spoofed by the client, so even a private CF IP is returned."""
-    assert client_ip(_req({"cf-connecting-ip": "10.0.0.5"})) == "10.0.0.5"
+def test_xff_prepended_spoof_is_ignored():
+    """Client prepends a fake IP; the proxy appends the real one — we take the real (rightmost)."""
+    req = _req({"x-forwarded-for": "6.6.6.6, 8.8.4.4"})
+    assert client_ip(req) == "8.8.4.4"
 
 
-def test_xff_skips_private_returns_first_public():
-    req = _req({"x-forwarded-for": "10.0.0.1, 192.168.1.2, 8.8.4.4"})
+def test_xff_skips_trailing_private_takes_rightmost_public():
+    req = _req({"x-forwarded-for": "10.0.0.1, 8.8.4.4, 192.168.1.2"})
     assert client_ip(req) == "8.8.4.4"
 
 
@@ -44,8 +45,8 @@ def test_xff_all_private_falls_back_to_peer_host():
     assert client_ip(req) == "1.2.3.4"
 
 
-def test_garbage_cf_falls_through_to_host():
-    assert client_ip(_req({"cf-connecting-ip": "not-an-ip"}, client_host="1.2.3.4")) == "1.2.3.4"
+def test_no_xff_falls_back_to_host():
+    assert client_ip(_req({}, client_host="1.2.3.4")) == "1.2.3.4"
 
 
 def test_no_identifiable_ip_returns_none():

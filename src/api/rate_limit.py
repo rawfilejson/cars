@@ -11,7 +11,8 @@ token-ს ვიღებთ (X-Client-Id, localStorage-დან): ერთ �
   * საათობრივი ჭერი: IP-ზე (backstop)
 
 დრო DB-ის NOW()-ით იზომება — კლიენტის საათს არ ვენდობით.
-onrender.com Cloudflare-ის უკანაა, ამიტომ რეალური IP CF-Connecting-IP-შია.
+IP X-Forwarded-For-ის ბოლო (proxy-ჩამატებულ) ჩანაწერიდან — კლიენტს
+მარცხნიდან ცრუ IP-ის prepend არ შეუძლია.
 """
 
 from __future__ import annotations
@@ -51,16 +52,12 @@ def _is_ip(value: str) -> bool:
 def client_ip(request: Request) -> str | None:
     """რეალური კლიენტის IP, ან None თუ ვერ დავადგინეთ.
 
-    Cloudflare-ი CF-Connecting-IP-ს ყოველთვის გადააწერს კავშირის რეალური
-    IP-ით — კლიენტი ვერ აყალბებს. fallback: X-Forwarded-For-ის პირველი
-    public IP (CF-ის გარეშე dev), შემდეგ peer host.
+    X-Forwarded-For-ის ბოლო (rightmost) public IP-ს ვიღებთ: ამ ჩანაწერს
+    hosting proxy ამატებს კავშირის რეალური IP-ით, ხოლო კლიენტის მიერ
+    მარცხნიდან prepend-ული ცრუ IP-ები იგნორდება. fallback: peer host.
     """
-    cf = request.headers.get("cf-connecting-ip", "").strip()
-    if _is_ip(cf):
-        return cf
-
     fwd = request.headers.get("x-forwarded-for", "")
-    for part in fwd.split(","):
+    for part in reversed(fwd.split(",")):
         ip = part.strip()
         if _is_public_ip(ip):
             return ip

@@ -134,8 +134,8 @@ def _content_type(key: str) -> str:
 
 
 def _r2_object_exists(client, key: str) -> bool:
-    """HeadObject — sphenecan სწრაფი check (Class B operation, ~10x იაფი
-    Class A upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
+    """HeadObject — სწრაფი check (Class B operation, ~10x იაფი Class A
+    upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
     """
     from botocore.exceptions import ClientError
     try:
