@@ -3119,7 +3119,7 @@
             updateLabel();
             const _ph = escapeHtml(t(sel.dataset.searchPh || ''));
             const sb = (multi && searchable)
-                ? `<input class="cdd-search" type="text" aria-controls="${listId}" aria-autocomplete="list" aria-label="${_ph}" placeholder="${_ph}" value="${escapeHtml(_filter)}">`
+                ? `<input class="cdd-search" type="text" maxlength="40" aria-controls="${listId}" aria-autocomplete="list" aria-label="${_ph}" placeholder="${_ph}" value="${escapeHtml(_filter)}">`
                 : '';
             panel.innerHTML = sb + `<div class="cdd-rows" id="${listId}" role="listbox"${multi ? ' aria-multiselectable="true"' : ''}>${rowsHtml()}</div>`;
             if (multi && searchable) {
