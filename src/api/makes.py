@@ -33,6 +33,8 @@ _JUNK = {
 _DRIVE_RE = re.compile(r"^\d?x\d$|^\d(dr|wd)$|^4x[24]$|^v\d$", re.IGNORECASE)
 _TWO_WORD = {"land", "grand", "range", "santa", "alfa", "aston", "mini", "model", "great", "gran"}
 _TRIM_NUM_RE = re.compile(r"(\d{2,3})[a-z]{1,2}")
+# კლასის ნომერი (C 300, GLE 350, E 220d) — ეს submodel-ია და არა trim-ნაგავი
+_SERIES_NUM_RE = re.compile(r"\d{2,3}[a-z]{0,2}", re.IGNORECASE)
 
 
 def _canon_token(tok: str) -> str:
@@ -50,9 +52,13 @@ def _base_model(manufacturer: str, model: str) -> str:
         return ""
     take = 1
     low0 = toks[0].lower().strip("-")
-    if (low0 in _TWO_WORD or toks[0].isdigit()) and len(toks) > 1:
+    if len(toks) > 1:
         nxt = toks[1]
-        if nxt.isascii() and nxt.isalpha() and len(nxt) >= 4 and nxt.lower() not in _JUNK:
+        if low0 in _TWO_WORD or toks[0].isdigit():
+            if nxt.isascii() and nxt.isalpha() and len(nxt) >= 4 and nxt.lower() not in _JUNK:
+                take = 2
+        elif len(toks[0]) <= 3 and toks[0].isalpha() and _SERIES_NUM_RE.fullmatch(nxt):
+            # ასოებიანი სერია + ნომერი (C 300) — ნომერი submodel-ს განასხვავებს
             take = 2
     return " ".join(_canon_token(t) for t in toks[:take])
 
@@ -107,6 +113,18 @@ def _load_makes() -> MakesResponse:
         bucket = agg.setdefault(manu, {})
         disp, cnt = bucket.get(key, (base, 0))
         bucket[key] = (disp, cnt + row["c"])
+
+    # იშვიათი ნომრიანი submodel-ი (cnt < _MIN_COUNT) კლასის ბაზურ ჩანაწერში ბრუნდება,
+    # რომ ეს მანქანები კლასის ფილტრით მაინც იძებნებოდეს
+    for bucket in agg.values():
+        rare = [k for k, (disp, cnt) in bucket.items()
+                if cnt < _MIN_COUNT and " " in disp and disp.split()[1].isdigit()]
+        for k in rare:
+            disp, cnt = bucket.pop(k)
+            base = disp.split()[0]
+            bkey = base.lower().replace("-", "")
+            bdisp, bcnt = bucket.get(bkey, (base, 0))
+            bucket[bkey] = (bdisp, bcnt + cnt)
 
     return MakesResponse(makes=_order_makes(agg))
 

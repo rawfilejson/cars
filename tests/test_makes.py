@@ -25,6 +25,15 @@ def test_canon_token(tok, expected):
     ("Mazda", "3 Hatchback", "3"),                       # body-type junk not merged
     ("Hyundai", "Hyundai Sonata", "Sonata"),             # manufacturer echo stripped
     ("Mercedes-Benz", "", ""),                           # empty model → empty
+    # letter-series + number → the number is the submodel, kept
+    ("Mercedes-Benz", "C 300 4MATIC Sedan", "C 300"),
+    ("Mercedes-Benz", "GLE 350 de", "GLE 350"),
+    ("Mercedes-Benz", "E 220d", "E 220"),                # trim suffix canonicalized
+    ("Mercedes-Benz", "S 500 L", "S 500"),
+    ("Mercedes-Benz", "C 4MATIC", "C"),                  # no series number → base class
+    # word models keep dropping trailing numbers/trims
+    ("Toyota", "Camry 70", "Camry"),
+    ("Audi", "RS 6", "RS"),                              # single digit — not a series number
 ])
 def test_base_model(manufacturer, model, expected):
     assert _base_model(manufacturer, model) == expected
@@ -32,6 +41,29 @@ def test_base_model(manufacturer, model, expected):
 
 def test_base_model_drops_manufacturer_case_insensitive():
     assert _base_model("TOYOTA", "toyota Corolla") == "Corolla"
+
+
+def test_rare_submodel_folds_into_base_class():
+    """C 43 (2 ცალი) არ ქრება — კლასის "C" ჩანაწერს ემატება."""
+    from unittest.mock import MagicMock, patch
+
+    from src.api import makes as makes_mod
+
+    rows = [
+        {"manufacturer": "Mercedes-Benz", "model": "C 300", "c": 5},
+        {"manufacturer": "Mercedes-Benz", "model": "C 43 AMG", "c": 2},
+        {"manufacturer": "Mercedes-Benz", "model": "C 4MATIC", "c": 2},
+    ]
+    cur = MagicMock()
+    cur.fetchall.return_value = rows
+    conn = MagicMock()
+    conn.cursor.return_value.__enter__.return_value = cur
+    ctx = MagicMock()
+    ctx.__enter__.return_value = conn
+    with patch.object(makes_mod, "connection", return_value=ctx):
+        out = makes_mod._load_makes().makes
+    # C 300 რჩება ცალკე; C 43 (იშვიათი) და C 4MATIC ერთად "C"-ში (2+2=4 ≥ 3)
+    assert out["Mercedes-Benz"] == ["C 300", "C"]
 
 
 def test_order_makes_by_popularity():
