@@ -3,119 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>წესები და კონფიდენციალურობა — Terms & Privacy — Car-DB</title>
+    <title>წესები და კონფიდენციალურობა — Terms &amp; Privacy — Car-DB</title>
     <meta name="robots" content="index">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&family=Noto+Sans+Georgian:wght@400;600;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600&family=Noto+Sans+Georgian:wght@400;500;600&family=Noto+Serif+Georgian:wght@500;600;700&display=swap">
     <style>
-        :root { --bg:#EDF2F4; --surface:#fff; --ink:#2B2D42; --muted:#8D99AE; --line:#DCE3EA; --accent:#EF233C; --soft:#F3F6F8; }
+        :root { --bg:#EDF2F4; --surface:#fff; --ink:#2B2D42; --muted:#64748B; --line:#DCE3EA; --accent:#EF233C; --accent-dim:#FDE6E8; --soft:#F3F6F8; }
         * { box-sizing: border-box; }
         body { margin:0; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
                font-family:'Inter Tight','Noto Sans Georgian',system-ui,sans-serif; line-height:1.65; }
+        .serif { font-family:'Fraunces','Noto Serif Georgian',Georgia,serif; }
+
         .top-rule { height:3px; background:var(--accent); }
-        header { background:rgba(255,255,255,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
-        .hbar { max-width:1080px; margin:0 auto; padding:16px 20px; display:flex; align-items:center; gap:16px; }
-        .logo { font-weight:800; font-size:20px; letter-spacing:-.02em; text-decoration:none; color:var(--ink); }
-        .logo b { color:var(--accent); }
-        .back { color:var(--muted); text-decoration:none; font-size:14px; }
-        .back:hover { color:var(--accent); }
-        .wrap { max-width:1080px; margin:0 auto; padding:34px 20px 80px; }
-        h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:0 0 4px; }
-        .updated { color:var(--muted); font-size:13px; margin:0 0 20px; }
-        .note { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 18px;
-                color:var(--muted); font-size:14px; margin-bottom:26px; }
-        .legal-grid { display:grid; grid-template-columns:1fr 1fr; gap:38px; }
-        .col h2 { font-size:22px; font-weight:800; margin:0 0 14px; }
-        .col h3 { font-size:16px; font-weight:600; margin:24px 0 6px; }
-        .col p { font-size:15px; color:#3a3d52; margin:0 0 6px; }
-        .col + .col { border-left:1px solid var(--line); padding-left:38px; }
-        .lang-tag { display:inline-block; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
-                    color:var(--accent); background:#FDE6E8; border-radius:999px; padding:4px 12px; margin-bottom:14px; }
-        .callout { background:var(--soft); border:1px solid var(--line); border-radius:12px; padding:12px 16px; font-size:14px; margin:10px 0; }
+        header { background:rgba(255,255,255,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+        .hbar { max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+        .logo { text-decoration:none; color:var(--ink); }
+        .logo h2 { margin:0; font-size:24px; font-weight:700; letter-spacing:-.01em; line-height:1; }
+        .logo b { color:var(--accent); font-weight:inherit; }
+        .logo p { margin:3px 0 0; font-size:11px; color:var(--muted); letter-spacing:.04em; }
+        .back { display:inline-flex; align-items:center; gap:7px; color:var(--ink); text-decoration:none; font-size:13px;
+                border:1px solid var(--line); border-radius:999px; padding:8px 16px; background:var(--surface);
+                transition: color .12s, border-color .12s, background .12s, transform .12s; }
+        .back:hover { color:var(--accent); border-color:var(--accent-dim); background:var(--accent-dim); }
+        .back:active { transform: scale(.95); }
+
+        .wrap { max-width:1080px; margin:0 auto; padding:40px 20px 70px; }
+        h1 { font-family:'Fraunces','Noto Serif Georgian',Georgia,serif; font-size:clamp(28px,5vw,42px); font-weight:700; letter-spacing:-.02em; margin:0 0 6px; }
+        .updated { color:var(--muted); font-size:13px; margin:0 0 22px; }
+
+        .lang-tabs { display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px; gap:4px; margin-bottom:30px; }
+        .lang-tab { border:0; background:transparent; border-radius:999px; padding:8px 20px; font-size:14px; font-family:inherit;
+                    color:var(--muted); cursor:pointer; transition: color .14s, background .14s, transform .12s; }
+        .lang-tab:hover { color:var(--ink); }
+        .lang-tab:active { transform: scale(.95); }
+        .lang-tab.on { background:var(--ink); color:#fff; }
+
+        .sec-title { font-family:'Fraunces','Noto Serif Georgian',Georgia,serif; font-size:24px; font-weight:600; margin:34px 0 16px; display:flex; align-items:center; gap:10px; }
+        .sec-title:first-child { margin-top:0; }
+        .sec-title svg { width:22px; height:22px; color:var(--accent); flex-shrink:0; }
+
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+        .tcard { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px 22px;
+                 transition: border-color .15s, box-shadow .15s; }
+        .tcard:hover { border-color:#C9D2DC; box-shadow:0 6px 22px rgba(43,45,66,.06); }
+        .tcard .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:999px;
+                      background:var(--accent-dim); color:var(--accent); font-size:13px; font-weight:600; margin-bottom:10px; }
+        .tcard h3 { font-size:16px; font-weight:600; margin:0 0 8px; }
+        .tcard p { font-size:14px; color:#3a3d52; margin:0 0 6px; }
+        .tcard p:last-child { margin-bottom:0; }
+
+        .callout { grid-column:1 / -1; display:flex; gap:12px; align-items:flex-start; background:var(--accent-dim);
+                   border:1px solid #FBDADE; border-radius:16px; padding:16px 20px; font-size:14px; }
+        .callout svg { width:20px; height:20px; color:var(--accent); flex-shrink:0; margin-top:2px; }
+        .callout a { color:var(--accent); font-weight:600; }
         a { color:var(--accent); }
-        @media (max-width:760px) {
-            .legal-grid { grid-template-columns:1fr; gap:30px; }
-            .col + .col { border-left:0; padding-left:0; border-top:1px solid var(--line); padding-top:26px; }
-        }
+
+        footer { border-top:1px solid var(--line); }
+        .finner { max-width:1080px; margin:0 auto; padding:26px 20px; display:flex; flex-direction:column; gap:10px;
+                  align-items:center; text-align:center; color:var(--muted); font-size:14px; }
+        @media (min-width:768px) { .finner { flex-direction:row; justify-content:space-between; text-align:left; } }
+        .flinks { display:flex; gap:18px; }
+        .flinks a { color:var(--ink); text-decoration:none; transition: color .12s; }
+        .flinks a:hover { color:var(--accent); }
+
+        [hidden] { display:none !important; }
+        @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
     </style>
 </head>
 <body>
 <div class="top-rule"></div>
 <header><div class="hbar">
-    <a class="logo" href="/">Car<b>·</b>DB</a>
-    <a class="back" href="/">← მთავარი</a>
+    <a class="logo" href="/">
+        <h2 class="serif">Car<b>·</b>DB</h2>
+        <p data-t="sub"></p>
+    </a>
+    <a class="back" href="/"><span aria-hidden="true">←</span> <span data-t="back"></span></a>
 </div></header>
 
 <div class="wrap">
-    <h1>წესები და კონფიდენციალურობა</h1>
-    <p class="updated">ბოლო განახლება: 2026-06-16</p>
-    <div class="note">ქართული ვერსია მარცხნივ, English version on the right. მობილურზე — ინგლისური ქვემოთ ↓</div>
+    <h1 data-t="title"></h1>
+    <p class="updated" data-t="updated"></p>
 
-    <div class="legal-grid">
-        <div class="col">
-            <span class="lang-tag">ქართული</span>
-
-            <h2>წესები და პირობები</h2>
-            <h3>1. სერვისის შესახებ</h3>
-            <p>Car-DB არის საჯაროდ ხელმისაწვდომი მანქანების განცხადებების <strong>არქივი/საძიებო სისტემა</strong>. ჩვენ მანქანებს არ ვყიდით და გარიგების მხარე არ ვართ — მხოლოდ ვაინდექსებთ ღია წყაროებში უკვე გამოქვეყნებულ ინფორმაციას.</p>
-            <h3>2. გარანტიის გარეშე</h3>
-            <p>ინფორმაცია მოწოდებულია „როგორც არის“. ის შესაძლოა იყოს არასრული, მოძველებული ან უზუსტო. გადაწყვეტილებამდე გადაამოწმეთ პირველად წყაროსთან.</p>
-            <h3>3. პასუხისმგებლობის შეზღუდვა</h3>
-            <p>სერვისით სარგებლობა თქვენი რისკია. არ ვაგებთ პასუხს ზიანზე, რომელიც ინფორმაციის სიზუსტეს ან მესამე მხარის განცხადებებს უკავშირდება.</p>
-            <h3>4. დასაშვები გამოყენება</h3>
-            <p>აკრძალულია საიტის ავტომატური მასობრივი მოხსნა (scraping), გადატვირთვა ან ბოროტად გამოყენება. მოქმედებს IP-ლიმიტები.</p>
-            <h3>5. ინტელექტუალური საკუთრება და მოხსნა</h3>
-            <p>განცხადებების შინაარსი ეკუთვნის მფლობელებს/წყაროებს. თუ ხართ უფლებამოსილი და გსურთ წაშლა, მოგვწერეთ — <strong>დავაკმაყოფილებთ გონივრულ ვადაში</strong>.</p>
-            <h3>6. ცვლილებები და სამართალი</h3>
-            <p>წესები შესაძლოა განახლდეს. მოქმედებს საქართველოს კანონმდებლობა.</p>
-
-            <h2 style="margin-top:34px">კონფიდენციალურობა</h2>
-            <h3>1. რას ვაგროვებთ</h3>
-            <p>ანგარიში არ გჭირდებათ. ვინახავთ მხოლოდ: საძიებო ტექსტს, IP-მისამართს (მხოლოდ ლიმიტისთვის) და User-Agent-ს. პერსონალურ მონაცემს არ ვყიდით.</p>
-            <h3>2. განცხადებების მონაცემები</h3>
-            <p>საიტი აჩვენებს საჯარო განცხადებებს, რომელიც შესაძლოა შეიცავდეს გამყიდველის საკონტაქტო ინფორმაციას ისე, როგორც პირველად წყაროზე გამოქვეყნდა.</p>
-            <div class="callout">თუ ხართ გამყიდველი/მფლობელი და გსურთ წაშლა, მოგვწერეთ — სწრაფად წავშლით.</div>
-            <h3>3. თქვენი უფლებები</h3>
-            <p>შეგიძლიათ მოითხოვოთ მონაცემის ნახვა ან წაშლა; მოთხოვნას გონივრულ ვადაში დავაკმაყოფილებთ.</p>
-            <h3>4. Cookies და ანალიტიკა</h3>
-            <p>აუცილებელი cookies-ის მიღმა მონაცემს არ ვაგროვებთ. შესაძლოა ჩაირთოს კონფიდენციალურობაზე ორიენტირებული აგრეგირებული ანალიტიკა.</p>
-            <h3>5. კონტაქტი</h3>
-            <p>წაშლის ან კონფიდენციალურობის მოთხოვნა: <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener">Instagram @deme.brn</a></p>
-        </div>
-
-        <div class="col">
-            <span class="lang-tag">English</span>
-
-            <h2>Terms of Service</h2>
-            <h3>1. About the service</h3>
-            <p>Car-DB is a search index / <strong>archive of publicly available car listings</strong>. We do not sell cars and are not a party to any transaction — we only index information already published on open sources.</p>
-            <h3>2. No warranty</h3>
-            <p>Information is provided "as is". It may be incomplete, outdated, or inaccurate. Verify with the original source before acting.</p>
-            <h3>3. Limitation of liability</h3>
-            <p>Use of the service is at your own risk. We are not liable for damages relating to the accuracy of information or to third-party listings.</p>
-            <h3>4. Acceptable use</h3>
-            <p>Automated bulk scraping, overloading, or abuse of this site is prohibited. IP-based rate limits apply.</p>
-            <h3>5. Intellectual property &amp; removal</h3>
-            <p>Listing content belongs to its owners/sources. If you are authorised and want removal, contact us — <strong>we honour the request within a reasonable time</strong>.</p>
-            <h3>6. Changes &amp; governing law</h3>
-            <p>These terms may be updated. Georgian law applies.</p>
-
-            <h2 style="margin-top:34px">Privacy</h2>
-            <h3>1. What we collect</h3>
-            <p>No account required. We store only: your search text, your IP address (for abuse limiting only), and your User-Agent. We do not sell personal data.</p>
-            <h3>2. Listing data</h3>
-            <p>The site shows publicly published listings, which may include a seller's contact details exactly as published on the original source.</p>
-            <div class="callout">If you are a seller or owner and want removal, contact us — we will remove it promptly.</div>
-            <h3>3. Your rights</h3>
-            <p>You may request access to, or deletion of, data about you; we honour such requests within a reasonable time.</p>
-            <h3>4. Cookies &amp; analytics</h3>
-            <p>We collect no data beyond essential cookies. Privacy-friendly aggregate analytics may be enabled.</p>
-            <h3>5. Contact</h3>
-            <p>Privacy or removal requests: <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener">Instagram @deme.brn</a></p>
-        </div>
+    <div class="lang-tabs" role="tablist" aria-label="language">
+        <button class="lang-tab" data-l="ka" role="tab">ქართული</button>
+        <button class="lang-tab" data-l="en" role="tab">English</button>
     </div>
+
+    <section data-lang="ka">
+        <h2 class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>წესები და პირობები</h2>
+        <div class="grid">
+            <div class="tcard"><span class="num">1</span><h3>რა არის Car-DB</h3>
+                <p>Car-DB საჯაროდ გამოქვეყნებული ავტო-განცხადებების <strong>საძიებო არქივია</strong>: ღია წყაროებზე (myauto.ge, autopapa.ge) უკვე გამოქვეყნებულ განცხადებებს ერთ ადგილას ვაინდექსებთ და ვაჩვენებთ.</p>
+                <p>მანქანებს არ ვყიდით, გარიგების მხარე არ ვართ და გამყიდველებთან კავშირი არ გვაქვს.</p></div>
+            <div class="tcard"><span class="num">2</span><h3>მონაცემების წყარო</h3>
+                <p>ყოველ განცხადებას აქვს ბმული პირველად წყაროზე. ფოტოები შესაძლოა ჩვენს საცავში იყოს დროებით ასლირებული სისწრაფისთვის — შინაარსი მაინც წყაროს/მფლობელს ეკუთვნის.</p></div>
+            <div class="tcard"><span class="num">3</span><h3>გარანტიის გარეშე</h3>
+                <p>ინფორმაცია მოწოდებულია „როგორც არის“ — შესაძლოა იყოს არასრული, მოძველებული ან უზუსტო (ფასი, გარბენი, სტატუსი). ყიდვის გადაწყვეტილებამდე ყოველთვის გადაამოწმეთ პირველად წყაროსთან და გამყიდველთან.</p></div>
+            <div class="tcard"><span class="num">4</span><h3>პასუხისმგებლობის შეზღუდვა</h3>
+                <p>სერვისით სარგებლობა თქვენი რისკია. არ ვაგებთ პასუხს ზიანზე, რომელიც ინფორმაციის სიზუსტეს, მესამე მხარის განცხადებებს ან გამყიდველთან ურთიერთობას უკავშირდება.</p></div>
+            <div class="tcard"><span class="num">5</span><h3>დასაშვები გამოყენება</h3>
+                <p>აკრძალულია საიტის ავტომატური მასობრივი მოხსნა (scraping), განზრახ გადატვირთვა ან ბოროტად გამოყენება. მოქმედებს ძიების ლიმიტები.</p></div>
+            <div class="tcard"><span class="num">6</span><h3>წაშლა და საავტორო უფლებები</h3>
+                <p>თუ განცხადების მფლობელი ხართ და გსურთ მისი წაშლა ჩვენი ინდექსიდან, მოგვწერეთ — გონივრულ ვადაში წავშლით.</p></div>
+            <div class="tcard"><span class="num">7</span><h3>ცვლილებები და სამართალი</h3>
+                <p>წესები შესაძლოა განახლდეს — ცვლილება ამ გვერდზე გამოქვეყნდება. მოქმედებს საქართველოს კანონმდებლობა.</p></div>
+        </div>
+
+        <h2 class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>კონფიდენციალურობა</h2>
+        <div class="grid">
+            <div class="tcard"><span class="num">1</span><h3>რას ვინახავთ</h3>
+                <p>ანგარიში არ გჭირდებათ. სერვერზე ვინახავთ მხოლოდ: საძიებო ტექსტს, IP-მისამართს და ბრაუზერის ანონიმურ იდენტიფიკატორს (ორივე — მხოლოდ ლიმიტებისთვის) და User-Agent-ს.</p></div>
+            <div class="tcard"><span class="num">2</span><h3>რას არ ვაგროვებთ</h3>
+                <p>სახელს, ელფოსტას, ტელეფონს ან საბანკო მონაცემს არ გკითხავთ და არ ვინახავთ. პერსონალურ მონაცემს არავის ვყიდით და არ გადავცემთ.</p></div>
+            <div class="tcard"><span class="num">3</span><h3>შენახულები თქვენს ბრაუზერშია</h3>
+                <p>დაგულებული მანქანები, შენახული ძიებები, შედარებები და ენის არჩევანი ინახება მხოლოდ თქვენს ბრაუზერში (localStorage) — სერვერზე არ იგზავნება.</p></div>
+            <div class="tcard"><span class="num">4</span><h3>განცხადებების მონაცემები</h3>
+                <p>საიტი აჩვენებს საჯარო განცხადებებს, რომლებიც შესაძლოა შეიცავდეს გამყიდველის საკონტაქტო ინფორმაციას ისე, როგორც პირველად წყაროზე გამოქვეყნდა.</p></div>
+            <div class="tcard"><span class="num">5</span><h3>თქვენი უფლებები</h3>
+                <p>შეგიძლიათ მოითხოვოთ თქვენთან დაკავშირებული მონაცემის ნახვა ან წაშლა — მოთხოვნას გონივრულ ვადაში დავაკმაყოფილებთ.</p></div>
+            <div class="tcard"><span class="num">6</span><h3>Cookies და ანალიტიკა</h3>
+                <p>სარეკლამო ან თვალთვალის cookies არ გვაქვს. შესაძლოა ჩართული იყოს კონფიდენციალურობაზე ორიენტირებული, აგრეგირებული ანალიტიკა (გვერდის ნახვების დათვლა პერსონალური პროფილის გარეშე).</p></div>
+            <div class="callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
+                <span>გამყიდველი ხართ და გსურთ განცხადების ან ნომრის წაშლა? მოგვწერეთ: <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener">Instagram @deme.brn</a> — სწრაფად წავშლით.</span></div>
+        </div>
+    </section>
+
+    <section data-lang="en" hidden>
+        <h2 class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h7"/></svg>Terms of Service</h2>
+        <div class="grid">
+            <div class="tcard"><span class="num">1</span><h3>What Car-DB is</h3>
+                <p>Car-DB is a <strong>search archive of publicly published car listings</strong>: we index listings already published on open sources (myauto.ge, autopapa.ge) and show them in one place.</p>
+                <p>We do not sell cars, are not a party to any transaction, and are not affiliated with sellers.</p></div>
+            <div class="tcard"><span class="num">2</span><h3>Where the data comes from</h3>
+                <p>Every listing links to its original source. Photos may be temporarily cached in our storage for speed — the content still belongs to its source/owner.</p></div>
+            <div class="tcard"><span class="num">3</span><h3>No warranty</h3>
+                <p>Information is provided "as is" — it may be incomplete, outdated, or inaccurate (price, mileage, status). Always verify with the original source and the seller before acting.</p></div>
+            <div class="tcard"><span class="num">4</span><h3>Limitation of liability</h3>
+                <p>Use of the service is at your own risk. We are not liable for damages relating to information accuracy, third-party listings, or your dealings with sellers.</p></div>
+            <div class="tcard"><span class="num">5</span><h3>Acceptable use</h3>
+                <p>Automated bulk scraping, deliberate overloading, or abuse of this site is prohibited. Search rate limits apply.</p></div>
+            <div class="tcard"><span class="num">6</span><h3>Removal &amp; copyright</h3>
+                <p>If you own a listing and want it removed from our index, contact us — we will remove it within a reasonable time.</p></div>
+            <div class="tcard"><span class="num">7</span><h3>Changes &amp; governing law</h3>
+                <p>These terms may be updated — changes are published on this page. Georgian law applies.</p></div>
+        </div>
+
+        <h2 class="sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Privacy</h2>
+        <div class="grid">
+            <div class="tcard"><span class="num">1</span><h3>What we store</h3>
+                <p>No account required. On the server we store only: your search text, your IP address and an anonymous browser identifier (both used solely for rate limiting), and your User-Agent.</p></div>
+            <div class="tcard"><span class="num">2</span><h3>What we don't collect</h3>
+                <p>We never ask for or store your name, email, phone, or payment details. We do not sell or share personal data.</p></div>
+            <div class="tcard"><span class="num">3</span><h3>Your saves stay in your browser</h3>
+                <p>Saved cars, saved searches, comparisons, and your language choice live only in your browser (localStorage) — they are never sent to the server.</p></div>
+            <div class="tcard"><span class="num">4</span><h3>Listing data</h3>
+                <p>The site shows publicly published listings, which may include a seller's contact details exactly as published on the original source.</p></div>
+            <div class="tcard"><span class="num">5</span><h3>Your rights</h3>
+                <p>You may request access to, or deletion of, data about you — we honour such requests within a reasonable time.</p></div>
+            <div class="tcard"><span class="num">6</span><h3>Cookies &amp; analytics</h3>
+                <p>No advertising or tracking cookies. Privacy-friendly aggregate analytics may be enabled (page-view counting without personal profiles).</p></div>
+            <div class="callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
+                <span>Are you a seller who wants a listing or phone number removed? Contact us: <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener">Instagram @deme.brn</a> — we will remove it promptly.</span></div>
+        </div>
+    </section>
 </div>
+
+<footer><div class="finner">
+    <p data-t="footer" style="margin:0"></p>
+    <p class="flinks" style="margin:0">
+        <a href="/" data-t="home"></a>
+        <a href="https://instagram.com/deme.brn" target="_blank" rel="noopener">@deme.brn</a>
+    </p>
+</div></footer>
+
+<script>
+(function () {
+    var STR = {
+        ka: { title: 'წესები და კონფიდენციალურობა', updated: 'ბოლო განახლება: 2026-07-06',
+              back: 'მთავარი', sub: 'ავტო-განცხადებების საძიებო არქივი',
+              footer: 'Car-DB — საჯარო ავტო-განცხადებების საძიებო არქივი.', home: 'მთავარი' },
+        en: { title: 'Terms & Privacy', updated: 'Last updated: 2026-07-06',
+              back: 'Home', sub: 'car listings search archive',
+              footer: 'Car-DB — a search archive of public car listings.', home: 'Home' }
+    };
+    function apply(lang) {
+        var s = STR[lang] || STR.ka;
+        document.documentElement.lang = lang;
+        document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = s[el.getAttribute('data-t')] || ''; });
+        document.querySelectorAll('[data-lang]').forEach(function (el) { el.hidden = el.getAttribute('data-lang') !== lang; });
+        document.querySelectorAll('.lang-tab').forEach(function (b) {
+            var on = b.getAttribute('data-l') === lang;
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+    }
+    var saved = '';
+    try { saved = localStorage.getItem('cardb_lang') || ''; } catch (e) {}
+    apply(saved === 'ka' || saved === '' ? 'ka' : 'en');
+    document.querySelectorAll('.lang-tab').forEach(function (b) {
+        b.addEventListener('click', function () { apply(b.getAttribute('data-l')); });
+    });
+})();
+</script>
 </body>
 </html>

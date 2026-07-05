@@ -114,7 +114,7 @@
         .cdd { position: relative; flex: 1 1 0; min-width: 0; }
         .cdd select { display: none; }
         .cdd-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 42px;
-            background: #fff; border: 1px solid #DCE3EA; border-radius: 11px; padding: 0 12px; font-size: 14px; color: #2B2D42;
+            background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; padding: 0 14px; font-size: 14px; color: #2B2D42;
             font-family: inherit; cursor: pointer; text-align: left; transition: border-color .12s; }
         .cdd-btn:hover { border-color: #6B7280; }
         .cdd.open .cdd-btn { border-color: #EF233C; }
@@ -192,7 +192,7 @@
         .sidebar .filter-select, .sidebar .filter-input { flex: 1 1 0; min-width: 0; width: auto; max-width: none; height: 42px; }
         .sidebar #f-brand, .sidebar #f-model { max-width: none; }
         .sidebar .filter-reset { flex: 0 0 auto; }
-        .apply-btn { width: 100%; background: #EF233C; color: #fff; border: 0; border-radius: 12px; padding: 13px;
+        .apply-btn { width: 100%; background: #EF233C; color: #fff; border: 0; border-radius: 999px; padding: 13px;
             font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 4px; transition: background .15s; }
         .apply-btn:hover { background: #D90429; }
         .ad-slot { margin-top: 16px; border: 1px dashed #6B7280; border-radius: 12px; min-height: 200px;
@@ -225,8 +225,12 @@
         .dt-loc { color: #64748B; font-size: 14px; margin-top: 4px; }
         .dt-pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 2px; }
         .dt-actions { display: flex; align-items: center; gap: 8px; }
-        .save-btn.dt-fav { width: 40px; height: 40px; font-size: 17px; }
-        .dt-compare { opacity: 1 !important; transform: none !important; pointer-events: auto !important; width: 40px; height: 40px; }
+        /* detail bar: all three action buttons share one size and look */
+        .dt-actions .rcard-compare, .dt-actions .save-btn, .dt-actions .detail-icon-btn {
+            width: 40px; height: 40px; background: #fff; border: 1px solid #DCE3EA; color: #6B7280;
+            opacity: 1; transform: scale(1); pointer-events: auto;
+        }
+        .dt-actions button svg { width: 18px; height: 18px; }
         .save-btn.dt-fav:hover { border-color: #FBDADE; color: #EF233C; background: #FDE6E8; transform: none; }
         .dt-hl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 4px; }
         .dt-hl-tile { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
@@ -236,6 +240,7 @@
         @media (max-width: 560px) { .dt-hl { grid-template-columns: repeat(2, 1fr); } }
         .dt-pricebox { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 14px 0; padding: 16px 20px; background: #FEF2F3; border: 1px solid #FBDADE; border-radius: 14px; }
         .dt-price { font-size: 30px; font-weight: 800; color: #EF233C; letter-spacing: -.01em; }
+        .dt-price.negotiable { font-size: 20px; font-weight: 700; }
         .dt-specs { border-top: 1px solid #DCE3EA; }
         .dt-contact { margin-top: 18px; background: #F3F6F8; border-radius: 14px; padding: 4px 16px; }
         .dt-cline { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2E8EE; font-size: 14px; }
@@ -320,7 +325,7 @@
         .filter-label { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
         .filter-input {
             background: transparent; border: 1px solid #DCE3EA; color: #2B2D42;
-            padding: 8px; font-size: 16px; border-radius: 11px;
+            padding: 8px; font-size: 16px; border-radius: 999px;
             font-family: 'JetBrains Mono', monospace;
             width: 80px; text-align: center;
             -moz-appearance: textfield;
@@ -331,7 +336,7 @@
         .filter-input:focus { border-color: #2B2D42; outline: 0; }
         .filter-select {
             background: white; border: 1px solid #DCE3EA; color: #2B2D42;
-            padding: 8px 28px 8px 10px; font-size: 16px; border-radius: 11px;
+            padding: 8px 28px 8px 10px; font-size: 16px; border-radius: 999px;
             font-family: inherit; cursor: pointer;
             -webkit-appearance: none; -moz-appearance: none; appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231A1A1A' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
@@ -649,6 +654,7 @@
         .spec-pill:hover .pill-ic { color: #EF233C; }
         .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
         .rcard-price { font-size: 22px; font-weight: 800; color: #EF233C; letter-spacing: -.02em; background: #FEF2F3; border: 1px solid #FBE0E4; border-radius: 10px; padding: 4px 12px; }
+        .rcard-price.negotiable { font-size: 14px; font-weight: 700; letter-spacing: 0; padding: 7px 12px; }
         .rcard-badges { display: flex; gap: 7px; flex-shrink: 0; align-items: center; }
         @media (max-width: 560px) { .rcard { flex-direction: column; } .rcard-photo { width: 100%; } }
 
@@ -685,9 +691,17 @@
         .btn-search, .apply-btn, .save-btn, .copy-btn, .detail-btn, .cdd-btn, .chip, .hist-chip,
         .pager-btn, .lang-opt, .lang-trigger, .filter-reset, .more-toggle, .spec-pill, .tab,
         .saved-trigger, .ph-nav { transition: transform .12s ease, box-shadow .12s, background .12s, border-color .12s, color .12s; }
-        .btn-search:active, .apply-btn:active, .save-btn:active, .copy-btn:active, .detail-btn:active,
-        .cdd-btn:active, .chip:active, .hist-chip:active, .pager-btn:active, .lang-opt:active,
-        .filter-reset:active, .more-toggle:active, .spec-pill:active, .tab:active, .ph-nav:active { transform: scale(.95); }
+        button:not(:disabled) { transition: transform .12s ease, box-shadow .12s, background .12s, border-color .12s, color .12s; }
+        button:not(:disabled):active, a.detail-btn:active, .chip:active, .hist-chip:active,
+        .lang-opt:active, .spec-pill:active, .tab:active { transform: scale(.94); }
+        /* engine icon idles, then periodically shudders like a starter cranking */
+        @keyframes engineCrank {
+            0%, 62%, 100% { transform: rotate(0); }
+            65% { transform: rotate(-7deg); } 69% { transform: rotate(6deg); }
+            73% { transform: rotate(-5deg); } 77% { transform: rotate(4deg); }
+            81% { transform: rotate(-2deg); } 85% { transform: rotate(1deg); } 89% { transform: rotate(0); }
+        }
+        svg[data-ic="engine"] { animation: engineCrank 3.4s linear infinite; transform-origin: 50% 60%; }
         .spec-pill:hover { background: #FDE6E8; border-color: #FBD5DA; transform: translateY(-1px); }
         .chip:hover, .hist-chip:hover { transform: translateY(-1px); }
         .btn-search.is-busy { animation: btnPulse 1s ease-in-out infinite; }
@@ -701,6 +715,7 @@
             .rcard.is-hiding { animation: none !important; opacity: 0; }
             .photo-anim { animation: none !important; }
             .sk::after { animation: none; }
+            svg[data-ic="engine"], .save-btn.pop svg, .rcard-compare.pop svg { animation: none !important; }
         }
 
         /* refined benefit pills (replace the green dots) */
@@ -711,9 +726,13 @@
         .clear-x:hover { color: #2B2D42; }
 
         /* save (heart) button */
-        .save-btn { background: transparent; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: #6B7280; transition: all .15s ease; flex-shrink: 0; }
+        .save-btn { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; transition: all .15s ease; flex-shrink: 0; }
         .save-btn:hover { border-color: #EF233C; color: #EF233C; transform: scale(1.08); }
         .save-btn.is-saved { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
+        .save-btn svg { width: 17px; height: 17px; }
+        .save-btn.is-saved svg { fill: currentColor; }
+        @keyframes heartPop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 70% { transform: scale(.85); } 100% { transform: scale(1); } }
+        .save-btn.pop svg, .rcard-compare.pop svg { animation: heartPop .35s ease; }
 
         /* hover actions on a card (hide) */
         .rcard-acts { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
@@ -790,24 +809,31 @@
 
         /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #64748B; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
-        .saved-trigger:hover { border-color: #2B2D42; color: #2B2D42; }
+        .saved-trigger:hover { border-color: #EF233C; color: #EF233C; }
+        .saved-trigger svg { width: 15px; height: 15px; }
+        .saved-trigger.has-items { color: #EF233C; border-color: #FBDADE; background: #FEF2F3; }
+        .saved-trigger.has-items svg { fill: currentColor; }
         .saved-trigger .cnt { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #EF233C; }
 
         /* slide-in drawer */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(43,45,66,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
-        .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 390px; max-width: 92vw; background: #EDF2F4; box-shadow: -8px 0 44px rgba(43,45,66,.2); transform: translateX(100%); transition: transform .32s cubic-bezier(.2,.7,.2,1); z-index: 61; display: flex; flex-direction: column; }
+        .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 390px; max-width: 92vw; background: #EDF2F4; box-shadow: -8px 0 44px rgba(43,45,66,.2); transform: translateX(100%); transition: transform .38s cubic-bezier(.16,1,.3,1); z-index: 61; display: flex; flex-direction: column; }
         .drawer.open { transform: none; }
+        .drawer.open .drawer-body { animation: drawerBody .45s .06s cubic-bezier(.16,1,.3,1) backwards; }
+        @keyframes drawerBody { from { opacity: 0; transform: translateY(16px); } }
         .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #DCE3EA; }
         .drawer-head h3 { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 22px; color: #2B2D42; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 32px; }
-        .drawer-sec { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 10px; }
+        .drawer-sec { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 10px; }
         .drawer-sec:first-child { margin-top: 0; }
-        .drawer-sec-h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #64748B; }
-        .saved-row { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid #EFEADF; }
+        .drawer-sec-h { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #64748B; }
+        .drawer-sec-h svg { width: 13px; height: 13px; color: #EF233C; flex-shrink: 0; }
+        .saved-row { display: flex; gap: 12px; align-items: center; padding: 8px 10px; margin-bottom: 8px; background: #fff; border: 1px solid #E7ECF1; border-radius: 12px; transition: border-color .14s, box-shadow .14s; }
+        .saved-row:hover { border-color: #FBDADE; box-shadow: 0 4px 14px rgba(43,45,66,.07); }
         .saved-row .grow { cursor: pointer; min-width: 0; flex: 1; }
         .saved-row:hover .saved-row-title { color: #EF233C; }
-        .saved-row img { width: 58px; height: 44px; object-fit: cover; border-radius: 6px; background: #ECE6DA; flex-shrink: 0; }
+        .saved-row img { width: 58px; height: 44px; object-fit: cover; border-radius: 8px; background: #ECE6DA; flex-shrink: 0; }
         .saved-row-title { font-size: 14px; color: #2B2D42; line-height: 1.3; }
         .saved-row-price { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #15803D; margin-top: 2px; }
         .row-x { color: #6B7280; border: 0; background: transparent; cursor: pointer; font-size: 14px; padding: 4px 2px; }
@@ -854,7 +880,7 @@
             </a>
         </div>
         <div class="flex items-center gap-3 md:gap-6 pt-1 md:pt-2 flex-shrink-0">
-            <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><span>♥</span> <span class="cnt" id="saved-count">0</span></button>
+            <button class="saved-trigger" onclick="openSaved()" aria-label="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg> <span class="cnt" id="saved-count">0</span></button>
             <div class="lang-menu" id="lang-menu">
                 <button class="lang-trigger" onclick="toggleLangMenu(event)" aria-label="language" aria-haspopup="true" aria-expanded="false">
                     <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.5 4 5.6 4 9s-1.4 6.5-4 9c-2.6-2.5-4-5.6-4-9s1.4-6.5 4-9z"/></svg>
@@ -1195,7 +1221,8 @@
         for (const [id, key] of Object.entries(MULTI)) {
             const sel = document.getElementById(id);
             if (!sel) continue;
-            const vals = Array.from(sel.selectedOptions).map(o => o.value).filter(Boolean);
+            // merged location options carry several raw DB values in one option
+            const vals = Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
             if (vals.length) payload[key] = vals;
         }
 
@@ -1454,7 +1481,40 @@
         fillFacet('f-fuel', _facets.fuel);
         fillFacet('f-gearbox', _facets.gearbox);
         fillFacet('f-drive', _facets.drive);
-        fillFacet('f-location', _facets.location, 'location_any');
+        fillLocationFacet(_facets.location);
+    }
+
+    // ლოკაციის მოკლე ფორმა: ", საქართველო" ზედმეტია, გზაში მყოფი — ერთი წარწერით,
+    // უცხოეთი ქვეყანასთან ერთად რჩება რომ ჩანდეს მანქანა ჯერ აქ არ არის
+    const _LOC_SEP = '\u001F';
+    const _LOC_COUNTRY_SHORT = { 'არაბეთის გაერთიანებული საემიროები': 'ემირატები' };
+    function locLabel(raw) {
+        const s = String(raw || '').replace(/\s*\(AUTOPAPA\)/gi, '').trim();
+        if (!s) return '';
+        if (/გზაში/.test(s)) return t('loc_transit');
+        const parts = s.split(',').map(p => p.trim()).filter(Boolean);
+        if (parts.length > 1 && parts[parts.length - 1] === 'საქართველო') parts.pop();
+        return parts.map(p => tval(_LOC_COUNTRY_SHORT[p] || p)).join(', ');
+    }
+
+    // ერთნაირად შემოკლებული ლოკაციები ერთ option-ად იყრება; value ინახავს ყველა
+    // raw ვარიანტს (ძიებისას ისევ ცალ-ცალკე იგზავნება, DB-ის ზუსტი ტექსტით)
+    function fillLocationFacet(values) {
+        const sel = document.getElementById('f-location');
+        if (!sel || !values) return;
+        const keep = new Set(Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)));
+        const groups = new Map();
+        for (const v of values) {
+            const label = locLabel(v);
+            if (!label) continue;
+            if (!groups.has(label)) groups.set(label, []);
+            groups.get(label).push(v);
+        }
+        sel.innerHTML = `<option value="">${t('location_any')}</option>` +
+            Array.from(groups, ([label, raws]) =>
+                `<option value="${escapeHtml(raws.join(_LOC_SEP))}"${raws.some(r => keep.has(r)) ? ' selected' : ''}>${escapeHtml(label)}</option>`
+            ).join('');
+        if (sel._cdd) sel._cdd.render();
     }
 
     // derive a class/series label from a base model name (myauto-style grouping)
@@ -1890,7 +1950,7 @@
     // სტატიკური ხატულები
     const _PILL_IC = {
         gauge:  _PIC('<path d="M13.4 13.4l2.6 -2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>'),
-        engine: _PIC('<rect x="3.5" y="10" width="11" height="7" rx="1.2"/><path d="M6 10V7.5h2V10M10 10V7.5h2V10"/><path d="M14.5 12h2.2l2.3 2.3v.6L16.7 17h-2.2"/><path d="M3.5 13.5H2M8 17v1.8"/>'),
+        engine: _PIC('<rect x="3.5" y="10" width="11" height="7" rx="1.2"/><path d="M6 10V7.5h2V10M10 10V7.5h2V10"/><path d="M14.5 12h2.2l2.3 2.3v.6L16.7 17h-2.2"/><path d="M3.5 13.5H2M8 17v1.8"/>').replace('<svg ', '<svg data-ic="engine" '),
         bolt:   _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>'),
     };
     // body-type — ცალკე ამოსაცნობი silhouette თითო ტიპზე
@@ -2102,6 +2162,7 @@
 
     // compare tray — up to 4 cars side by side (stored locally)
     const ICON_COMPARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8l4-4 4 4M21 16l-4 4-4-4"/></svg>';
+    const ICON_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
     const COMPARE_KEY = 'cdb_compare';
     const _carFull = {};
     function getCompare() { try { const v = JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } }
@@ -2129,7 +2190,7 @@
             const car = _carFull[carKey];
             if (!car) return;
             list.push(summarizeCar(car));
-            if (btn) { btn.classList.add('on'); btn.setAttribute('aria-pressed', 'true'); }
+            if (btn) { btn.classList.add('on'); btn.setAttribute('aria-pressed', 'true'); btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
         }
         setCompare(list);
         renderCompareBar();
@@ -2224,7 +2285,7 @@
         const rows = [
             { label: t('filter_year'),    disp: c => c.year || dash,                                                      val: c => c.year || null,                        better: 'high' },
             { label: t('spec_mileage'),   disp: c => c.mileage ? c.mileage.toLocaleString() + (en ? ' km' : ' კმ') : dash, val: c => c.mileage || null,                    better: 'low' },
-            { label: t('filter_price'),   disp: c => c.price > 0 ? '$' + c.price.toLocaleString() : dash,                  val: c => c.price > 0 ? c.price : null,          better: 'low' },
+            { label: t('filter_price'),   disp: c => c.price > 0 ? '$' + c.price.toLocaleString() : t('price_negotiable'), val: c => c.price > 0 ? c.price : null,          better: 'low' },
             { label: t('spec_engine'),    disp: c => c.engine ? c.engine + ' L' : dash },
             { label: t('spec_power'),     disp: c => c.power ? c.power + (en ? ' hp' : ' ც.ძ.') : dash,                    val: c => c.power || null,                       better: 'high' },
             { label: t('filter_fuel'),    disp: c => c.fuel ? escapeHtml(tval(c.fuel)) : dash },
@@ -2253,7 +2314,7 @@
         const head = list.map((c, ci) =>
             `<th><a href="${escapeHtml(c.url)}" onclick="return goToCarDetail('${escapeHtml(c.key)}', event)"><img class="cmp-car-img" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2"></a>` +
             `<div class="cmp-car-title">${escapeHtml(c.title)}</div>` +
-            `<div class="cmp-car-price">${c.price > 0 ? '$' + c.price.toLocaleString() : dash}</div>` +
+            `<div class="cmp-car-price">${c.price > 0 ? '$' + c.price.toLocaleString() : t('price_negotiable')}</div>` +
             (multi ? `<div class="cmp-wins">${t('cmp_wins', { n: wins[ci] })}</div>` : '') +
             `<button class="cmp-remove" onclick="removeFromCompare('${escapeHtml(c.key)}')">✕ ${t('act_hide')}</button></th>`
         ).join('');
@@ -2358,18 +2419,18 @@
                       <div class="min-w-0">
                         <a class="rcard-title" href="/car/${escapeHtml(carKey)}"
                            onclick="return goToCarDetail('${escapeHtml(carKey)}', event)">${escapeHtml(title)}</a>
-                        ${car.location ? `<div class="rcard-loc">${escapeHtml(tval(car.location))}</div>` : ''}
+                        ${car.location ? `<div class="rcard-loc">${escapeHtml(locLabel(car.location))}</div>` : ''}
                       </div>
                       <div class="rcard-acts">
                         <button class="rcard-compare ${isInCompare(carKey) ? 'on' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${isInCompare(carKey) ? 'true' : 'false'}" onclick="event.stopPropagation(); toggleCompare('${escapeHtml(carKey)}', this)" title="${t('act_compare')}" aria-label="${t('act_compare')}">${ICON_COMPARE}</button>
                         <button class="rcard-hide" onclick="event.stopPropagation(); hideCar('${escapeHtml(carKey)}', this)" title="${t('act_hide')}" aria-label="${t('act_hide')}">${ICON_HIDE}</button>
-                        <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${isCarSaved(carKey) ? 'true' : 'false'}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${isCarSaved(carKey) ? '♥' : '♡'}</button>
+                        <button class="save-btn ${isCarSaved(carKey) ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${isCarSaved(carKey) ? 'true' : 'false'}" onclick="event.stopPropagation(); toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${ICON_HEART}</button>
                       </div>
                     </div>
                     <div class="rcard-specs">${carSpecPills(car)}</div>
                     ${contactLine}
                     <div class="rcard-bot">
-                      <div class="rcard-price">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—'}</div>
+                      <div class="rcard-price${car.price_amount > 0 ? '' : ' negotiable'}">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : t('price_negotiable')}</div>
                       <div class="rcard-badges">${customsBadge}${sourceBadgeHtml(car)}</div>
                     </div>
                   </div>
@@ -2448,8 +2509,26 @@
 
     window.toggleDesc = function (btn) {
         const desc = btn.parentElement.querySelector('.description');
+        clearTimeout(desc._animT);
+        desc.style.transition = desc.style.height = desc.style.overflow = '';
+        const from = desc.offsetHeight;
         const clamped = desc.classList.toggle('clamped');
+        const to = desc.offsetHeight;
         btn.textContent = t(clamped ? 'see_more' : 'see_less');
+        if (from === to || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        // line-clamp hides the extra lines even mid-transition, so release it while
+        // the height animates and re-apply once collapsed. Cleanup runs on a timer:
+        // a second click cancels the transition, so transitionend can't be trusted.
+        desc.classList.remove('clamped');
+        desc.style.height = from + 'px';
+        desc.style.overflow = 'hidden';
+        void desc.offsetHeight;
+        desc.style.transition = 'height .28s ease';
+        desc.style.height = to + 'px';
+        desc._animT = setTimeout(() => {
+            desc.style.transition = desc.style.height = desc.style.overflow = '';
+            if (clamped) desc.classList.add('clamped');
+        }, 300);
     };
 
     const _CAR_KEY_RE = /^\/car\/((?:autopapa|myauto)-\d+)\/?$/;
@@ -2560,7 +2639,8 @@
             ? phones.map(p => `<a class="dt-call" href="tel:${escapeHtml(p.replace(/\s/g, ''))}">☎ ${escapeHtml(p)}</a>`).join('')
             : '';
         const customs = customsBadgeHtml(car);
-        const price = car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : '—';
+        const priceMissing = !(car.price_amount > 0);
+        const price = priceMissing ? t('price_negotiable') : '$' + car.price_amount.toLocaleString();
         const dateLine = car.posted_date && car.posted_date.trim()
             ? t('posted_on', { date: escapeHtml(car.posted_date.trim()) })
             : t('scraped_on_note', { date: formatDate(car.created_at) });
@@ -2579,7 +2659,7 @@
               <a href="/" class="detail-btn" onclick="return goToSearch(event)">${t('back_to_search')}</a>
               <div class="dt-actions">
                 <button class="rcard-compare dt-compare ${isInCompare(carKey) ? 'on' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${isInCompare(carKey) ? 'true' : 'false'}" onclick="toggleCompare('${escapeHtml(carKey)}', this)" title="${t('act_compare')}" aria-label="${t('act_compare')}">${ICON_COMPARE}</button>
-                <button class="save-btn dt-fav ${saved ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${saved ? 'true' : 'false'}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${saved ? '♥' : '♡'}</button>
+                <button class="save-btn dt-fav ${saved ? 'is-saved' : ''}" data-key="${escapeHtml(carKey)}" aria-pressed="${saved ? 'true' : 'false'}" onclick="toggleSave('${escapeHtml(carKey)}', this)" aria-label="save">${ICON_HEART}</button>
                 <button class="detail-btn detail-icon-btn" onclick="copyDetailLink(this)" title="${t('copy_link')}" aria-label="${t('copy_link')}">${ICON_COPY}</button>
               </div>
             </div>
@@ -2589,12 +2669,12 @@
                 <div class="dt-ptop">
                   <div class="min-w-0">
                     <h1 class="dt-title">${escapeHtml(title)}</h1>
-                    ${car.location ? `<p class="dt-loc">${escapeHtml(tval(car.location))}</p>` : ''}
+                    ${car.location ? `<p class="dt-loc">${escapeHtml(locLabel(car.location))}</p>` : ''}
                   </div>
                   ${sourceBadgeHtml(car)}
                 </div>
                 ${hlGrid}
-                <div class="dt-pricebox"><span class="dt-price">${price}</span>${customs}</div>
+                <div class="dt-pricebox"><span class="dt-price${priceMissing ? ' negotiable' : ''}">${price}</span>${customs}</div>
                 ${specs.length ? `<div class="dt-specs">${specs.join('')}</div>` : ''}
                 ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
                 ${contact ? `<div class="dt-contact">${contact}</div>` : ''}
@@ -2749,6 +2829,7 @@
         const had = cars.some(c => c.key === key);
         cars = had ? cars.filter(c => c.key !== key) : [(_carData[key] || { key: key, title: key }), ...cars].slice(0, 300);
         lsSet(LS_CARS, cars);
+        if (btn && !had) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
         refreshHearts();
         updateSavedCount();
     };
@@ -2758,7 +2839,6 @@
             const s = isCarSaved(b.dataset.key);
             b.classList.toggle('is-saved', s);
             b.setAttribute('aria-pressed', s ? 'true' : 'false');
-            b.textContent = s ? '♥' : '♡';
         });
     }
 
@@ -2776,7 +2856,7 @@
         (p.fuels || []).forEach(v => parts.push(tval(v)));
         (p.gearboxes || []).forEach(v => parts.push(tval(v)));
         (p.drives || []).forEach(v => parts.push(tval(v)));
-        (p.locations || []).forEach(v => parts.push(tval(v)));
+        [...new Set((p.locations || []).map(locLabel))].forEach(v => parts.push(v));
         if (p.customs_cleared === true)  parts.push(t('cleared'));
         if (p.customs_cleared === false) parts.push(t('not_cleared'));
         if (p.sort) parts.push(t('sort_' + p.sort));
@@ -2807,7 +2887,7 @@
         const sel = document.getElementById(id);
         if (!sel) return;
         const set = new Set(values || []);
-        Array.from(sel.options).forEach(o => { o.selected = o.value ? set.has(o.value) : false; });
+        Array.from(sel.options).forEach(o => { o.selected = o.value ? o.value.split(_LOC_SEP).some(v => set.has(v)) : false; });
     }
     function runSavedSearch(item) {
         closeSaved();
@@ -2900,16 +2980,24 @@
 
     function updateSavedCount() {
         const el = document.getElementById('saved-count');
-        if (el) el.textContent = getSavedCars().length + lsGet(LS_SEARCHES).length;
+        if (!el) return;
+        const n = getSavedCars().length + lsGet(LS_SEARCHES).length;
+        el.textContent = n;
+        const trig = el.closest('.saved-trigger');
+        if (trig) trig.classList.toggle('has-items', n > 0);
     }
 
     window.openSaved = function () { renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
     window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.classList.remove('saved-open'); unlockScroll('saved'); };
 
+    const IC_SEARCH_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+    const IC_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
+    const IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12c.7-2 4-6 9-6s8.3 4 9 6c-.7 2-4 6-9 6s-8.3-4-9-6z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+
     function renderSaved() {
         const cars = getSavedCars(), searches = lsGet(LS_SEARCHES), hist = lsGet(LS_HIST);
         let h = '';
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_cars_h')} · ${cars.length}</span>${cars.length ? `<button class="drawer-clear" onclick="clearSavedCars()">${t('clear_all')}</button>` : ''}</div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_HEART}${t('saved_cars_h')} · ${cars.length}</span>${cars.length ? `<button class="drawer-clear" onclick="clearSavedCars()">${t('clear_all')}</button>` : ''}</div>`;
         h += cars.length ? cars.map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
@@ -2919,11 +3007,11 @@
               <button class="row-x" data-key="${escapeHtml(c.key)}" data-act="remove">✕</button>
             </div>`).join('') : `<div class="drawer-empty">${t('no_saved')}</div>`;
 
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
-        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search">♥ ${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_SEARCH_SM}${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
+        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search">${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const compSaves = getCompSaves();
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_COMPARE}${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
         h += compSaves.length ? compSaves.map((s, i) => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-act="loadcmp" data-i="${i}" style="cursor:pointer">
@@ -2933,11 +3021,11 @@
               <button class="row-x" data-act="delcmp" data-i="${i}" aria-label="${escapeHtml(t('remove'))}">✕</button>
             </div>`).join('') : `<div class="drawer-empty">—</div>`;
 
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_CLOCK}${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
         h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(_histLabel(q))}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const viewed = lsGet(LS_VIEWED);
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('viewed_h')} · ${viewed.length}</span>${viewed.length ? `<button class="drawer-clear" onclick="clearViewed()">${t('clear_all')}</button>` : ''}</div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_EYE}${t('viewed_h')} · ${viewed.length}</span>${viewed.length ? `<button class="drawer-clear" onclick="clearViewed()">${t('clear_all')}</button>` : ''}</div>`;
         h += viewed.length ? viewed.map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
@@ -2947,7 +3035,7 @@
             </div>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const hiddenList = getHiddenList();
-        h += `<div class="drawer-sec"><span class="drawer-sec-h">${t('hidden_h')} · ${hiddenList.length}</span>${hiddenList.length ? `<button class="drawer-clear" onclick="clearHidden()">${t('clear_all')}</button>` : ''}</div>`;
+        h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_HIDE}${t('hidden_h')} · ${hiddenList.length}</span>${hiddenList.length ? `<button class="drawer-clear" onclick="clearHidden()">${t('clear_all')}</button>` : ''}</div>`;
         h += hiddenList.length ? hiddenList.map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open" style="cursor:pointer">
