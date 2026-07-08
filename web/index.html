@@ -2140,14 +2140,14 @@
 
     // გარბენი — სპიდომეტრის ისარი მდებარეობით (დაბალი → მარცხნივ, მაღალი → მარჯვნივ)
     function _mileageGauge(km) {
-        // odometer track: the marker slides rightward as mileage climbs, so a
-        // low-km car reads clearly different from a high-km one at a glance
-        // (cap 250k spreads typical listings across the whole track)
-        const frac = Math.max(0.03, Math.min(1, (km || 0) / 250000));
-        const x0 = 4, x1 = 20, w = x1 - x0;
-        const fw = (w * frac).toFixed(1);
-        const mx = (x0 + w * frac).toFixed(1);
-        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9.5" width="16" height="5" rx="2.5"/><rect x="4" y="9.5" width="${fw}" height="5" rx="2.5" fill="currentColor" stroke="none" opacity="0.16"/><circle cx="${mx}" cy="12" r="2.2" fill="#fff"/><circle cx="${mx}" cy="12" r="2.2"/></svg>`;
+        // tachometer needle sweeps left (0 km) → right; 500k km pins it fully right and
+        // anything above stays pinned. Linear, so every 5,000 km nudges it a little further.
+        const frac = Math.max(0, Math.min(1, (km || 0) / 500000));
+        const ang = Math.PI * (1 - frac);
+        const cx = 12, cy = 15.5, r = 7;
+        const nx = (cx + r * Math.cos(ang)).toFixed(1);
+        const ny = (cy - r * Math.sin(ang)).toFixed(1);
+        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
     }
 
     // სორტირება — კატეგორია + ზრდადი/კლებადი სვეტები (მიმართულება ცხადად ჩანს)
