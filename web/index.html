@@ -742,7 +742,7 @@
             .sk::after { animation: none; }
             svg[data-ic="engine"], .save-btn.pop svg, .rcard-compare.pop svg { animation: none !important; }
             .mrange-fill { transition: none !important; }
-            .cmp-modal, .cmp-sheet { animation: none !important; }
+            .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img { animation: none !important; }
         }
 
         /* refined benefit pills (replace the green dots) */
@@ -823,12 +823,28 @@
         .cmp-car-price { color: #EF233C; font-weight: 600; font-size: 15px; margin-top: 3px; }
         .cmp-remove { margin-top: 6px; background: none; border: 0; color: #6B7280; font-size: 12px; cursor: pointer; padding: 0; }
         .cmp-remove:hover { color: #EF233C; }
-        .cmp-table td.cmp-best { background: #ECFDF3; color: #15803D; font-weight: 700; }
-        .cmp-table td.cmp-worst { background: #FEF2F3; color: #D90429; }
-        .cmp-wins { font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; }
-        /* winning column: a soft tinted band the full height of the table */
-        .cmp-table th.cmp-winner { background: linear-gradient(#FFF9E6, #fff); border-top: 2px solid #F5B301; }
-        .cmp-crown { display: inline-flex; align-items: center; gap: 4px; background: #F5B301; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-bottom: 8px; }
+        .cmp-table td.cmp-best { background: #E7FBEF; color: #15803D; font-weight: 700; box-shadow: inset 3px 0 0 #34D07F; }
+        .cmp-table td.cmp-worst { background: #FEF2F3; color: #D90429; box-shadow: inset 3px 0 0 #F4879A; }
+        .cmp-wins { display: inline-block; font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; background: #E7FBEF; border-radius: 999px; padding: 1px 9px; }
+        /* winning column: a golden frame running the full height of the table */
+        .cmp-table th.cmp-winner { background: linear-gradient(180deg, #FFF4CE, #FFFDF4);
+            border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; border-top: 3px solid #F5B301; }
+        .cmp-table td.cmp-wincol { border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; }
+        .cmp-table td.cmp-wincol:not(.cmp-best):not(.cmp-worst) { background: #FFFCEF; }
+        .cmp-table tr:last-child td.cmp-wincol { border-bottom: 2px solid #F5B301; }
+        .cmp-table th.cmp-winner .cmp-car-title { color: #92600B; font-weight: 700; }
+        .cmp-table th.cmp-winner .cmp-car-img { animation: winnerGlow 2s ease-in-out infinite; }
+        @keyframes winnerGlow {
+            0%, 100% { box-shadow: 0 0 0 3px #F5B301, 0 4px 14px rgba(245,179,1,.3); }
+            50% { box-shadow: 0 0 0 3px #FFCF52, 0 8px 22px rgba(245,179,1,.55); }
+        }
+        .cmp-crown { display: inline-flex; align-items: center; gap: 5px; color: #fff; font-size: 11px; font-weight: 700;
+            padding: 3px 11px; border-radius: 999px; margin-bottom: 9px; box-shadow: 0 2px 9px rgba(245,179,1,.45);
+            background: linear-gradient(90deg, #F5B301, #FF9500, #FFCF52, #F5B301); background-size: 250% 100%;
+            animation: crownShine 2.4s linear infinite; }
+        @keyframes crownShine { to { background-position: -250% 0; } }
+        .cmp-crown span { display: inline-block; animation: crownStar 1.6s ease-in-out infinite; }
+        @keyframes crownStar { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.3) rotate(14deg); } }
         .cmp-summary { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 16px; margin: 0 0 14px; font-size: 14px; color: #2B2D42; line-height: 1.5; }
         .cmp-summary strong { color: #15803D; }
         .cmp-head-acts { display: flex; align-items: center; gap: 10px; }
@@ -2397,7 +2413,9 @@
         if (_driveScore(w.drive) === 2 && list.some(c => _driveScore(c.drive) === 1)) reasons.push(t('cmp_reason_awd'));
         if (w.customs === true && list.some(c => c.customs === false)) reasons.push(t('cmp_reason_customs'));
         const tail = reasons.length ? ' — ' + reasons.join(', ') : '';
-        return `<strong>${escapeHtml(w.title)}</strong> ${t('cmp_better_pick')}${tail}`;
+        // identical-name cars are common, so pin the price to the winner's name to disambiguate
+        const price = w.price > 0 ? ` · $${w.price.toLocaleString()}` : '';
+        return `<strong>${escapeHtml(w.title)}${price}</strong> ${t('cmp_better_pick')}${tail}`;
     }
     function renderCompareModal() {
         const list = getCompare();
@@ -2441,9 +2459,10 @@
         const topScore = Math.max(...scores);
         const sorted = [...scores].sort((a, b) => b - a);
         const decisive = multi && topScore > 0 && (topScore - (sorted[1] || 0)) >= 0.4;
+        const winnerIdx = decisive ? scores.indexOf(topScore) : -1;
         const head = list.map((c, ci) =>
-            `<th class="${decisive && scores[ci] === topScore ? 'cmp-winner' : ''}">` +
-            (decisive && scores[ci] === topScore ? `<div class="cmp-crown">★ ${t('cmp_best_overall')}</div>` : '') +
+            `<th class="${ci === winnerIdx ? 'cmp-winner' : ''}">` +
+            (ci === winnerIdx ? `<div class="cmp-crown"><span>★</span> ${t('cmp_best_overall')}</div>` : '') +
             `<a href="${escapeHtml(c.url)}" onclick="return goToCarDetail('${escapeHtml(c.key)}', event)"><img class="cmp-car-img" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2"></a>` +
             `<div class="cmp-car-title">${escapeHtml(c.title)}</div>` +
             `<div class="cmp-car-price">${c.price > 0 ? '$' + c.price.toLocaleString() : t('price_negotiable')}</div>` +
@@ -2451,7 +2470,10 @@
             `<button class="cmp-remove" onclick="removeFromCompare('${escapeHtml(c.key)}')">✕ ${t('act_hide')}</button></th>`
         ).join('');
         const body = rows.map((row, ri) =>
-            `<tr><td class="cmp-rowlabel">${row.label}</td>${list.map((c, ci) => `<td class="${rowCells[ri][ci]}">${row.disp(c)}</td>`).join('')}</tr>`
+            `<tr><td class="cmp-rowlabel">${row.label}</td>${list.map((c, ci) => {
+                const cls = [rowCells[ri][ci], ci === winnerIdx ? 'cmp-wincol' : ''].filter(Boolean).join(' ');
+                return `<td class="${cls}">${row.disp(c)}</td>`;
+            }).join('')}</tr>`
         ).join('');
         const summary = multi ? _compareSummary(list, scores) : '';
         modal.querySelector('.cmp-body').innerHTML =
