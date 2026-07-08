@@ -7,6 +7,12 @@ const TRANSLATIONS = {
         nav_listings_count: "{n} განცხადება",
         stat_cars: "მანქანა ბაზაში",
         saved_title: "შენახული",
+        export_data: "მონაცემების ჩამოტვირთვა (backup)",
+        import_data: "მონაცემების ატვირთვა (backup-იდან)",
+        export_done: "მონაცემები ჩამოიტვირთა",
+        import_done: "მონაცემები აღდგა",
+        import_error: "ფაილის წაკითხვა ვერ მოხერხდა",
+        load_more: "მეტის ჩვენება",
         saved_cars_h: "მანქანები",
         recent_h: "ბოლო ძიებები",
         viewed_h: "ნანახი მანქანები",
@@ -65,6 +71,9 @@ const TRANSLATIONS = {
         cmp_reason_cheaper: "უფრო იაფი",
         cmp_reason_power: "მეტი სიმძლავრე",
         cmp_reason_awd: "სრული წამყვანი",
+        cmp_reason_customs: "განბაჟებული",
+        cmp_best_overall: "საუკეთესო",
+        cmp_close_call: "მანქანები ერთმანეთს ახლოსაა — აშკარა ფავორიტი არ ჩანს.",
         save_comparison: "შედარების შენახვა",
         saved_comparisons_h: "შენახული შედარებები",
         cmp_cars_n: "{n} მანქანა",
@@ -93,6 +102,7 @@ const TRANSLATIONS = {
         notice_slow: "ხანდახან 10-15 წამი ჭირდება ინფორმაციის მოძიებას. გთხოვთ მოითმინეთ.",
 
         err_fetch: "შეცდომა: {msg}",
+        offline_msg: "ინტერნეტთან კავშირი გაწყდა",
         err_unknown: "დაფიქსირდა შეცდომა, სცადეთ მოგვიანებით.",
         err_query_too_vague:
             "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — დაამატე წელი, " +
@@ -109,6 +119,7 @@ const TRANSLATIONS = {
         spec_year: "წელი",
         spec_mileage: "გარბენი",
         spec_engine: "ძრავა",
+        spec_customs: "განბაჟება",
         spec_fuel: "საწვავი",
         spec_gearbox: "კოლოფი",
         spec_drive: "წამყვანი",
@@ -155,6 +166,12 @@ const TRANSLATIONS = {
         nav_listings_count: "{n} listings",
         stat_cars: "cars indexed",
         saved_title: "Saved",
+        export_data: "Download my data (backup)",
+        import_data: "Restore from a backup file",
+        export_done: "Data downloaded",
+        import_done: "Data restored",
+        import_error: "Couldn't read that file",
+        load_more: "Show more",
         saved_cars_h: "Cars",
         recent_h: "Recent searches",
         viewed_h: "Recently viewed",
@@ -213,6 +230,9 @@ const TRANSLATIONS = {
         cmp_reason_cheaper: "cheaper",
         cmp_reason_power: "more power",
         cmp_reason_awd: "all-wheel drive",
+        cmp_reason_customs: "customs cleared",
+        cmp_best_overall: "Best overall",
+        cmp_close_call: "These cars are very close — no clear winner.",
         save_comparison: "Save comparison",
         saved_comparisons_h: "Saved comparisons",
         cmp_cars_n: "{n} cars",
@@ -241,6 +261,7 @@ const TRANSLATIONS = {
         notice_slow: "Searches can take 10-15 seconds. Please be patient.",
 
         err_fetch: "Error: {msg}",
+        offline_msg: "You're offline — check your connection",
         err_unknown: "Something went wrong, please try again later.",
         err_query_too_vague:
             "Please be more specific — add the year, city, or trim " +
@@ -257,6 +278,7 @@ const TRANSLATIONS = {
         spec_year: "Year",
         spec_mileage: "Mileage",
         spec_engine: "Engine",
+        spec_customs: "Customs",
         spec_fuel: "Fuel",
         spec_gearbox: "Gearbox",
         spec_drive: "Drive",
@@ -303,6 +325,12 @@ const TRANSLATIONS = {
         nav_listings_count: "{n} объявлений",
         stat_cars: "автомобилей в базе",
         saved_title: "Сохранённое",
+        export_data: "Скачать мои данные (бэкап)",
+        import_data: "Восстановить из файла",
+        export_done: "Данные скачаны",
+        import_done: "Данные восстановлены",
+        import_error: "Не удалось прочитать файл",
+        load_more: "Показать ещё",
         saved_cars_h: "Автомобили",
         recent_h: "Недавние запросы",
         viewed_h: "Недавно просмотренные",
@@ -356,6 +384,9 @@ const TRANSLATIONS = {
         cmp_reason_cheaper: "дешевле",
         cmp_reason_power: "мощнее",
         cmp_reason_awd: "полный привод",
+        cmp_reason_customs: "растаможен",
+        cmp_best_overall: "Лучший выбор",
+        cmp_close_call: "Машины очень близки — явного лидера нет.",
         save_comparison: "Сохранить сравнение",
         saved_comparisons_h: "Сохранённые сравнения",
         cmp_cars_n: "{n} авто",
@@ -380,6 +411,7 @@ const TRANSLATIONS = {
         no_results: "По вашему запросу автомобилей не найдено",
         notice_slow: "Поиск может занять 10-15 секунд. Пожалуйста, подождите.",
         err_fetch: "Ошибка: {msg}",
+        offline_msg: "Нет подключения к интернету",
         err_unknown: "Что-то пошло не так, попробуйте позже.",
         err_query_too_vague: "Пожалуйста, уточните запрос — добавьте год, город или комплектацию (например, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Введите запрос для поиска или используйте фильтры.",
@@ -391,6 +423,7 @@ const TRANSLATIONS = {
         spec_year: "Год",
         spec_mileage: "Пробег",
         spec_engine: "Двигатель",
+        spec_customs: "Растаможка",
         spec_fuel: "Топливо",
         spec_gearbox: "Коробка передач",
         spec_drive: "Привод",
@@ -431,6 +464,12 @@ const TRANSLATIONS = {
         nav_listings_count: "{n} хабарландыру",
         stat_cars: "көлік тізімделген",
         saved_title: "Сақталған",
+        export_data: "Деректерді жүктеу (backup)",
+        import_data: "Файлдан қалпына келтіру",
+        export_done: "Деректер жүктелді",
+        import_done: "Деректер қалпына келді",
+        import_error: "Файлды оқу мүмкін болмады",
+        load_more: "Тағы көрсету",
         saved_cars_h: "Көліктер",
         recent_h: "Соңғы іздеулер",
         viewed_h: "Жуырда қаралған",
@@ -484,6 +523,9 @@ const TRANSLATIONS = {
         cmp_reason_cheaper: "арзанырақ",
         cmp_reason_power: "қуаттырақ",
         cmp_reason_awd: "толық жетек",
+        cmp_reason_customs: "кедендік рәсімделген",
+        cmp_best_overall: "Үздік таңдау",
+        cmp_close_call: "Көліктер өте жақын — айқын жеңімпаз жоқ.",
         save_comparison: "Салыстыруды сақтау",
         saved_comparisons_h: "Сақталған салыстырулар",
         cmp_cars_n: "{n} көлік",
@@ -508,6 +550,7 @@ const TRANSLATIONS = {
         no_results: "Сіздің сұранысыңыз бойынша көлік табылмады",
         notice_slow: "Іздеу 10-15 секундқа созылуы мүмкін. Сабырлы болыңыз.",
         err_fetch: "Қате: {msg}",
+        offline_msg: "Интернет байланысы жоқ",
         err_unknown: "Бірдеңе дұрыс болмады, кейінірек қайталап көріңіз.",
         err_query_too_vague: "Нақтырақ көрсетіңіз — жылын, қаласын немесе жинақталымын қосыңыз (мысалы, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Іздеу үшін бірдеңе енгізіңіз немесе сүзгілерді пайдаланыңыз.",
@@ -519,6 +562,7 @@ const TRANSLATIONS = {
         spec_year: "Жыл",
         spec_mileage: "Жүрісі",
         spec_engine: "Қозғалтқыш",
+        spec_customs: "Кеден",
         spec_fuel: "Жанармай",
         spec_gearbox: "Беріліс қорабы",
         spec_drive: "Жетек",
@@ -589,6 +633,11 @@ function applyTranslations() {
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+        const s = t(el.dataset.i18nTitle);
+        el.title = s;
+        el.setAttribute("aria-label", s);
     });
 
     const cur = document.getElementById("lang-current");

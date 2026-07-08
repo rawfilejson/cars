@@ -86,10 +86,22 @@
         html { -webkit-text-size-adjust: 100%; }
         body { font-family: 'Inter Tight', 'Noto Sans Georgian', system-ui, sans-serif; }
 
-        body { overflow-x: hidden; }
+        /* clip (not hidden) — hidden turns body into a scroll container and breaks the sticky sidebar */
+        body { overflow-x: clip; }
 
 
-        .top-rule { height: 3px; background: #EF233C; }
+        /* top rule doubles as a loading bar: idle = full red line, during a search it
+           dips to zero and climbs left→right to show progress */
+        .top-rule { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: #FADBDF; z-index: 200; overflow: hidden; }
+        .top-rule-fill { height: 100%; width: 100%; background: #EF233C; transform-origin: left center; transform: scaleX(1); }
+        body { padding-top: 3px; }
+        /* offline banner — slides down from under the top rule when the connection drops */
+        .offline-banner { position: fixed; top: 3px; left: 0; right: 0; z-index: 199; display: flex; align-items: center; justify-content: center;
+            gap: 9px; background: #2B2D42; color: #fff; font-size: 13.5px; font-weight: 500; padding: 9px 16px; text-align: center;
+            transform: translateY(-120%); transition: transform .3s cubic-bezier(.2,.7,.2,1); }
+        body.is-offline .offline-banner { transform: translateY(0); }
+        .offline-dot { width: 8px; height: 8px; border-radius: 50%; background: #FF8A95; flex-shrink: 0; animation: offlinePulse 1.4s ease-in-out infinite; }
+        @keyframes offlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
         /* ===== redesign: search band + sidebar layout ===== */
         .hero-title { font-size: 27px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; color: #2B2D42; }
@@ -158,11 +170,19 @@
         .brand-dot { color: #EF233C; font-weight: inherit; }
         .cdd-group-head { padding: 8px 12px 3px; font-size: 11px; font-weight: 700; text-transform: uppercase;
             letter-spacing: .06em; color: #64748B; }
-        .cdd-group-head.cdd-grp { display: flex; align-items: center; gap: 7px; padding: 9px 12px; cursor: pointer;
+        .cdd-group-head.cdd-grp { display: flex; align-items: center; gap: 9px; padding: 8px 12px; cursor: pointer;
             user-select: none; border-radius: 9px; }
         .cdd-group-head.cdd-grp:hover { background: #F3F6F8; color: #2B2D42; }
-        .cdd-group-head.cdd-grp .grp-chev { font-size: 9px; color: #6B7280; transition: transform .15s; }
-        .cdd-group-head.cdd-grp.open .grp-chev { transform: rotate(90deg); }
+        .cdd-group-head.cdd-grp .grp-badge { display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 999px; background: #FDE6E8; color: #EF233C;
+            font-size: 11px; font-weight: 700; flex-shrink: 0; transition: background .15s, color .15s; }
+        .cdd-group-head.cdd-grp:hover .grp-badge, .cdd-group-head.cdd-grp.open .grp-badge { background: #EF233C; color: #fff; }
+        .cdd-group-head.cdd-grp .grp-label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cdd-group-head.cdd-grp .grp-n { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500;
+            color: #6B7280; background: #F3F6F8; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+        .cdd-group-head.cdd-grp:hover .grp-n { background: #E7ECF1; }
+        .cdd-group-head.cdd-grp svg.grp-chev { width: 12px; height: 12px; color: #6B7280; flex-shrink: 0; transition: transform .18s; }
+        .cdd-group-head.cdd-grp.open svg.grp-chev { transform: rotate(90deg); }
         /* "more filters" expander */
         .more-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: none; border: 0;
             color: #EF233C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 0; }
@@ -173,13 +193,18 @@
         .filter-slider { position: relative; }
         .mrange { position: relative; flex: 1 1 100%; height: 28px; }
         .mrange-bar { position: absolute; top: 12px; left: 2px; right: 2px; height: 4px; background: #DCE3EA; border-radius: 4px; }
-        .mrange-fill { position: absolute; top: 0; height: 100%; background: #EF233C; border-radius: 4px; }
+        /* the fill trails the thumbs with a short ease so dragging feels animated */
+        .mrange-fill { position: absolute; top: 0; height: 100%; background: #EF233C; border-radius: 4px;
+            transition: left .16s cubic-bezier(.2,.7,.3,1), width .16s cubic-bezier(.2,.7,.3,1); }
         .mrange-input { position: absolute; top: 0; left: 0; width: 100%; height: 28px; margin: 0; background: none;
             pointer-events: none; -webkit-appearance: none; appearance: none; }
         .mrange-input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px;
-            border-radius: 50%; background: #fff; border: 2px solid #EF233C; cursor: pointer; box-shadow: 0 1px 4px rgba(43,45,66,.25); }
+            border-radius: 50%; background: #fff; border: 2px solid #EF233C; cursor: pointer; box-shadow: 0 1px 4px rgba(43,45,66,.25);
+            transition: transform .12s ease, box-shadow .12s; }
+        .mrange-input:active::-webkit-slider-thumb { transform: scale(1.22); box-shadow: 0 2px 10px rgba(239,35,60,.35); }
         .mrange-input::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%;
-            background: #fff; border: 2px solid #EF233C; cursor: pointer; }
+            background: #fff; border: 2px solid #EF233C; cursor: pointer; transition: transform .12s ease; }
+        .mrange-input:active::-moz-range-thumb { transform: scale(1.22); }
         .mrange-vals { display: flex; justify-content: space-between; flex-basis: 100%; margin-top: 2px;
             font-size: 12px; color: #64748B; font-family: 'JetBrains Mono', monospace; }
         .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -716,6 +741,8 @@
             .photo-anim { animation: none !important; }
             .sk::after { animation: none; }
             svg[data-ic="engine"], .save-btn.pop svg, .rcard-compare.pop svg { animation: none !important; }
+            .mrange-fill { transition: none !important; }
+            .cmp-modal, .cmp-sheet { animation: none !important; }
         }
 
         /* refined benefit pills (replace the green dots) */
@@ -799,6 +826,9 @@
         .cmp-table td.cmp-best { background: #ECFDF3; color: #15803D; font-weight: 700; }
         .cmp-table td.cmp-worst { background: #FEF2F3; color: #D90429; }
         .cmp-wins { font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; }
+        /* winning column: a soft tinted band the full height of the table */
+        .cmp-table th.cmp-winner { background: linear-gradient(#FFF9E6, #fff); border-top: 2px solid #F5B301; }
+        .cmp-crown { display: inline-flex; align-items: center; gap: 4px; background: #F5B301; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-bottom: 8px; }
         .cmp-summary { background: #F5F8FA; border: 1px solid #E7ECF1; border-radius: 12px; padding: 12px 16px; margin: 0 0 14px; font-size: 14px; color: #2B2D42; line-height: 1.5; }
         .cmp-summary strong { color: #15803D; }
         .cmp-head-acts { display: flex; align-items: center; gap: 10px; }
@@ -824,6 +854,12 @@
         @keyframes drawerBody { from { opacity: 0; transform: translateY(16px); } }
         .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #DCE3EA; }
         .drawer-head h3 { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 22px; color: #2B2D42; }
+        .drawer-head-acts { display: flex; align-items: center; gap: 6px; }
+        .drawer-io { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px;
+            background: #fff; border: 1px solid #DCE3EA; color: #64748B; cursor: pointer; transition: color .12s, border-color .12s, background .12s, transform .12s; }
+        .drawer-io svg { width: 17px; height: 17px; }
+        .drawer-io:hover { color: #EF233C; border-color: #FBDADE; background: #FDE6E8; }
+        .drawer-io:active { transform: scale(.92); }
         .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 32px; }
         .drawer-sec { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 10px; }
         .drawer-sec:first-child { margin-top: 0; }
@@ -838,11 +874,19 @@
         .saved-row-price { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #15803D; margin-top: 2px; }
         .row-x { color: #6B7280; border: 0; background: transparent; cursor: pointer; font-size: 14px; padding: 4px 2px; }
         .row-x:hover { color: #EF233C; }
-        .hist-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #DCE3EA; border-radius: 999px; font-size: 13px; color: #2B2D42; background: #fff; cursor: pointer; }
+        .hist-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #DCE3EA; border-radius: 999px; font-size: 13px; color: #2B2D42; background: #fff; cursor: pointer;
+            max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+        .drawer .hist-chip { max-width: 240px; }
+        .hist-chip svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
         .hist-chip:hover { border-color: #2B2D42; }
         .drawer-empty { color: #64748B; font-size: 13px; padding: 6px 0; }
         .drawer-clear { font-size: 12px; color: #64748B; text-decoration: underline; text-decoration-color: #DCE3EA; background: 0; border: 0; cursor: pointer; }
         .drawer-clear:hover { color: #EF233C; }
+        .drawer-more { display: block; width: 100%; margin: 4px 0 2px; padding: 9px; background: #fff; border: 1px solid #DCE3EA;
+            border-radius: 10px; color: #2B2D42; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
+            transition: border-color .12s, background .12s, transform .1s; }
+        .drawer-more:hover { border-color: #EF233C; color: #EF233C; background: #FDE6E8; }
+        .drawer-more:active { transform: scale(.98); }
 
         .notfound { text-align: center; padding: 80px 20px 100px; }
         .notfound-code { font-family: 'Fraunces','Noto Serif Georgian',serif; font-size: 92px; font-weight: 700; color: #EF233C; line-height: 1; }
@@ -869,7 +913,8 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-<div class="top-rule"></div>
+<div class="top-rule"><div class="top-rule-fill" id="top-progress"></div></div>
+<div class="offline-banner" id="offline-banner" role="status" aria-live="polite"><span class="offline-dot"></span><span data-i18n="offline_msg"></span></div>
 
 <header class="border-b border-line">
     <div class="max-w-6xl mx-auto px-4 md:px-6 py-5 md:py-6 flex items-start justify-between gap-3 md:gap-6">
@@ -1063,7 +1108,16 @@
 <aside id="saved-drawer" class="drawer" aria-label="saved">
     <div class="drawer-head">
         <h3 data-i18n="saved_title"></h3>
-        <button class="clear-x" style="font-size:20px" onclick="closeSaved()" aria-label="close">✕</button>
+        <div class="drawer-head-acts">
+            <button class="drawer-io" onclick="exportData()" data-i18n-title="export_data" aria-label="export">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            </button>
+            <button class="drawer-io" onclick="document.getElementById('import-file').click()" data-i18n-title="import_data" aria-label="import">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            </button>
+            <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
+            <button class="clear-x" style="font-size:20px" onclick="closeSaved()" aria-label="close">✕</button>
+        </div>
     </div>
     <div id="saved-body" class="drawer-body"></div>
 </aside>
@@ -1547,16 +1601,20 @@
                 if (s) { if (!groups.has(s)) groups.set(s, []); groups.get(s).push(m); }
                 else flat.push(m);
             }
+            // a class header with a single model underneath is just noise — flatten it
+            for (const [series, ms] of [...groups.entries()]) {
+                if (ms.length < 2) { flat.push(...ms); groups.delete(series); }
+            }
             const prefix = multiBrand ? (b + ' · ') : '';
             if (groups.size) {
                 // groups were inserted in model order (backend = count desc), so popular series lead
                 for (const [series, ms] of groups.entries()) {
-                    out.push(`<option disabled>${escapeHtml(prefix + series)}</option>`);
+                    out.push(`<option disabled data-n="${ms.length}">${escapeHtml(prefix + series)}</option>`);
                     ms.forEach(m => out.push(opt(m)));
                 }
-                if (flat.length) { out.push(`<option disabled>${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
+                if (flat.length) { out.push(`<option disabled data-n="${flat.length}">${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
             } else {
-                if (multiBrand) out.push(`<option disabled>${escapeHtml(b)}</option>`);
+                if (multiBrand) out.push(`<option disabled data-n="${flat.length}">${escapeHtml(b)}</option>`);
                 flat.forEach(m => out.push(opt(m)));
             }
         }
@@ -1608,6 +1666,31 @@
         meta.appendChild(span);
     }
 
+    // top loading bar — the red top rule dips to zero then fills left→right during a search
+    let _tpDone = null;
+    function startTopProgress() {
+        const bar = document.getElementById('top-progress');
+        if (!bar) return;
+        clearTimeout(_tpDone);
+        bar.style.transition = 'none';
+        bar.style.transform = 'scaleX(0)';
+        void bar.offsetWidth;
+        bar.style.transition = 'transform 2.4s cubic-bezier(.08,.7,.2,1)';
+        bar.style.transform = 'scaleX(0.9)';   // trickles toward 90% while the request is in flight
+    }
+    function finishTopProgress() {
+        const bar = document.getElementById('top-progress');
+        if (!bar) return;
+        bar.style.transition = 'transform .25s ease';
+        bar.style.transform = 'scaleX(1)';      // snaps to 100% and stays as the idle red line
+    }
+
+    // connection banner — navigator.onLine flips on adapter up/down; a failed fetch confirms it
+    function setOffline(off) { document.body.classList.toggle('is-offline', !!off); }
+    window.addEventListener('offline', () => setOffline(true));
+    window.addEventListener('online', () => setOffline(false));
+    if (!navigator.onLine) setOffline(true);
+
     async function doSearch(opts = {}) {
         if (opts.resetPage !== false) currentPage = 1;
 
@@ -1649,6 +1732,7 @@
         empty.classList.add('hidden');
         document.body.classList.add('mode-results');
         results.innerHTML = skeletonCards(currentPage === 1 ? 5 : 4);   // loading state for every page
+        startTopProgress();
 
         try {
             const resp = await fetch(`${API_BASE}/search`, {
@@ -1667,14 +1751,20 @@
             }
 
             lastResponse = await resp.json();
+            setOffline(false);
             _searchCache.set(_ckey, { t: Date.now(), data: lastResponse });
             renderResults(lastResponse);
         } catch (e) {
-            showSearchError(meta, t('err_fetch', { msg: e.message }));
+            // a network-level failure (fetch throws TypeError) usually means no connection
+            const offline = !navigator.onLine || e instanceof TypeError;
+            if (offline) setOffline(true);
+            results.innerHTML = '';
+            showSearchError(meta, offline ? t('offline_msg') : t('err_fetch', { msg: e.message }));
         } finally {
             btn.disabled = false;
             document.querySelectorAll('[data-search-btn]').forEach(b => b.classList.remove('is-busy'));
             updateSearchBtnCount();
+            finishTopProgress();
         }
     }
 
@@ -1692,10 +1782,9 @@
     window.goToPage = function (page) {
         currentPage = page;
         doSearch({ resetPage: false });
-        // ease up to the start of the results instead of hard-jumping to the page top
-        const top = document.querySelector('.results-bar') || document.getElementById('results');
-        if (top && top.scrollIntoView) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        // scroll back to the top so the search field and filters stay in view on the
+        // new page (the sticky sidebar keeps the filters pinned while scrolling results)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     function escapeHtml(text) {
@@ -2035,12 +2124,14 @@
 
     // გარბენი — სპიდომეტრის ისარი მდებარეობით (დაბალი → მარცხნივ, მაღალი → მარჯვნივ)
     function _mileageGauge(km) {
-        const frac = Math.max(0, Math.min(1, Math.sqrt((km || 0) / 1000000)));
-        const ang = Math.PI * (1 - frac);
-        const cx = 12, cy = 15.5, r = 7;
-        const nx = (cx + r * Math.cos(ang)).toFixed(1);
-        const ny = (cy - r * Math.sin(ang)).toFixed(1);
-        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
+        // odometer track: the marker slides rightward as mileage climbs, so a
+        // low-km car reads clearly different from a high-km one at a glance
+        // (cap 250k spreads typical listings across the whole track)
+        const frac = Math.max(0.03, Math.min(1, (km || 0) / 250000));
+        const x0 = 4, x1 = 20, w = x1 - x0;
+        const fw = (w * frac).toFixed(1);
+        const mx = (x0 + w * frac).toFixed(1);
+        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9.5" width="16" height="5" rx="2.5"/><rect x="4" y="9.5" width="${fw}" height="5" rx="2.5" fill="currentColor" stroke="none" opacity="0.16"/><circle cx="${mx}" cy="12" r="2.2" fill="#fff"/><circle cx="${mx}" cy="12" r="2.2"/></svg>`;
     }
 
     // სორტირება — კატეგორია + ზრდადი/კლებადი სვეტები (მიმართულება ცხადად ჩანს)
@@ -2176,7 +2267,7 @@
             year: car.year, mileage: car.mileage_km,
             engine: car.engine_volume_l, power: car.power_hp,
             fuel: car.engine_type, gearbox: car.gearbox, drive: car.drive_wheels,
-            body: car.body_type, location: car.location,
+            body: car.body_type, location: car.location, customs: car.customs_cleared,
             thumb: (car.image_urls && car.image_urls[0]) || '',
             url: `/car/${car.source}-${car.source_id}`,
         };
@@ -2259,10 +2350,42 @@
         const s = (d || '').toLowerCase();
         return /4x4|4wd|awd|ოთხ|სრულ|толық|полн/.test(s) ? 2 : 1;
     }
-    function _compareSummary(list, wins) {
+    // magnitude-aware value score: an attribute only counts as much as its gap is
+    // meaningful (a 150k km spread is decisive, a $300 one barely matters)
+    const _CMP_FACTORS = [
+        { weight: 3, better: 'high', ref: 8,      val: c => c.year || null },
+        { weight: 3, better: 'low',  ref: 150000, val: c => c.mileage || null },
+        { weight: 3, better: 'low',  ref: 'mean', val: c => c.price > 0 ? c.price : null },
+        { weight: 1, better: 'high', ref: 80,     val: c => c.power || null },
+        { weight: 1, better: 'high', ref: 1,      val: c => c.drive ? _driveScore(c.drive) : null },
+        { weight: 1, better: 'high', ref: 1,      val: c => c.customs === true ? 1 : c.customs === false ? 0 : null },
+    ];
+    function _cmpScores(list) {
+        const scores = list.map(() => 0);
+        for (const f of _CMP_FACTORS) {
+            const vals = list.map(f.val);
+            const present = vals.filter(v => v != null);
+            if (present.length < 2) continue;
+            const max = Math.max(...present), min = Math.min(...present);
+            if (max === min) continue;
+            const ref = f.ref === 'mean' ? present.reduce((a, b) => a + b, 0) / present.length : f.ref;
+            const gapScale = Math.min(1, (max - min) / ref);
+            for (let i = 0; i < list.length; i++) {
+                if (vals[i] == null) continue;
+                let adv = (vals[i] - min) / (max - min);
+                if (f.better === 'low') adv = 1 - adv;
+                scores[i] += f.weight * gapScale * adv;
+            }
+        }
+        return scores;
+    }
+    function _compareSummary(list, scores) {
         let bi = 0;
-        for (let i = 1; i < list.length; i++) if (wins[i] > wins[bi]) bi = i;
-        if (!wins[bi]) return '';
+        for (let i = 1; i < list.length; i++) if (scores[i] > scores[bi]) bi = i;
+        const sorted = [...scores].sort((a, b) => b - a);
+        if (!sorted[0]) return '';
+        const margin = sorted[0] - (sorted[1] || 0);
+        if (margin < 0.4) return t('cmp_close_call');
         const w = list[bi];
         const uniqMax = (f) => { const vs = list.map(f).filter(v => v != null); if (vs.length < 2) return false; const m = Math.max(...vs); return f(w) === m && vs.filter(v => v === m).length === 1; };
         const uniqMin = (f) => { const vs = list.map(f).filter(v => v != null); if (vs.length < 2) return false; const m = Math.min(...vs); return f(w) === m && vs.filter(v => v === m).length === 1; };
@@ -2272,6 +2395,7 @@
         if (uniqMin(c => c.price > 0 ? c.price : null)) reasons.push(t('cmp_reason_cheaper'));
         if (uniqMax(c => c.power || null)) reasons.push(t('cmp_reason_power'));
         if (_driveScore(w.drive) === 2 && list.some(c => _driveScore(c.drive) === 1)) reasons.push(t('cmp_reason_awd'));
+        if (w.customs === true && list.some(c => c.customs === false)) reasons.push(t('cmp_reason_customs'));
         const tail = reasons.length ? ' — ' + reasons.join(', ') : '';
         return `<strong>${escapeHtml(w.title)}</strong> ${t('cmp_better_pick')}${tail}`;
     }
@@ -2292,7 +2416,8 @@
             { label: t('filter_gearbox'), disp: c => c.gearbox ? escapeHtml(tval(c.gearbox)) : dash },
             { label: t('filter_drive'),   disp: c => c.drive ? escapeHtml(tval(c.drive)) : dash,                          val: c => c.drive ? _driveScore(c.drive) : null, better: 'high' },
             { label: t('filter_body'),    disp: c => c.body ? escapeHtml(tval(c.body)) : dash },
-            { label: t('filter_location'),disp: c => c.location ? escapeHtml(tval(c.location)) : dash },
+            { label: t('spec_customs'),   disp: c => c.customs === true ? t('cleared') : c.customs === false ? t('not_cleared') : dash, val: c => c.customs === true ? 1 : c.customs === false ? 0 : null, better: 'high' },
+            { label: t('filter_location'),disp: c => c.location ? escapeHtml(locLabel(c.location)) : dash },
         ];
         const wins = list.map(() => 0);
         const scoreRow = (row) => {
@@ -2311,8 +2436,15 @@
             });
         };
         const rowCells = rows.map(scoreRow);   // tallies `wins` as a side effect
+        // overall verdict weighs each attribute by how big (and how meaningful) its gap is
+        const scores = multi ? _cmpScores(list) : list.map(() => 0);
+        const topScore = Math.max(...scores);
+        const sorted = [...scores].sort((a, b) => b - a);
+        const decisive = multi && topScore > 0 && (topScore - (sorted[1] || 0)) >= 0.4;
         const head = list.map((c, ci) =>
-            `<th><a href="${escapeHtml(c.url)}" onclick="return goToCarDetail('${escapeHtml(c.key)}', event)"><img class="cmp-car-img" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2"></a>` +
+            `<th class="${decisive && scores[ci] === topScore ? 'cmp-winner' : ''}">` +
+            (decisive && scores[ci] === topScore ? `<div class="cmp-crown">★ ${t('cmp_best_overall')}</div>` : '') +
+            `<a href="${escapeHtml(c.url)}" onclick="return goToCarDetail('${escapeHtml(c.key)}', event)"><img class="cmp-car-img" src="${escapeHtml(c.thumb)}" alt="" loading="lazy" onerror="this.style.opacity=.2"></a>` +
             `<div class="cmp-car-title">${escapeHtml(c.title)}</div>` +
             `<div class="cmp-car-price">${c.price > 0 ? '$' + c.price.toLocaleString() : t('price_negotiable')}</div>` +
             (multi ? `<div class="cmp-wins">${t('cmp_wins', { n: wins[ci] })}</div>` : '') +
@@ -2321,7 +2453,7 @@
         const body = rows.map((row, ri) =>
             `<tr><td class="cmp-rowlabel">${row.label}</td>${list.map((c, ci) => `<td class="${rowCells[ri][ci]}">${row.disp(c)}</td>`).join('')}</tr>`
         ).join('');
-        const summary = multi ? _compareSummary(list, wins) : '';
+        const summary = multi ? _compareSummary(list, scores) : '';
         modal.querySelector('.cmp-body').innerHTML =
             (summary ? `<div class="cmp-summary">${summary}</div>` : '') +
             `<table class="cmp-table"><thead><tr><td class="cmp-rowlabel"></td>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -2951,11 +3083,11 @@
         let html = '';
         if (saved.length) {
             html += `<span class="recent-label">${t('saved_searches_h')}</span>` +
-                saved.map((s, i) => `<span class="chip-wrap"><button class="hist-chip pinned" data-kind="saved" data-i="${i}">♥ ${escapeHtml(s.label)}</button><button class="chip-del" data-kind="saved-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('');
+                saved.map((s, i) => `<span class="chip-wrap"><button class="hist-chip pinned" data-kind="saved" data-i="${i}" title="${escapeHtml(s.label)}">${ICON_HEART}${escapeHtml(s.label)}</button><button class="chip-del" data-kind="saved-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('');
         }
         if (hist.length) {
             html += `<span class="recent-label">${t('recent_h')}</span>` +
-                hist.map((item, i) => `<span class="chip-wrap"><button class="hist-chip" data-kind="hist" data-i="${i}">${escapeHtml(_histLabel(item))}</button><button class="chip-save" data-kind="hist-save" data-i="${i}" aria-label="${sv}" title="${sv}">♡</button><button class="chip-del" data-kind="hist-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('') +
+                hist.map((item, i) => `<span class="chip-wrap"><button class="hist-chip" data-kind="hist" data-i="${i}" title="${escapeHtml(_histLabel(item))}">${escapeHtml(_histLabel(item))}</button><button class="chip-save" data-kind="hist-save" data-i="${i}" aria-label="${sv}" title="${sv}">♡</button><button class="chip-del" data-kind="hist-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('') +
                 `<button class="hist-chip recent-clear" data-kind="clear-all">✕ ${t('clear_all')}</button>`;
         }
         row.innerHTML = html;
@@ -2987,8 +3119,60 @@
         if (trig) trig.classList.toggle('has-items', n > 0);
     }
 
-    window.openSaved = function () { renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
+    // long lists render in chunks; each section grows independently via "show more"
+    const _DRAWER_PAGE = 8;
+    let _drawerShown = {};
+    function _loadMore(section, total, shown) {
+        if (total <= shown) return '';
+        return `<button class="drawer-more" data-more="${section}">${t('load_more')} · ${total - shown}</button>`;
+    }
+    window.drawerShowMore = function (section) {
+        _drawerShown[section] = (_drawerShown[section] || _DRAWER_PAGE) + _DRAWER_PAGE;
+        renderSaved();
+    };
+
+    window.openSaved = function () { _drawerShown = {}; renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
     window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.classList.remove('saved-open'); unlockScroll('saved'); };
+
+    // backup/restore — everything the user builds up lives in localStorage; these let
+    // them move it between browsers/devices (cid is deliberately excluded — it's the
+    // rate-limit identity, not user data)
+    const EXPORT_KEYS = [LS_CARS, LS_SEARCHES, LS_HIST, LS_VIEWED, HIDDEN_KEY, CMPSAVE_KEY, 'cardb_lang'];
+    window.exportData = function () {
+        const payload = { app: 'cardb', version: 1, exported: new Date().toISOString(), data: {} };
+        EXPORT_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v != null) payload.data[k] = v; });
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cardb-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(t('export_done'));
+    };
+    window.importData = function (input) {
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            let data = null;
+            try { const p = JSON.parse(reader.result); data = p && p.data; } catch (_) {}
+            if (!data || typeof data !== 'object') { showToast(t('import_error')); return; }
+            let langChanged = false;
+            EXPORT_KEYS.forEach(k => {
+                if (typeof data[k] !== 'string') return;
+                if (k === 'cardb_lang' && data[k] !== getLang()) langChanged = true;
+                localStorage.setItem(k, data[k]);
+            });
+            updateSavedCount();
+            renderSaved();
+            if (typeof renderRecent === 'function') renderRecent();
+            if (langChanged) setLang(data['cardb_lang']);
+            showToast(t('import_done'));
+        };
+        reader.readAsText(file);
+    };
 
     const IC_SEARCH_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
     const IC_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
@@ -2997,18 +3181,19 @@
     function renderSaved() {
         const cars = getSavedCars(), searches = lsGet(LS_SEARCHES), hist = lsGet(LS_HIST);
         let h = '';
+        const carLimit = _drawerShown.cars || _DRAWER_PAGE;
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_HEART}${t('saved_cars_h')} · ${cars.length}</span>${cars.length ? `<button class="drawer-clear" onclick="clearSavedCars()">${t('clear_all')}</button>` : ''}</div>`;
-        h += cars.length ? cars.map(c => `
+        h += cars.length ? cars.slice(0, carLimit).map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
                 <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
                 <div class="min-w-0"><div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>${c.price ? `<div class="saved-row-price">${Number(c.price).toLocaleString()} ${escapeHtml(c.currency || '')}</div>` : ''}</div>
               </div>
               <button class="row-x" data-key="${escapeHtml(c.key)}" data-act="remove">✕</button>
-            </div>`).join('') : `<div class="drawer-empty">${t('no_saved')}</div>`;
+            </div>`).join('') + _loadMore('cars', cars.length, carLimit) : `<div class="drawer-empty">${t('no_saved')}</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_SEARCH_SM}${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
-        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search">${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search" title="${escapeHtml(s.label)}">${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const compSaves = getCompSaves();
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_COMPARE}${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
@@ -3022,28 +3207,30 @@
             </div>`).join('') : `<div class="drawer-empty">—</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_CLOCK}${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
-        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist">${escapeHtml(_histLabel(q))}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist" title="${escapeHtml(_histLabel(q))}">${escapeHtml(_histLabel(q))}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
 
         const viewed = lsGet(LS_VIEWED);
+        const viewedLimit = _drawerShown.viewed || _DRAWER_PAGE;
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_EYE}${t('viewed_h')} · ${viewed.length}</span>${viewed.length ? `<button class="drawer-clear" onclick="clearViewed()">${t('clear_all')}</button>` : ''}</div>`;
-        h += viewed.length ? viewed.map(c => `
+        h += viewed.length ? viewed.slice(0, viewedLimit).map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open">
                 <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
                 <div class="min-w-0"><div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>${c.price ? `<div class="saved-row-price">${Number(c.price).toLocaleString()} ${escapeHtml(c.currency || '')}</div>` : ''}</div>
               </div>
-            </div>`).join('') : `<div class="drawer-empty">—</div>`;
+            </div>`).join('') + _loadMore('viewed', viewed.length, viewedLimit) : `<div class="drawer-empty">—</div>`;
 
         const hiddenList = getHiddenList();
+        const hiddenLimit = _drawerShown.hidden || _DRAWER_PAGE;
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_HIDE}${t('hidden_h')} · ${hiddenList.length}</span>${hiddenList.length ? `<button class="drawer-clear" onclick="clearHidden()">${t('clear_all')}</button>` : ''}</div>`;
-        h += hiddenList.length ? hiddenList.map(c => `
+        h += hiddenList.length ? hiddenList.slice(0, hiddenLimit).map(c => `
             <div class="saved-row">
               <div class="grow flex items-center gap-3" data-key="${escapeHtml(c.key)}" data-act="open" style="cursor:pointer">
                 <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
                 <div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>
               </div>
               <button class="row-x" data-act="unhide" data-key="${escapeHtml(c.key)}" title="${escapeHtml(t('act_undo'))}" aria-label="${escapeHtml(t('act_undo'))}">↩</button>
-            </div>`).join('') : `<div class="drawer-empty">—</div>`;
+            </div>`).join('') + _loadMore('hidden', hiddenList.length, hiddenLimit) : `<div class="drawer-empty">—</div>`;
 
         const body = document.getElementById('saved-body');
         body.innerHTML = h;
@@ -3052,6 +3239,7 @@
         body.querySelectorAll('[data-act="loadcmp"]').forEach(el => el.onclick = () => loadComparison(+el.dataset.i));
         body.querySelectorAll('[data-act="delcmp"]').forEach(el => el.onclick = () => deleteComparison(+el.dataset.i));
         body.querySelectorAll('[data-act="unhide"]').forEach(el => el.onclick = (e) => { e.stopPropagation(); unhideCar(el.dataset.key); });
+        body.querySelectorAll('[data-more]').forEach(el => el.onclick = () => drawerShowMore(el.dataset.more));
         body.querySelectorAll('.hist-chip').forEach(b => {
             b.onclick = () => {
                 if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
@@ -3211,7 +3399,14 @@
                     if (multi && searchable && _filter) return '';   // hide headers while searching
                     if (o.textContent) {
                         group = i;
-                        return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" id="${listId}-o${i}" role="option" aria-selected="false" aria-expanded="${_expanded.has(i) ? 'true' : 'false'}" data-group="${i}"><span class="grp-chev">▸</span>${escapeHtml(o.textContent)}</div>`;
+                        const label = o.textContent;
+                        const mono = (label.split('·').pop() || '').trim().charAt(0).toUpperCase();
+                        const n = o.dataset.n || '';
+                        return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" id="${listId}-o${i}" role="option" aria-selected="false" aria-expanded="${_expanded.has(i) ? 'true' : 'false'}" data-group="${i}">`
+                            + `<span class="grp-badge">${escapeHtml(mono)}</span>`
+                            + `<span class="grp-label">${escapeHtml(label)}</span>`
+                            + (n ? `<span class="grp-n">${escapeHtml(n)}</span>` : '')
+                            + `<svg class="grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>`;
                     }
                     group = null;
                     return `<div class="cdd-sep" role="presentation"></div>`;
