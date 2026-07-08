@@ -742,7 +742,7 @@
             .sk::after { animation: none; }
             svg[data-ic="engine"], .save-btn.pop svg, .rcard-compare.pop svg { animation: none !important; }
             .mrange-fill { transition: none !important; }
-            .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img { animation: none !important; }
+            .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img, .search-detail { animation: none !important; }
         }
 
         /* refined benefit pills (replace the green dots) */
@@ -890,11 +890,13 @@
         .saved-row-price { font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #15803D; margin-top: 2px; }
         .row-x { color: #6B7280; border: 0; background: transparent; cursor: pointer; font-size: 14px; padding: 4px 2px; }
         .row-x:hover { color: #EF233C; }
-        .hist-chip { display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #DCE3EA; border-radius: 999px; font-size: 13px; color: #2B2D42; background: #fff; cursor: pointer;
-            max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
-        .drawer .hist-chip { max-width: 240px; }
-        .hist-chip svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
+        .hist-chip { display: inline-flex; align-items: center; gap: 5px; margin: 0 6px 6px 0; padding: 6px 12px; border: 1px solid #DCE3EA; border-radius: 999px; font-size: 13px; color: #2B2D42; background: #fff; cursor: pointer; font-family: inherit; vertical-align: top; max-width: 340px; }
+        .hist-chip .chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px; }
+        .drawer .hist-chip .chip-text { max-width: 150px; }
+        .hist-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+        .hist-chip.pinned { color: #C81E2E; }
         .hist-chip:hover { border-color: #2B2D42; }
+        .chip-more-n { flex-shrink: 0; font-size: 11px; font-weight: 600; color: #EF233C; background: #FDE6E8; border-radius: 999px; padding: 1px 7px; }
         .drawer-empty { color: #64748B; font-size: 13px; padding: 6px 0; }
         .drawer-clear { font-size: 12px; color: #64748B; text-decoration: underline; text-decoration-color: #DCE3EA; background: 0; border: 0; cursor: pointer; }
         .drawer-clear:hover { color: #EF233C; }
@@ -912,15 +914,29 @@
         .recent-row:empty { margin-top: 0; }
         .recent-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #64748B; }
 
-        .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; }
-        .chip-wrap .hist-chip { margin: 0; border-radius: 999px 0 0 999px; border-right: 0; }
-        .chip-del { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; background: #fff; color: #6B7280; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; cursor: pointer; }
-        /* მთელი chip ერთად, რბილად რეაგირებს hover-ზე (გადახტომის გარეშე) */
-        .chip-wrap .hist-chip { transition: background .14s, border-color .14s; }
-        .chip-wrap:hover .hist-chip, .chip-wrap:hover .chip-del, .chip-wrap:hover .chip-save { border-color: #C9D2DC; background: #F7F9FB; }
-        .chip-wrap .hist-chip:hover { transform: none; }
-        .chip-wrap:hover .chip-del { color: #EF233C; }
-        .chip-save { display: flex; align-items: center; border: 1px solid #DCE3EA; border-left: 0; border-right: 0; background: #fff; color: #6B7280; padding: 0 8px; font-size: 12px; cursor: pointer; }
+        /* segmented chip: label · expand · [save] · delete, joined into one pill */
+        .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; vertical-align: top; transition: transform .1s ease; }
+        .chip-wrap > button { margin: 0; background: #fff; cursor: pointer; font-family: inherit; transition: background .14s, border-color .14s, color .14s; }
+        .chip-wrap > .hist-chip { border-radius: 999px 0 0 999px; border-right: 0; }
+        .chip-expand { display: inline-flex; align-items: center; border: 1px solid #DCE3EA; border-right: 0; color: #6B7280; padding: 0 9px; }
+        .chip-expand .chip-chev { width: 13px; height: 13px; transition: transform .18s; }
+        .chip-expand.open .chip-chev { transform: rotate(180deg); }
+        .chip-save { display: flex; align-items: center; border: 1px solid #DCE3EA; border-right: 0; color: #6B7280; padding: 0 8px; font-size: 12px; }
+        .chip-del { display: flex; align-items: center; border: 1px solid #DCE3EA; color: #6B7280; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; }
+        .chip-wrap:hover > button { border-color: #C9D2DC; background: #F7F9FB; }
+        .chip-expand:hover, .chip-save:hover, .chip-del:hover { color: #EF233C; }
+        /* press the whole segmented chip as one unit, not individual segments */
+        .chip-wrap > button:active { transform: none; }
+        .chip-wrap:active { transform: scale(.97); }
+        .recent-toggle { color: #EF233C; font-weight: 600; }
+
+        /* expandable filter breakdown under a search chip */
+        .search-detail { flex-basis: 100%; width: 100%; margin: -1px 0 8px; padding: 10px 14px; background: #fff; border: 1px solid #E7ECF1; border-radius: 12px; animation: sdIn .2s ease both; }
+        @keyframes sdIn { from { opacity: 0; transform: translateY(-4px); } }
+        .sd-row { display: flex; gap: 10px; padding: 3px 0; font-size: 13px; }
+        .sd-row + .sd-row { border-top: 1px solid #F1F4F6; }
+        .sd-label { flex: 0 0 92px; color: #64748B; }
+        .sd-val { flex: 1; min-width: 0; color: #2B2D42; font-weight: 500; word-break: break-word; }
         .chip-wrap .hist-chip { border-radius: 999px 0 0 999px; border-right: 0; }
         .chip-save:hover { color: #EF233C; }
         .recent-clear { color: #6B7280; }
@@ -3017,6 +3033,71 @@
         return parts.join(' · ') || t('save_search');
     }
 
+    // structured breakdown of a saved search — one {label, value} per active filter,
+    // used both for the compact chip label and the expandable detail panel
+    function _searchParts(p) {
+        const en = getLang() === 'en';
+        const out = [];
+        if (p.query) out.push({ label: t('q_label'), value: p.query });
+        if (p.manufacturers && p.manufacturers.length) out.push({ label: t('filter_brand'), value: p.manufacturers.join(', ') });
+        if (p.models && p.models.length) out.push({ label: t('filter_model'), value: p.models.join(', ') });
+        if (p.year_from || p.year_to) out.push({ label: t('filter_year'), value: (p.year_from || '…') + '–' + (p.year_to || '…') });
+        if (p.price_from || p.price_to) out.push({ label: t('filter_price'), value: '$' + (p.price_from || '0') + '–' + (p.price_to || '∞') });
+        if (p.mileage_from || p.mileage_to) out.push({ label: t('spec_mileage'), value: (p.mileage_from || '0') + '–' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ') });
+        if (p.body_types && p.body_types.length) out.push({ label: t('filter_body'), value: p.body_types.map(tval).join(', ') });
+        if (p.fuels && p.fuels.length) out.push({ label: t('filter_fuel'), value: p.fuels.map(tval).join(', ') });
+        if (p.gearboxes && p.gearboxes.length) out.push({ label: t('filter_gearbox'), value: p.gearboxes.map(tval).join(', ') });
+        if (p.drives && p.drives.length) out.push({ label: t('filter_drive'), value: p.drives.map(tval).join(', ') });
+        if (p.locations && p.locations.length) out.push({ label: t('filter_location'), value: [...new Set(p.locations.map(locLabel))].join(', ') });
+        if (p.customs_cleared === true) out.push({ label: t('spec_customs'), value: t('cleared') });
+        if (p.customs_cleared === false) out.push({ label: t('spec_customs'), value: t('not_cleared') });
+        if (p.sort) out.push({ label: t('filter_sort'), value: t('sort_' + p.sort) });
+        return out;
+    }
+    function _payloadOf(item) {
+        return (item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : (typeof item === 'string' ? { query: item } : {}));
+    }
+    // compact chip: leading value + a "+N" badge for the remaining filters
+    function _chipShort(item) {
+        const parts = _searchParts(_payloadOf(item));
+        if (!parts.length) return { text: (item && item.label) || t('save_search'), extra: 0 };
+        return { text: parts[0].value, extra: parts.length - 1 };
+    }
+    function _detailHtml(item) {
+        const parts = _searchParts(_payloadOf(item));
+        if (!parts.length) return `<div class="sd-row"><span class="sd-val">${escapeHtml(t('save_search'))}</span></div>`;
+        return parts.map(pt => `<div class="sd-row"><span class="sd-label">${escapeHtml(pt.label)}</span><span class="sd-val">${escapeHtml(pt.value)}</span></div>`).join('');
+    }
+    const CHIP_CHEV = '<svg class="chip-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    function _chipBtnInner(item, saved) {
+        const short = _chipShort(item);
+        const badge = short.extra ? `<span class="chip-more-n">+${short.extra}</span>` : '';
+        return (saved ? ICON_HEART : '') + `<span class="chip-text">${escapeHtml(short.text)}</span>` + badge;
+    }
+    // one compact search chip + its (hidden) expandable filter breakdown
+    function _searchChip(o) {
+        const save = o.saveKind ? `<button class="chip-save" data-kind="${o.saveKind}" data-i="${o.i}" aria-label="${escapeHtml(t('save_search'))}" title="${escapeHtml(t('save_search'))}">♡</button>` : '';
+        return `<span class="chip-wrap">`
+            + `<button class="hist-chip ${o.saved ? 'pinned' : ''}" data-kind="${o.runKind}" data-i="${o.i}" title="${escapeHtml(_histLabel(o.item))}">${_chipBtnInner(o.item, o.saved)}</button>`
+            + `<button class="chip-expand" data-exp="${o.uid}" aria-label="${escapeHtml(t('expand'))}" title="${escapeHtml(t('expand'))}">${CHIP_CHEV}</button>`
+            + save
+            + `<button class="chip-del" data-kind="${o.delKind}" data-i="${o.i}" aria-label="${escapeHtml(t('remove'))}">✕</button>`
+            + `</span><div class="search-detail" id="${o.uid}" hidden>${_detailHtml(o.item)}</div>`;
+    }
+    // toggle a chip's filter-breakdown panel open/closed
+    function _wireChipExpand(scope) {
+        scope.querySelectorAll('.chip-expand').forEach(b => {
+            b.onclick = (e) => {
+                e.stopPropagation();
+                const d = document.getElementById(b.dataset.exp);
+                if (!d) return;
+                const show = d.hasAttribute('hidden');
+                d.toggleAttribute('hidden', !show);
+                b.classList.toggle('open', show);
+            };
+        });
+    }
+
     window.saveCurrentSearch = function (btn) {
         const payload = buildSearchPayload();
         delete payload.page;
@@ -3095,25 +3176,30 @@
         updateSavedCount(); renderRecent();
     }
 
+    let _recentAll = false;
     function renderRecent() {
         const row = document.getElementById('recent-row');
         if (!row) return;
-        const saved = lsGet(LS_SEARCHES).slice(0, 6);
-        const hist = lsGet(LS_HIST).slice(0, 8);
-        if (!saved.length && !hist.length) { row.innerHTML = ''; return; }
-        const rm = escapeHtml(t('remove')), sv = escapeHtml(t('save_search'));
+        const allSaved = lsGet(LS_SEARCHES), allHist = lsGet(LS_HIST);
+        if (!allSaved.length && !allHist.length) { row.innerHTML = ''; return; }
+        const SCAP = 4, HCAP = 5;
+        const saved = _recentAll ? allSaved : allSaved.slice(0, SCAP);
+        const hist = _recentAll ? allHist : allHist.slice(0, HCAP);
         let html = '';
         if (saved.length) {
             html += `<span class="recent-label">${t('saved_searches_h')}</span>` +
-                saved.map((s, i) => `<span class="chip-wrap"><button class="hist-chip pinned" data-kind="saved" data-i="${i}" title="${escapeHtml(s.label)}">${ICON_HEART}${escapeHtml(s.label)}</button><button class="chip-del" data-kind="saved-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('');
+                saved.map((s, i) => _searchChip({ runKind: 'saved', delKind: 'saved-del', i, item: s, uid: 'sdr-s-' + i, saved: true })).join('');
         }
         if (hist.length) {
             html += `<span class="recent-label">${t('recent_h')}</span>` +
-                hist.map((item, i) => `<span class="chip-wrap"><button class="hist-chip" data-kind="hist" data-i="${i}" title="${escapeHtml(_histLabel(item))}">${escapeHtml(_histLabel(item))}</button><button class="chip-save" data-kind="hist-save" data-i="${i}" aria-label="${sv}" title="${sv}">♡</button><button class="chip-del" data-kind="hist-del" data-i="${i}" aria-label="${rm}">✕</button></span>`).join('') +
+                hist.map((item, i) => _searchChip({ runKind: 'hist', delKind: 'hist-del', saveKind: 'hist-save', i, item, uid: 'sdr-h-' + i, saved: false })).join('') +
                 `<button class="hist-chip recent-clear" data-kind="clear-all">✕ ${t('clear_all')}</button>`;
         }
+        const total = allSaved.length + allHist.length, shown = saved.length + hist.length;
+        if (!_recentAll && total > shown) html += `<button class="hist-chip recent-toggle" data-kind="more">${t('load_more')} · ${total - shown}</button>`;
+        else if (_recentAll && total > SCAP + HCAP) html += `<button class="hist-chip recent-toggle" data-kind="less">${t('show_less')}</button>`;
         row.innerHTML = html;
-        row.querySelectorAll('[data-kind]').forEach((b) => {
+        row.querySelectorAll('.hist-chip[data-kind], .chip-del[data-kind], .chip-save[data-kind]').forEach((b) => {
             b.onclick = (e) => {
                 e.stopPropagation();
                 const i = +b.dataset.i;
@@ -3124,9 +3210,12 @@
                     case 'hist-save': _saveHistItem(i); break;
                     case 'hist-del': { const h = lsGet(LS_HIST); h.splice(i, 1); lsSet(LS_HIST, h); renderRecent(); break; }
                     case 'clear-all': lsSet(LS_HIST, []); renderRecent(); break;
+                    case 'more': _recentAll = true; renderRecent(); break;
+                    case 'less': _recentAll = false; renderRecent(); break;
                 }
             };
         });
+        _wireChipExpand(row);
     }
     window.clearHistory = function () { lsSet(LS_HIST, []); renderSaved(); renderRecent(); };
     window.clearSavedCars = function () { lsSet(LS_CARS, []); updateSavedCount(); renderSaved(); };
@@ -3215,7 +3304,8 @@
             </div>`).join('') + _loadMore('cars', cars.length, carLimit) : `<div class="drawer-empty">${t('no_saved')}</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_SEARCH_SM}${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
-        h += searches.length ? searches.map((s, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="search" title="${escapeHtml(s.label)}">${escapeHtml(s.label)}</button><button class="chip-del" data-i="${i}" data-kind="search" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        const searchLimit = _drawerShown.searches || _DRAWER_PAGE;
+        h += searches.length ? searches.slice(0, searchLimit).map((s, i) => _searchChip({ runKind: 'search', delKind: 'search', i, item: s, uid: 'sdd-s-' + i, saved: true })).join('') + _loadMore('searches', searches.length, searchLimit) : `<div class="drawer-empty">—</div>`;
 
         const compSaves = getCompSaves();
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_COMPARE}${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
@@ -3229,7 +3319,8 @@
             </div>`).join('') : `<div class="drawer-empty">—</div>`;
 
         h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_CLOCK}${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
-        h += hist.length ? hist.map((q, i) => `<span class="chip-wrap"><button class="hist-chip" data-i="${i}" data-kind="hist" title="${escapeHtml(_histLabel(q))}">${escapeHtml(_histLabel(q))}</button><button class="chip-del" data-i="${i}" data-kind="hist" aria-label="delete">✕</button></span>`).join('') : `<div class="drawer-empty">—</div>`;
+        const histLimit = _drawerShown.hist || _DRAWER_PAGE;
+        h += hist.length ? hist.slice(0, histLimit).map((q, i) => _searchChip({ runKind: 'hist', delKind: 'hist', i, item: q, uid: 'sdd-h-' + i, saved: false })).join('') + _loadMore('hist', hist.length, histLimit) : `<div class="drawer-empty">—</div>`;
 
         const viewed = lsGet(LS_VIEWED);
         const viewedLimit = _drawerShown.viewed || _DRAWER_PAGE;
@@ -3262,7 +3353,8 @@
         body.querySelectorAll('[data-act="delcmp"]').forEach(el => el.onclick = () => deleteComparison(+el.dataset.i));
         body.querySelectorAll('[data-act="unhide"]').forEach(el => el.onclick = (e) => { e.stopPropagation(); unhideCar(el.dataset.key); });
         body.querySelectorAll('[data-more]').forEach(el => el.onclick = () => drawerShowMore(el.dataset.more));
-        body.querySelectorAll('.hist-chip').forEach(b => {
+        _wireChipExpand(body);
+        body.querySelectorAll('.hist-chip[data-kind]').forEach(b => {
             b.onclick = () => {
                 if (b.dataset.kind === 'search') { const s = lsGet(LS_SEARCHES)[+b.dataset.i]; if (s) runSavedSearch(s); }
                 else { const q = lsGet(LS_HIST)[+b.dataset.i]; if (q) runHistory(q); }
