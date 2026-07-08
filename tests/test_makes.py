@@ -67,15 +67,24 @@ def test_rare_submodel_folds_into_base_class():
 
 
 def test_order_makes_by_popularity():
-    """მწარმოებლები/მოდელები count-ის კლებადობით; იშვიათები იჭრება."""
+    """მწარმოებლები/მოდელები count-ის კლებადობით; იშვიათი მოდელები იჭრება."""
     agg = {
         "Toyota": {"camry": ("Camry", 50), "prius": ("Prius", 5), "rare": ("Rare", 2)},
         "BMW": {"320": ("320", 30), "x5": ("X5", 40)},
-        "Lada": {"niva": ("Niva", 1)},   # ყველა _MIN_COUNT-ზე ქვემოთ → ქრება
     }
     out = _order_makes(agg)
-    # მწარმოებლები ჯამური count-ით: BMW(70) > Toyota(55); Lada საერთოდ არ ჩანს
+    # მწარმოებლები ჯამური count-ით: BMW(70) > Toyota(55)
     assert list(out.keys()) == ["BMW", "Toyota"]
     # მოდელები count-ის კლებადობით; "Rare" (2 < 3) იჭრება
     assert out["BMW"] == ["X5", "320"]
     assert out["Toyota"] == ["Camry", "Prius"]
+
+
+def test_small_brand_with_single_listing_still_appears():
+    """ერთადერთი Bugatti-ც კი dropdown-ში უნდა მოხვდეს — ბრენდი არ იკარგება."""
+    agg = {
+        "Toyota": {"camry": ("Camry", 50)},
+        "Bugatti": {"chiron": ("Chiron", 1)},
+    }
+    out = _order_makes(agg)
+    assert out["Bugatti"] == ["Chiron"]

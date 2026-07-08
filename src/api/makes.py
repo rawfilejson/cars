@@ -75,11 +75,14 @@ def _order_makes(
     """აგრეგირებული count-ები → {მწარმოებელი: [მოდელები]} პოპულარობის რიგზე.
 
     მწარმოებლები — ყველაზე ბევრი განცხადება პირველი; თითოეულში მოდელებიც
-    count-ის კლებადობით (ტოლობისას ანბანურად). _MIN_COUNT-ზე ნაკლები ეთიშება.
+    count-ის კლებადობით (ტოლობისას ანბანურად). იშვიათი მოდელები ეთიშება,
+    მაგრამ ბრენდი განცხადებით ყოველთვის ჩანს — თუნდაც ერთი მანქანა იყოს.
     """
     ranked: list[tuple[str, int, list[str]]] = []
     for manu, bucket in agg.items():
         kept = [(disp, cnt) for disp, cnt in bucket.values() if cnt >= _MIN_COUNT]
+        if not kept:
+            kept = list(bucket.values())
         if not kept:
             continue
         kept.sort(key=lambda dc: (-dc[1], dc[0].lower()))
