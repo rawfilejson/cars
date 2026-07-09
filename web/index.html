@@ -677,10 +677,10 @@
         .spec-pill { display: inline-flex; align-items: center; gap: 6px; background: #F3F6F8; border: 1px solid #E7ECF1; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #2B2D42; }
         .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
         .spec-pill:hover .pill-ic { color: #EF233C; }
-        .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
+        .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px 12px; margin-top: auto; flex-wrap: wrap; }
         .rcard-price { font-size: 22px; font-weight: 800; color: #EF233C; letter-spacing: -.02em; background: #FEF2F3; border: 1px solid #FBE0E4; border-radius: 10px; padding: 4px 12px; }
         .rcard-price.negotiable { font-size: 14px; font-weight: 700; letter-spacing: 0; padding: 7px 12px; }
-        .rcard-badges { display: flex; gap: 7px; flex-shrink: 0; align-items: center; }
+        .rcard-badges { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
         @media (max-width: 560px) { .rcard { flex-direction: column; } .rcard-photo { width: 100%; } }
 
         .hero-stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; align-items: baseline; }
@@ -1723,7 +1723,12 @@
     window.addEventListener('online', () => setOffline(false));
     if (!navigator.onLine) setOffline(true);
 
+    // one search at a time — a second Enter/click while a request is in flight would
+    // fire a duplicate POST whose cooldown-429 error wipes the results the first just drew
+    let _searchInFlight = false;
+
     async function doSearch(opts = {}) {
+        if (_searchInFlight) return;
         if (opts.resetPage !== false) currentPage = 1;
 
         const payload = buildSearchPayload();
@@ -1757,6 +1762,7 @@
         const empty = document.getElementById('empty-state');
         const results = document.getElementById('results');
 
+        _searchInFlight = true;
         btn.disabled = true;
         btn.textContent = t('btn_searching');
         document.querySelectorAll('[data-search-btn]').forEach(b => b.classList.add('is-busy'));
@@ -1793,6 +1799,7 @@
             results.innerHTML = '';
             showSearchError(meta, offline ? t('offline_msg') : t('err_fetch', { msg: e.message }));
         } finally {
+            _searchInFlight = false;
             btn.disabled = false;
             document.querySelectorAll('[data-search-btn]').forEach(b => b.classList.remove('is-busy'));
             updateSearchBtnCount();
@@ -3242,8 +3249,13 @@
         renderSaved();
     };
 
-    window.openSaved = function () { _drawerShown = {}; renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
-    window.closeSaved = function () { document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.classList.remove('saved-open'); unlockScroll('saved'); };
+    let _savedOpener = null;
+    window.openSaved = function () { _savedOpener = document.activeElement; _drawerShown = {}; renderSaved(); document.getElementById('saved-overlay').classList.add('open'); document.getElementById('saved-drawer').classList.add('open'); document.body.classList.add('saved-open'); lockScroll('saved'); };
+    window.closeSaved = function () {
+        document.getElementById('saved-overlay').classList.remove('open'); document.getElementById('saved-drawer').classList.remove('open'); document.body.classList.remove('saved-open'); unlockScroll('saved');
+        if (_savedOpener && typeof _savedOpener.focus === 'function') _savedOpener.focus({ preventScroll: true });
+        _savedOpener = null;
+    };
 
     // backup/restore — everything the user builds up lives in localStorage; these let
     // them move it between browsers/devices (cid is deliberately excluded — it's the
