@@ -3282,12 +3282,14 @@
             let data = null;
             try { const p = JSON.parse(reader.result); data = p && p.data; } catch (_) {}
             if (!data || typeof data !== 'object') { showToast(t('import_error')); return; }
-            let langChanged = false;
+            let langChanged = false, applied = 0;
             EXPORT_KEYS.forEach(k => {
                 if (typeof data[k] !== 'string') return;
                 if (k === 'cardb_lang' && data[k] !== getLang()) langChanged = true;
                 localStorage.setItem(k, data[k]);
+                applied++;
             });
+            if (!applied) { showToast(t('import_error')); return; }
             updateSavedCount();
             renderSaved();
             if (typeof renderRecent === 'function') renderRecent();
