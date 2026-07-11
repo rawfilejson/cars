@@ -681,7 +681,12 @@
         .rcard-price { font-size: 22px; font-weight: 800; color: #EF233C; letter-spacing: -.02em; background: #FEF2F3; border: 1px solid #FBE0E4; border-radius: 10px; padding: 4px 12px; }
         .rcard-price.negotiable { font-size: 14px; font-weight: 700; letter-spacing: 0; padding: 7px 12px; }
         .rcard-badges { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
-        @media (max-width: 560px) { .rcard { flex-direction: column; } .rcard-photo { width: 100%; } }
+        @media (max-width: 560px) {
+            .rcard { flex-direction: column; }
+            .rcard-photo { width: 100%; }
+            /* stacked layout gives the photo no height to fill — restore the intrinsic ratio */
+            .rcard-photo .carousel { aspect-ratio: 4 / 3; height: auto; min-height: 0; }
+        }
 
         .hero-stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; align-items: baseline; }
         .hero-stat { display: inline-flex; align-items: baseline; gap: 7px; color: #64748B; font-size: 14px; }
@@ -1723,9 +1728,53 @@
     window.addEventListener('online', () => setOffline(false));
     if (!navigator.onLine) setOffline(true);
 
+    // shareable search links — the active search is mirrored into the query string
+    // (?q=…&brand=…), so refresh and copied links reproduce it. Lists join with | —
+    // locations contain commas.
+    const _URL_LISTS = { brand: 'manufacturers', model: 'models', body: 'body_types', fuel: 'fuels', gear: 'gearboxes', drive: 'drives', loc: 'locations' };
+    const _URL_NUMS = { yf: 'year_from', yt: 'year_to', pf: 'price_from', pt: 'price_to', mf: 'mileage_from', mt: 'mileage_to' };
+    function payloadToParams(p) {
+        const sp = new URLSearchParams();
+        if (p.query) sp.set('q', p.query);
+        for (const [k, f] of Object.entries(_URL_LISTS)) if (p[f] && p[f].length) sp.set(k, p[f].join('|'));
+        for (const [k, f] of Object.entries(_URL_NUMS)) if (p[f] != null) sp.set(k, p[f]);
+        if (p.customs_cleared === true) sp.set('customs', 'yes');
+        if (p.customs_cleared === false) sp.set('customs', 'no');
+        if (p.sort) sp.set('sort', p.sort);
+        if (p.page > 1) sp.set('page', p.page);
+        return sp;
+    }
+    function paramsToPayload(sp) {
+        const p = {};
+        const q = (sp.get('q') || '').trim();
+        if (q) p.query = q.slice(0, 200);
+        for (const [k, f] of Object.entries(_URL_LISTS)) {
+            const v = sp.get(k);
+            if (v) p[f] = v.split('|').map(s => s.trim()).filter(Boolean).slice(0, 30);
+        }
+        for (const [k, f] of Object.entries(_URL_NUMS)) {
+            const n = parseInt(sp.get(k), 10);
+            if (!Number.isNaN(n) && n >= 0) p[f] = n;
+        }
+        if (sp.get('customs') === 'yes') p.customs_cleared = true;
+        if (sp.get('customs') === 'no') p.customs_cleared = false;
+        const sort = sp.get('sort') || '';
+        if (/^[a-z_]{1,24}$/.test(sort)) p.sort = sort;
+        const page = parseInt(sp.get('page'), 10);
+        if (page > 1 && page <= 200) p.page = page;
+        return p;
+    }
+    function _syncUrl(payload) {
+        if (parseRoute().view !== 'search') return;
+        const qs = payloadToParams(payload).toString();
+        const url = qs ? '/?' + qs : '/';
+        if (location.pathname + location.search !== url) history.replaceState(history.state, '', url);
+    }
+
     // one search at a time — a second Enter/click while a request is in flight would
     // fire a duplicate POST whose cooldown-429 error wipes the results the first just drew
     let _searchInFlight = false;
+    let _lastPayload = null;   // last payload actually searched — used to restore the URL
 
     async function doSearch(opts = {}) {
         if (_searchInFlight) return;
@@ -1744,6 +1793,8 @@
             return;
         }
         pushHistory();
+        _lastPayload = payload;
+        _syncUrl(payload);
 
         const _ckey = JSON.stringify(payload);
         const _hit = _searchCache.get(_ckey);
@@ -2916,6 +2967,7 @@
         if (ev) ev.preventDefault();
         history.pushState({ view: 'search' }, '', '/');
         showSearchView();
+        if (lastResponse && _lastPayload) _syncUrl(_lastPayload);   // keep the shareable link
         requestAnimationFrame(() => window.scrollTo(0, _searchScrollY));
         return false;
     };
@@ -2966,19 +3018,8 @@
             .catch(() => {});
     })();
 
-    // ?q=... → run that search on load (shareable links + enables the SearchAction)
-    (function applyQueryParam() {
-        setTimeout(() => {
-            try {
-                const q = new URLSearchParams(location.search).get('q');
-                if (q && q.trim() && location.pathname === '/') {
-                    const el = document.getElementById('search-input');
-                    if (el) el.value = q.trim();
-                    doSearch();
-                }
-            } catch (_) {}
-        }, 0);
-    })();
+    // shareable links are restored by restoreFromUrl (bottom of the script), which
+    // handles ?q= plus every filter param
 
     // --- saved cars / searches / history (localStorage; no account needed) ---
     const _carData = {};
@@ -3131,9 +3172,7 @@
         const set = new Set(values || []);
         Array.from(sel.options).forEach(o => { o.selected = o.value ? o.value.split(_LOC_SEP).some(v => set.has(v)) : false; });
     }
-    function runSavedSearch(item) {
-        closeSaved();
-        const p = (item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : {});
+    function applySearchPayload(p) {
         _setVal('search-input', p.query);
         _setVal('f-year-from', p.year_from); _setVal('f-year-to', p.year_to);
         _setVal('f-price-from', p.price_from); _setVal('f-price-to', p.price_to);
@@ -3150,6 +3189,10 @@
         _setVal('f-sort', p.sort);
         refreshDropdowns(); updateFilterResets();
         document.getElementById('search-input').dispatchEvent(new Event('input'));
+    }
+    function runSavedSearch(item) {
+        closeSaved();
+        applySearchPayload((item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : {}));
         doSearch();
     }
     function runHistory(item) {
@@ -3709,13 +3752,28 @@
     }
 
     loadStats();
-    loadMakes();
-    loadFacets();
+    const _makesReady = loadMakes();
+    const _facetsReady = loadFacets();
     enhanceDropdowns();
     initMileageSlider();
     updateSearchBtnCount();
     renderCompareBar();
     addFilterIcons();
+
+    // a shared /?q=…&brand=… link re-runs its search on load. List filters need the
+    // brand/facet option lists first; plain text/number links start immediately.
+    (function restoreFromUrl() {
+        if (parseRoute().view !== 'search' || !location.search) return;
+        const p = paramsToPayload(new URLSearchParams(location.search));
+        const page = p.page; delete p.page;
+        if (!Object.keys(p).length) return;
+        const needsOptions = Object.values(_URL_LISTS).some(f => p[f]);
+        (needsOptions ? Promise.all([_makesReady, _facetsReady]) : Promise.resolve()).then(() => {
+            applySearchPayload(p);
+            currentPage = page || 1;
+            doSearch({ resetPage: false });
+        });
+    })();
 
     // dropdowns are enhanced before translations are applied (DOMContentLoaded),
     // so re-render once labels exist — otherwise the sort button shows blank until clicked
