@@ -88,11 +88,18 @@
 
         /* clip (not hidden) — hidden turns body into a scroll container and breaks the sticky sidebar */
         body { overflow-x: clip; }
+        /* no double-tap-to-zoom on touch devices — taps stay taps */
+        html { touch-action: manipulation; }
+        @media (max-width: 640px) {
+            /* 16px keeps iOS from auto-zooming when a dropdown search box gets focus */
+            .cdd-search { font-size: 16px; }
+        }
 
 
         /* top rule doubles as a loading bar: idle = full red line, during a search it
-           dips to zero and climbs left→right to show progress */
-        .top-rule { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: #FADBDF; z-index: 200; overflow: hidden; }
+           dips to zero and climbs left→right to show progress. Absolute, not fixed —
+           it belongs to the page top and must not follow the scroll */
+        .top-rule { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #FADBDF; z-index: 200; overflow: hidden; }
         .top-rule-fill { height: 100%; width: 100%; background: #EF233C; transform-origin: left center; transform: scaleX(1); }
         body { padding-top: 3px; }
         /* offline banner — slides down from under the top rule when the connection drops */
@@ -310,8 +317,6 @@
         body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toast { display: none; }
 
 
-        .lang-btn { color: #64748B; padding: 4px 8px; font-size: 13px; letter-spacing: 0.04em; }
-        .lang-btn.is-active { color: #2B2D42; font-weight: 600; }
         .lang-menu { position: relative; }
         .lang-trigger { display: inline-flex; align-items: center; gap: 4px; color: #64748B; font-size: 13px;
             font-weight: 600; letter-spacing: .04em; background: none; border: 0; cursor: pointer; padding: 4px 6px; font-family: inherit; }
@@ -789,6 +794,13 @@
         .rcard-compare.on { color: #fff; background: #EF233C; border-color: #EF233C; }
         .rcard-compare svg { width: 17px; height: 17px; }
         @media (hover: none) { .rcard-compare { opacity: 1; transform: none; pointer-events: auto; } }
+        /* touch screens: comfortable tap targets for the card actions and chip controls */
+        @media (hover: none) {
+            .rcard-compare, .rcard-hide, .save-btn { width: 40px; height: 40px; }
+            .rcard-compare svg, .rcard-hide svg, .save-btn svg { width: 18px; height: 18px; }
+            .chip-del, .chip-save { padding: 0 12px; }
+            .chip-expand { padding: 0 11px; }
+        }
 
         /* compare tray (bottom bar) */
         .cmp-bar { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); display: none; align-items: center; gap: 12px; background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; padding: 10px 12px 10px 16px; box-shadow: 0 14px 40px rgba(43,45,66,.20); z-index: 1150; max-width: calc(100vw - 24px); }
@@ -796,8 +808,12 @@
         body.has-cmpbar #results { padding-bottom: 90px; }
         @keyframes cmpBarIn { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .cmp-bar-label { font-size: 14px; font-weight: 500; color: #2B2D42; white-space: nowrap; }
-        .cmp-bar-thumbs { display: flex; gap: 6px; }
-        .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; display: block; }
+        .cmp-bar-thumbs { display: flex; gap: 6px; flex-shrink: 0; }
+        .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; display: block; flex-shrink: 0; }
+        /* narrow screens: the tray wraps to two rows instead of crushing the thumbnails */
+        @media (max-width: 560px) {
+            .cmp-bar { flex-wrap: wrap; justify-content: center; row-gap: 8px; padding: 10px 14px; width: calc(100vw - 24px); }
+        }
         .cmp-thumb-wrap { position: relative; cursor: pointer; }
         .cmp-thumb-wrap:hover .cmp-thumb { border-color: #EF233C; }
         .cmp-thumb-x { position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 50%; border: 0;
@@ -813,7 +829,9 @@
         /* compare modal */
         .cmp-modal { position: fixed; inset: 0; background: rgba(43,45,66,.5); z-index: 1300; display: none; align-items: flex-start; justify-content: center; padding: 28px 16px; overflow: auto; }
         .cmp-modal.show { display: flex; }
-        .cmp-sheet { background: #fff; border-radius: 16px; width: 100%; max-width: 920px; overflow: hidden; box-shadow: 0 24px 70px rgba(43,45,66,.3); animation: cmpSheetIn .22s cubic-bezier(.2,.7,.2,1) both; }
+        /* min-width: 0 — as a flex item the sheet would otherwise grow to the table's
+           min-content width and force the whole modal to pan sideways on phones */
+        .cmp-sheet { background: #fff; border-radius: 16px; width: 100%; max-width: 920px; min-width: 0; overflow: hidden; box-shadow: 0 24px 70px rgba(43,45,66,.3); animation: cmpSheetIn .22s cubic-bezier(.2,.7,.2,1) both; }
         @keyframes cmpSheetIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         .cmp-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #ECF0F3; }
         .cmp-sheet-head h3 { font-size: 17px; font-weight: 600; color: #2B2D42; margin: 0; }
@@ -2906,7 +2924,7 @@
                 ${specs.length ? `<div class="dt-specs">${specs.join('')}</div>` : ''}
                 ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
                 ${contact ? `<div class="dt-contact">${contact}</div>` : ''}
-                ${car.url ? `<a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="dt-source">${t('detail_open_source')} ↗</a>` : ''}
+                ${car.url && /^https?:\/\//i.test(car.url) ? `<a href="${escapeHtml(car.url)}" target="_blank" rel="noopener" class="dt-source">${t('detail_open_source')} ↗</a>` : ''}
               </div>
             </div>
             ${car.description ? `<div class="dt-desc">${descriptionHtml(car.description)}</div>` : ''}
@@ -3232,7 +3250,9 @@
         if (!row) return;
         const allSaved = lsGet(LS_SEARCHES), allHist = lsGet(LS_HIST);
         if (!allSaved.length && !allHist.length) { row.innerHTML = ''; return; }
-        const SCAP = 4, HCAP = 5;
+        // phones get a shorter row — the chips were crowding out the results
+        const narrow = matchMedia('(max-width: 560px)').matches;
+        const SCAP = narrow ? 2 : 4, HCAP = narrow ? 3 : 5;
         const saved = _recentAll ? allSaved : allSaved.slice(0, SCAP);
         const hist = _recentAll ? allHist : allHist.slice(0, HCAP);
         let html = '';
@@ -3611,7 +3631,15 @@
             if (multi && searchable) {
                 const si = panel.querySelector('.cdd-search');
                 si.addEventListener('click', (e) => e.stopPropagation());
-                si.addEventListener('input', () => { _filter = si.value.trim().toLowerCase(); panel.querySelector('.cdd-rows').innerHTML = rowsHtml(); if (wrap.classList.contains('open')) setActive(0); });
+                // short debounce — matching transliterates every option, too heavy per keystroke
+                si.addEventListener('input', () => {
+                    clearTimeout(si._deb);
+                    si._deb = setTimeout(() => {
+                        _filter = si.value.trim().toLowerCase();
+                        panel.querySelector('.cdd-rows').innerHTML = rowsHtml();
+                        if (wrap.classList.contains('open')) setActive(0);
+                    }, 80);
+                });
             }
         };
 

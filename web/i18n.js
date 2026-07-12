@@ -654,7 +654,7 @@ function applyTranslations() {
 
     const cur = document.getElementById("lang-current");
     if (cur) cur.textContent = LANG_LABELS[lang] || lang.toUpperCase();
-    document.querySelectorAll(".lang-btn, .lang-opt").forEach((btn) => {
+    document.querySelectorAll(".lang-opt").forEach((btn) => {
         btn.classList.toggle("is-active", btn.dataset.lang === lang);
     });
 }

@@ -30,7 +30,6 @@ _JUNK = {
     "front-wheel", "all-wheel", "rear-wheel", "drive", "iperformance", "base",
     "full", "competition", "active", "efficient", "line",
 }
-_DRIVE_RE = re.compile(r"^\d?x\d$|^\d(dr|wd)$|^4x[24]$|^v\d$", re.IGNORECASE)
 _TWO_WORD = {"land", "grand", "range", "santa", "alfa", "aston", "mini", "model", "great", "gran"}
 _TRIM_NUM_RE = re.compile(r"(\d{2,3})[a-z]{1,2}")
 # კლასის ნომერი (C 300, GLE 350, E 220d) — ეს submodel-ია და არა trim-ნაგავი
