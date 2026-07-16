@@ -95,14 +95,12 @@
             .cdd-search { font-size: 16px; }
         }
 
-
         /* top rule doubles as a loading bar: idle = full red line, during a search it
            dips to zero and climbs left→right to show progress. Absolute, not fixed —
            it belongs to the page top and must not follow the scroll */
         .top-rule { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #FADBDF; z-index: 200; overflow: hidden; }
         .top-rule-fill { height: 100%; width: 100%; background: #EF233C; transform-origin: left center; transform: scaleX(1); }
         body { padding-top: 3px; }
-        /* offline banner — slides down from under the top rule when the connection drops */
         .offline-banner { position: fixed; top: 3px; left: 0; right: 0; z-index: 199; display: flex; align-items: center; justify-content: center;
             gap: 9px; background: #2B2D42; color: #fff; font-size: 13.5px; font-weight: 500; padding: 9px 16px; text-align: center;
             transform: translateY(-120%); transition: transform .3s cubic-bezier(.2,.7,.2,1); }
@@ -110,7 +108,6 @@
         .offline-dot { width: 8px; height: 8px; border-radius: 50%; background: #FF8A95; flex-shrink: 0; animation: offlinePulse 1.4s ease-in-out infinite; }
         @keyframes offlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-        /* ===== redesign: search band + sidebar layout ===== */
         .hero-title { font-size: 27px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; color: #2B2D42; }
         @media (min-width: 768px) { .hero-title { font-size: 38px; } }
         .hero-desc { color: #64748B; font-size: 15px; margin-top: 8px; max-width: 640px; }
@@ -129,7 +126,6 @@
         .sidebar { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 18px;
             position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; overscroll-behavior: contain; }
 
-        /* ===== custom rounded dropdown ===== */
         .cdd { position: relative; flex: 1 1 0; min-width: 0; }
         .cdd select { display: none; }
         .cdd-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 42px;
@@ -157,7 +153,6 @@
         .cdd-opt .pill-ic { width: 17px; height: 17px; color: #64748B; flex-shrink: 0; }
         .cdd-opt.on { background: #FDE6E8; color: #D90429; font-weight: 600; }
         .cdd-sep { height: 1px; background: #DCE3EA; margin: 6px 10px; }
-        /* multi-select dropdown — checkbox rows, search, count badge */
         .cdd-search { width: 100%; box-sizing: border-box; border: 0; border-bottom: 1px solid #DCE3EA;
             padding: 8px 10px; margin-bottom: 4px; font-size: 14px; font-family: inherit; outline: 0; color: #2B2D42; }
         .cdd-rows { display: block; }
@@ -190,17 +185,14 @@
         .cdd-group-head.cdd-grp:hover .grp-n { background: #E7ECF1; }
         .cdd-group-head.cdd-grp svg.grp-chev { width: 12px; height: 12px; color: #6B7280; flex-shrink: 0; transition: transform .18s; }
         .cdd-group-head.cdd-grp.open svg.grp-chev { transform: rotate(90deg); }
-        /* "more filters" expander */
         .more-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: none; border: 0;
             color: #EF233C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 0; }
         .more-toggle .more-chev { font-size: 11px; transition: transform .18s; }
         .more-toggle.open .more-chev { transform: rotate(180deg); }
         .more-filters[hidden] { display: none; }
-        /* mileage dual-range slider */
         .filter-slider { position: relative; }
         .mrange { position: relative; flex: 1 1 100%; height: 28px; }
         .mrange-bar { position: absolute; top: 12px; left: 2px; right: 2px; height: 4px; background: #DCE3EA; border-radius: 4px; }
-        /* the fill trails the thumbs with a short ease so dragging feels animated */
         .mrange-fill { position: absolute; top: 0; height: 100%; background: #EF233C; border-radius: 4px;
             transition: left .16s cubic-bezier(.2,.7,.3,1), width .16s cubic-bezier(.2,.7,.3,1); }
         .mrange-input { position: absolute; top: 0; left: 0; width: 100%; height: 28px; margin: 0; background: none;
@@ -240,7 +232,6 @@
         body.mode-detail #recent-row, body.mode-detail .results-meta, body.mode-detail .sort-wrap { display: none; }
         body.mode-detail .shell { grid-template-columns: 1fr; }
 
-        /* ===== detail (inner) page — two-column ===== */
         .dt-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
         .dt-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
         .dt-gallery { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; overflow: hidden; }
@@ -256,7 +247,6 @@
         .dt-title { font-size: 24px; font-weight: 800; letter-spacing: -.01em; color: #2B2D42; line-height: 1.15; }
         .dt-loc { color: #64748B; font-size: 14px; margin-top: 4px; }
         .dt-actions { display: flex; align-items: center; gap: 8px; }
-        /* detail bar: all three action buttons share one size and look */
         .dt-actions .rcard-compare, .dt-actions .save-btn, .dt-actions .detail-icon-btn {
             width: 40px; height: 40px; background: #fff; border: 1px solid #DCE3EA; color: #6B7280;
             opacity: 1; transform: scale(1); pointer-events: auto;
@@ -304,13 +294,10 @@
                 visibility: hidden; transition: transform .3s cubic-bezier(.2,.7,.2,1), visibility 0s .3s; }
             .sidebar.open { transform: translateY(0); visibility: visible; transition: transform .3s cubic-bezier(.2,.7,.2,1); }
             .sidebar-close { display: inline-flex; }
-            /* keep the compare tray / toast clear of the floating Filters button */
             .cmp-bar { bottom: 86px; }
             .toast { bottom: 92px; }
         }
-        /* nothing floats on top of the saved drawer — no stray pills/trays/toasts */
         body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toast { display: none; }
-
 
         .lang-menu { position: relative; }
         .lang-trigger { display: inline-flex; align-items: center; gap: 4px; color: #64748B; font-size: 13px;
@@ -326,7 +313,6 @@
         .lang-opt:hover { background: #F3F6F8; }
         .lang-opt.is-active { background: #FDE6E8; color: #D90429; font-weight: 600; }
 
-
         .search-input {
             background: transparent; border: 0; outline: 0;
             font-size: 16px; flex: 1; padding: 12px 0;
@@ -334,7 +320,6 @@
             font-family: 'Inter Tight', 'Noto Sans Georgian', sans-serif;
         }
         @media (min-width: 640px) { .search-input { font-size: 18px; } }
-
 
         .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
         .filter-label { font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
@@ -359,12 +344,10 @@
         }
         @media (min-width: 640px) { .filter-select { font-size: 13px; padding: 6px 28px 6px 10px; } }
         .filter-select:focus { border-color: #2B2D42; outline: 0; }
-        /* ბრენდი/მოდელი — გრძელი სახელი ეკრანს არ უნდა გასცდეს */
         #f-brand, #f-model { max-width: 190px; text-overflow: ellipsis; }
         @media (max-width: 640px) {
             #f-brand, #f-model { max-width: 42vw; }
         }
-        /* თითო ფილტრის რესეტი — მხოლოდ მნიშვნელობის არსებობისას ჩანს */
         .filter-reset { display: none; border: 0; background: transparent; color: #6B7280; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; }
         .filter-group.has-val .filter-reset { display: inline-flex; }
         .filter-reset:hover { color: #EF233C; }
@@ -385,7 +368,6 @@
         .copy-btn:hover { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
         .copy-btn.is-copied { color: #15803D; border-color: #15803D; background: #ECFDF3; }
 
-
         .pager {
             display: flex; align-items: center; justify-content: center;
             gap: 16px; margin-top: 32px; padding-top: 24px;
@@ -404,9 +386,7 @@
             color: #64748B;
         }
 
-
         .spec-label { color: #64748B; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
-
 
         .source-badge {
             font-size: 11.5px; font-weight: 600; letter-spacing: .01em;
@@ -424,10 +404,8 @@
         .customs-yes { color: #15803D; background: #E5F5EB; }
         .customs-no  { color: #B91C1C; background: #FBE9E9; }
 
-
         .card { border: 1px solid #DCE3EA; background: white; border-radius: 18px; overflow: hidden; transition: border-color 150ms, box-shadow 150ms; }
         .card:hover { border-color: #2B2D42; }
-
 
         .serif-display {
             font-family: 'Fraunces', 'Noto Serif Georgian', Georgia, serif;
@@ -435,14 +413,12 @@
             letter-spacing: -0.02em;
         }
 
-
         .no-photo {
             background: #E2E8EE;
             display: flex; align-items: center; justify-content: center;
             color: #6B7280;
             font-family: 'JetBrains Mono', monospace; font-size: 12px;
         }
-
 
         .carousel { position: relative; background: #2B2D42; overflow: hidden; aspect-ratio: 4 / 3; cursor: zoom-in; }
         .carousel-stage { position: absolute; inset: 0; }
@@ -456,7 +432,6 @@
             letter-spacing: 0.05em;
             pointer-events: none;
         }
-        /* ფოტოს ისრები — fullscreen-ის გარეშე გადასვლა (ბარათზე და გვერდზე) */
         .ph-nav {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
             width: 34px; height: 34px; border-radius: 50%; border: 0;
@@ -474,7 +449,6 @@
         .ph-next { right: 8px; }
         @media (hover: none) { .ph-nav { opacity: .9; } }
 
-
         .thumb-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
         .thumb {
             aspect-ratio: 4 / 3; overflow: hidden; background: #E2E8EE;
@@ -485,7 +459,6 @@
         .thumb:hover { opacity: 1; }
         .thumb.is-active { border-color: #2B2D42; opacity: 1; }
 
-
         .lightbox { position: fixed; inset: 0; z-index: 1400; background: rgba(15,12,8,0.96); display: flex; flex-direction: column; padding: 16px; }
         .lightbox.hidden { display: none; }
         .lightbox-stage {
@@ -494,7 +467,6 @@
         }
         .lightbox-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .lightbox-stage iframe { width: min(90vw, 1280px); height: min(80vh, 720px); border: 0; }
-        /* same round-white look as the inline detail arrows (.ph-nav) */
         .lightbox-prev, .lightbox-next {
             position: absolute; top: 50%; transform: translateY(-50%);
             width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
@@ -542,7 +514,6 @@
         .lightbox-thumb.is-active { border-color: #EF233C; opacity: 1; }
         .lightbox-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-
         .desc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .desc-translate {
             display: inline-flex; align-items: center; gap: 6px;
@@ -565,7 +536,6 @@
         .tr-pop-body { padding: 14px; font-size: 14.5px; line-height: 1.7; color: #2B2D42; white-space: pre-wrap; }
         .tr-pop-load { padding: 14px; color: #64748B; font-size: 13px; }
 
-        /* პატარა press-ანიმაცია ყველა ღილაკზე */
         .btn-search, .apply-btn, .dt-call, .dt-source, .chip, .pager-btn, .detail-btn,
         .save-btn, .saved-trigger, .cdd-btn, .filter-clear, .dt-thumb {
             transition: transform .12s ease, background-color .15s, border-color .15s, color .15s, box-shadow .15s;
@@ -587,7 +557,6 @@
         }
         .see-more:hover { text-decoration: underline; }
 
-
         .detail-btn {
             display: inline-flex; align-items: center; justify-content: center;
             background: #fff; border: 1px solid #DCE3EA; color: #64748B;
@@ -608,7 +577,6 @@
         .footer-link { color: #2B2D42; font-size: 14px; transition: color .12s; }
         .footer-link:hover { color: #EF233C; }
 
-        /* product polish — elevation, motion, quick chips */
         #results .rcard { animation: cardIn .42s cubic-bezier(.2,.7,.2,1) both; }
         @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         .rcard { display: flex; align-items: stretch; min-height: 188px; background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; overflow: hidden; margin-bottom: 14px; transition: box-shadow .15s, transform .15s; }
@@ -652,10 +620,8 @@
         .chip:hover { border-color: #2B2D42; transform: translateY(-1px); }
         .chip:active { transform: translateY(0); }
 
-        /* search -> results: hero collapses so results lead */
         body.mode-results #hero-desc { display: none; }
 
-        /* skeleton loading cards (shimmer) */
         .skeleton-card { display: flex; overflow: hidden; border: 1px solid #DCE3EA; border-radius: 14px; background: #fff; margin-bottom: 16px; }
         .sk { position: relative; overflow: hidden; background: #ECE6DA; border-radius: 8px; }
         .sk::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: shimmer 1.25s infinite; }
@@ -665,11 +631,9 @@
         .sk-line { height: 14px; }
         @media (max-width: 767px) { .skeleton-card { flex-direction: column; } .sk-img { width: 100%; min-height: 190px; } }
 
-        /* micro-interactions — press feedback + hover lifts everywhere */
         button:not(:disabled) { transition: transform .12s ease, box-shadow .12s, background .12s, border-color .12s, color .12s; }
         button:not(:disabled):active, a.detail-btn:active, .chip:active, .hist-chip:active,
         .lang-opt:active, .spec-pill:active { transform: scale(.94); }
-        /* engine icon idles, then periodically shudders like a starter cranking */
         @keyframes engineCrank {
             0%, 62%, 100% { transform: rotate(0); }
             65% { transform: rotate(-7deg); } 69% { transform: rotate(6deg); }
@@ -695,12 +659,9 @@
             .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img, .search-detail { animation: none !important; }
         }
 
-
-        /* clear-X inside the search bar */
         .clear-x { color: #6B7280; font-size: 17px; line-height: 1; padding: 0 10px; background: transparent; border: 0; cursor: pointer; transition: color .12s; align-self: center; }
         .clear-x:hover { color: #2B2D42; }
 
-        /* save (heart) button */
         .save-btn { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; transition: all .15s ease; flex-shrink: 0; }
         .save-btn:hover { border-color: #EF233C; color: #EF233C; transform: scale(1.08); }
         .save-btn.is-saved { color: #EF233C; border-color: #EF233C; background: #FDE6E8; }
@@ -709,7 +670,6 @@
         @keyframes heartPop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 70% { transform: scale(.85); } 100% { transform: scale(1); } }
         .save-btn.pop svg, .rcard-compare.pop svg { animation: heartPop .35s ease; }
 
-        /* hover actions on a card (hide) */
         .rcard-acts { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .rcard-hide { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; opacity: 0; transform: scale(.85); pointer-events: none; transition: opacity .15s, transform .15s, color .15s, border-color .15s, background .15s; }
         .rcard:hover .rcard-hide, .rcard-hide:focus-visible { opacity: 1; transform: scale(1); pointer-events: auto; }
@@ -719,13 +679,11 @@
         @keyframes cardHide { to { opacity: 0; transform: translateX(26px) scale(.96); } }
         @media (hover: none) { .rcard-hide { opacity: 1; transform: none; pointer-events: auto; } }
 
-        /* toast */
         .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(10px); background: #2B2D42; color: #fff; border-radius: 12px; padding: 11px 16px; font-size: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 30px rgba(43,45,66,.28); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1200; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
         .toast button { background: none; border: 0; color: #FF8A95; font-weight: 500; font-size: 14px; cursor: pointer; padding: 2px 4px; }
         .toast button:hover { color: #fff; }
 
-        /* compare button on a card */
         .rcard-compare { background: #fff; border: 1px solid #DCE3EA; border-radius: 999px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; opacity: 0; transform: scale(.85); pointer-events: none; transition: opacity .15s, transform .15s, color .15s, border-color .15s, background .15s; }
         .rcard:hover .rcard-compare, .rcard-compare:focus-visible, .rcard-compare.on { opacity: 1; transform: scale(1); pointer-events: auto; }
         .rcard-compare:hover { color: #2B2D42; border-color: #2B2D42; }
@@ -740,15 +698,14 @@
             .chip-expand { padding: 0 11px; }
         }
 
-        /* compare tray (bottom bar) */
         .cmp-bar { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); display: none; align-items: center; gap: 12px; background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; padding: 10px 12px 10px 16px; box-shadow: 0 14px 40px rgba(43,45,66,.20); z-index: 1150; max-width: calc(100vw - 24px); }
         .cmp-bar.show { display: flex; animation: cmpBarIn .22s cubic-bezier(.2,.7,.2,1) both; }
         body.has-cmpbar #results { padding-bottom: 90px; }
+        body.has-cmpbar footer { margin-bottom: 92px; }
         @keyframes cmpBarIn { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         .cmp-bar-label { font-size: 14px; font-weight: 500; color: #2B2D42; white-space: nowrap; }
         .cmp-bar-thumbs { display: flex; gap: 6px; flex-shrink: 0; }
         .cmp-thumb { width: 46px; height: 34px; border-radius: 7px; object-fit: cover; background: #F3F6F8; border: 1px solid #E7ECF1; display: block; flex-shrink: 0; }
-        /* narrow screens: the tray wraps to two rows instead of crushing the thumbnails */
         @media (max-width: 560px) {
             .cmp-bar { flex-wrap: wrap; justify-content: center; row-gap: 8px; padding: 10px 14px; width: calc(100vw - 24px); }
         }
@@ -764,7 +721,6 @@
         .cmp-bar-clear { background: none; border: 0; color: #64748B; font-size: 13px; cursor: pointer; white-space: nowrap; }
         .cmp-bar-clear:hover { color: #EF233C; }
 
-        /* compare modal */
         .cmp-modal { position: fixed; inset: 0; background: rgba(43,45,66,.5); z-index: 1300; display: none; align-items: flex-start; justify-content: center; padding: 28px 16px; overflow: auto; }
         .cmp-modal.show { display: flex; }
         /* min-width: 0 — as a flex item the sheet would otherwise grow to the table's
@@ -787,7 +743,6 @@
         .cmp-table td.cmp-best { background: #E7FBEF; color: #15803D; font-weight: 700; box-shadow: inset 3px 0 0 #34D07F; }
         .cmp-table td.cmp-worst { background: #FEF2F3; color: #D90429; box-shadow: inset 3px 0 0 #F4879A; }
         .cmp-wins { display: inline-block; font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; background: #E7FBEF; border-radius: 999px; padding: 1px 9px; }
-        /* winning column: a golden frame running the full height of the table */
         .cmp-table th.cmp-winner { background: linear-gradient(180deg, #FFF4CE, #FFFDF4);
             border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; border-top: 3px solid #F5B301; }
         .cmp-table td.cmp-wincol { border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; }
@@ -814,7 +769,6 @@
         .cmp-save-thumbs { display: flex; gap: 3px; }
         .cmp-save-thumbs img { width: 40px; height: 30px; object-fit: cover; border-radius: 5px; background: #F3F6F8; }
 
-        /* header Saved trigger */
         .saved-trigger { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #64748B; border: 1px solid #DCE3EA; border-radius: 999px; padding: 5px 12px; cursor: pointer; transition: all .14s; }
         .saved-trigger:hover { border-color: #EF233C; color: #EF233C; }
         .saved-trigger svg { width: 15px; height: 15px; }
@@ -822,7 +776,6 @@
         .saved-trigger.has-items svg { fill: currentColor; }
         .saved-trigger .cnt { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #EF233C; }
 
-        /* slide-in drawer */
         .drawer-overlay { position: fixed; inset: 0; background: rgba(43,45,66,.4); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
         .drawer-overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 390px; max-width: 92vw; background: #EDF2F4; box-shadow: -8px 0 44px rgba(43,45,66,.2); transform: translateX(100%); transition: transform .38s cubic-bezier(.16,1,.3,1); z-index: 61; display: flex; flex-direction: column; }
@@ -875,7 +828,6 @@
         .recent-row:empty { margin-top: 0; }
         .recent-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #64748B; }
 
-        /* segmented chip: label · expand · [save] · delete, joined into one pill */
         .chip-wrap { display: inline-flex; align-items: stretch; margin: 0 6px 6px 0; vertical-align: top; transition: transform .1s ease; }
         .chip-wrap > button { margin: 0; background: #fff; cursor: pointer; font-family: inherit; transition: background .14s, border-color .14s, color .14s; }
         .chip-wrap > .hist-chip { border-radius: 999px 0 0 999px; border-right: 0; }
@@ -886,12 +838,10 @@
         .chip-del { display: flex; align-items: center; border: 1px solid #DCE3EA; color: #6B7280; border-radius: 0 999px 999px 0; padding: 0 10px; font-size: 11px; }
         .chip-wrap:hover > button { border-color: #C9D2DC; background: #F7F9FB; }
         .chip-expand:hover, .chip-save:hover, .chip-del:hover { color: #EF233C; }
-        /* press the whole segmented chip as one unit, not individual segments */
         .chip-wrap > button:active { transform: none; }
         .chip-wrap:active { transform: scale(.97); }
         .recent-toggle { color: #EF233C; font-weight: 600; }
 
-        /* expandable filter breakdown under a search chip */
         .search-detail { flex-basis: 100%; width: 100%; margin: -1px 0 8px; padding: 10px 14px; background: #fff; border: 1px solid #E7ECF1; border-radius: 12px; animation: sdIn .2s ease both; }
         @keyframes sdIn { from { opacity: 0; transform: translateY(-4px); } }
         .sd-row { display: flex; gap: 10px; padding: 3px 0; font-size: 13px; }
@@ -997,7 +947,6 @@
                 </div>
             </div>
 
-
             <div class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="filter-group" data-filter="year">
                     <span class="filter-label" data-i18n="filter_year"></span>
@@ -1096,7 +1045,6 @@
 
 </main>
 
-
 <div id="saved-overlay" class="drawer-overlay" onclick="closeSaved()"></div>
 <aside id="saved-drawer" class="drawer" aria-label="saved">
     <div class="drawer-head">
@@ -1177,11 +1125,9 @@
         document.querySelectorAll('[data-search-btn]').forEach(b => { b.textContent = label; });
     }
 
-    // live match-count on the search button as filters change (browse only)
     let _countTimer = null;
     function scheduleLiveCount() { clearTimeout(_countTimer); _countTimer = setTimeout(fetchLiveCount, 450); }
     async function fetchLiveCount() {
-        // text query → count comes from the search itself; drop any stale filtered count
         if (document.getElementById('search-input').value.trim()) { _lastCount = null; updateSearchBtnCount(); return; }
         const payload = buildSearchPayload();
         delete payload.page; delete payload.sort;
@@ -1268,7 +1214,6 @@
         for (const [id, key] of Object.entries(MULTI)) {
             const sel = document.getElementById(id);
             if (!sel) continue;
-            // merged location options carry several raw DB values in one option
             const vals = Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
             if (vals.length) payload[key] = vals;
         }
@@ -1293,7 +1238,6 @@
         const html = opts.join('');
         yFrom.innerHTML = html;
         yTo.innerHTML = html;
-        // არასწორი დიაპაზონის თავიდან აცილება — "დან" ყოველთვის <= "მდე"
         const fixRange = (changed) => {
             const f = parseInt(yFrom.value, 10), t = parseInt(yTo.value, 10);
             if (f && t && f > t) (changed === 'from' ? yTo : yFrom).value = (changed === 'from' ? yFrom : yTo).value;
@@ -1302,7 +1246,6 @@
         yTo.addEventListener('change', () => fixRange('to'));
     })();
 
-    // ფასი/გარბენი — "დან" არ უნდა აღემატებოდეს "მდე"-ს; თუ აღემატება, ვცვლით ადგილებს
     (function wireNumRanges() {
         const swap = (from, to) => {
             const f = parseFloat(from.value), t = parseFloat(to.value);
@@ -1387,14 +1330,10 @@
         customs:   ['f-customs'],
     };
 
-    // ერთი საერთო scroll-lock რამდენიმე გადაფარვას (drawer/modal/lightbox/sheet)
-    // ემსახურება — თითო თავისი გასაღებით იკეტება, რომ ერთის დახურვამ მეორის
-    // lock არ წაშალოს
     const _scrollLocks = new Set();
     function lockScroll(key) { _scrollLocks.add(key); document.body.style.overflow = 'hidden'; }
     function unlockScroll(key) { _scrollLocks.delete(key); if (!_scrollLocks.size) document.body.style.overflow = ''; }
 
-    // მობილურზე გვერდითა ფილტრების ჩვენება/დამალვა (ფიქსირებული floating ღილაკი)
     window.toggleSidebar = function () {
         const sb = document.getElementById('filter-sidebar');
         if (!sb) return;
@@ -1409,7 +1348,6 @@
         doSearch();
     };
 
-    // თითო ფილტრს ცალკე ასუფთავებს და თავიდან ეძებს
     window.resetFilter = function (kind) {
         if (kind === 'brand') {
             Array.from(document.getElementById('f-brand').options).forEach(o => o.selected = false);
@@ -1451,8 +1389,6 @@
             if (!resp.ok) return;
             _makes = (await resp.json()).makes || {};
         } catch { return; }
-        // backend returns brands ordered by listing count; show the top sellers first,
-        // then the rest alphabetically with a separator between them
         const all = Object.keys(_makes);
         const POP_N = 12;
         const popular = all.slice(0, POP_N);
@@ -1466,8 +1402,6 @@
         if (brand._cdd) brand._cdd.render();
     }
 
-    // self-contained brand markers for the picker: a coloured initials badge,
-    // signature colours for known makes and a deterministic hue for the rest
     const _BRAND_COLORS = {
         'BMW':'#0066B1','Mercedes-Benz':'#2B2B2B','Toyota':'#D81E2C','Audi':'#A50E26',
         'Volkswagen':'#00237A','Honda':'#C4122F','Ford':'#1B3F8B','Hyundai':'#002C5F',
@@ -1491,7 +1425,6 @@
     }
     function _brandLogoSlug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
     function _brandBadge(name) {
-        // try the real logo; fall back to a coloured monogram if it is missing
         return `<span class="brand-badge brand-badge-logo"><img class="brand-logo" src="logos/${_brandLogoSlug(name)}.png" alt="" loading="lazy" data-brand="${escapeHtml(name)}" onerror="_logoFail(this)"></span>`;
     }
     window._logoFail = function (img) {
@@ -1513,7 +1446,6 @@
         refillFacets();
     }
 
-    // dropdown-ის option-ებს ავსებს; value = ქართული (DB), ტექსტი = tval (en-ზე ითარგმნება)
     function fillFacet(id, values, anyKey) {
         const sel = document.getElementById(id);
         if (!sel || !values) return;
@@ -1531,8 +1463,6 @@
         fillLocationFacet(_facets.location);
     }
 
-    // ლოკაციის მოკლე ფორმა: ", საქართველო" ზედმეტია, გზაში მყოფი — ერთი წარწერით,
-    // უცხოეთი ქვეყანასთან ერთად რჩება რომ ჩანდეს მანქანა ჯერ აქ არ არის
     const _LOC_SEP = '\u001F';
     const _LOC_COUNTRY_SHORT = { 'არაბეთის გაერთიანებული საემიროები': 'ემირატები' };
     function locLabel(raw) {
@@ -1544,8 +1474,6 @@
         return parts.map(p => tval(_LOC_COUNTRY_SHORT[p] || p)).join(', ');
     }
 
-    // ერთნაირად შემოკლებული ლოკაციები ერთ option-ად იყრება; value ინახავს ყველა
-    // raw ვარიანტს (ძიებისას ისევ ცალ-ცალკე იგზავნება, DB-ის ზუსტი ტექსტით)
     function fillLocationFacet(values) {
         const sel = document.getElementById('f-location');
         if (!sel || !values) return;
@@ -1564,7 +1492,6 @@
         if (sel._cdd) sel._cdd.render();
     }
 
-    // derive a class/series label from a base model name (myauto-style grouping)
     function _seriesOf(brand, model) {
         const b = brand.toLowerCase(); const m = model.trim();
         if (b === 'bmw') {
@@ -1594,13 +1521,11 @@
                 if (s) { if (!groups.has(s)) groups.set(s, []); groups.get(s).push(m); }
                 else flat.push(m);
             }
-            // a class header with a single model underneath is just noise — flatten it
             for (const [series, ms] of [...groups.entries()]) {
                 if (ms.length < 2) { flat.push(...ms); groups.delete(series); }
             }
             const prefix = multiBrand ? (b + ' · ') : '';
             if (groups.size) {
-                // groups were inserted in model order (backend = count desc), so popular series lead
                 for (const [series, ms] of groups.entries()) {
                     out.push(`<option disabled data-n="${ms.length}">${escapeHtml(prefix + series)}</option>`);
                     ms.forEach(m => out.push(opt(m)));
@@ -1628,12 +1553,10 @@
     document.getElementById('f-brand').addEventListener('change', onBrandChange);
     document.getElementById('f-model').addEventListener('change', updateFilterResets);
 
-    // sort lives above the cards — changing it re-sorts the current results immediately
     document.getElementById('f-sort').addEventListener('change', () => {
         if (document.body.classList.contains('mode-results')) doSearch();
     });
 
-    // live count on the search button as filters change (browse only)
     document.getElementById('filter-sidebar').addEventListener('change', scheduleLiveCount);
     const _mrange = document.getElementById('mileage-range');
     if (_mrange) _mrange.addEventListener('input', scheduleLiveCount);
@@ -1659,7 +1582,6 @@
         meta.appendChild(span);
     }
 
-    // top loading bar — the red top rule dips to zero then fills left→right during a search
     let _tpDone = null;
     function startTopProgress() {
         const bar = document.getElementById('top-progress');
@@ -1678,15 +1600,11 @@
         bar.style.transform = 'scaleX(1)';      // snaps to 100% and stays as the idle red line
     }
 
-    // connection banner — navigator.onLine flips on adapter up/down; a failed fetch confirms it
     function setOffline(off) { document.body.classList.toggle('is-offline', !!off); }
     window.addEventListener('offline', () => setOffline(true));
     window.addEventListener('online', () => setOffline(false));
     if (!navigator.onLine) setOffline(true);
 
-    // shareable search links — the active search is mirrored into the query string
-    // (?q=…&brand=…), so refresh and copied links reproduce it. Lists join with | —
-    // locations contain commas.
     const _URL_LISTS = { brand: 'manufacturers', model: 'models', body: 'body_types', fuel: 'fuels', gear: 'gearboxes', drive: 'drives', loc: 'locations' };
     const _URL_NUMS = { yf: 'year_from', yt: 'year_to', pf: 'price_from', pt: 'price_to', mf: 'mileage_from', mt: 'mileage_to' };
     function payloadToParams(p) {
@@ -1739,7 +1657,6 @@
         const payload = buildSearchPayload();
         const fields = Object.keys(payload).filter(k => k !== 'page');
         if (fields.length === 0) return;
-        // მხოლოდ სიმბოლოებისგან/პუნქტუაციისგან შემდგარი query API-მდე არ უშვებთ
         if (payload.query && fields.length === 1 &&
             payload.query.replace(/[^\p{L}\p{N}]/gu, '').length === 0) {
             document.body.classList.add('mode-results');
@@ -1755,7 +1672,6 @@
         const _ckey = JSON.stringify(payload);
         const _hit = _searchCache.get(_ckey);
         if (_hit && Date.now() - _hit.t < _SEARCH_TTL) {
-            // quota is server-authoritative — don't replay a stale "searches left" from cache
             const cached = { ..._hit.data, remaining_searches: null };
             lastResponse = cached;
             document.body.classList.add('mode-results');
@@ -1800,7 +1716,6 @@
             _searchCache.set(_ckey, { t: Date.now(), data: lastResponse });
             renderResults(lastResponse);
         } catch (e) {
-            // a network-level failure (fetch throws TypeError) usually means no connection
             const offline = !navigator.onLine || e instanceof TypeError;
             if (offline) setOffline(true);
             results.innerHTML = '';
@@ -1819,7 +1734,6 @@
     document.querySelectorAll('#search-input, .filter-input, .filter-select').forEach((el) => {
         el.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
     });
-    // ფილტრის შეცვლა მხოლოდ reset-ღილაკებს და count-ს ანახლებს — ძებნა მხოლოდ ღილაკზე
     document.querySelectorAll('.filter-input, .filter-select').forEach((el) => {
         el.addEventListener('change', updateFilterResets);
         el.addEventListener('input', updateFilterResets);
@@ -1828,7 +1742,6 @@
     window.goToPage = function (page) {
         currentPage = page;
         doSearch({ resetPage: false });
-        // scroll back to the top so the search field and filters stay in view on the
         // new page (the sticky sidebar keeps the filters pinned while scrolling results)
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -1842,7 +1755,6 @@
             .replace(/'/g, '&#39;');
     }
 
-    // fallback extraction from the description text (when the structured field is empty)
     function vinFromText(text) {
         if (!text) return '';
         const cleaned = String(text).toUpperCase().replace(/[A-Z0-9]*\*+[A-Z0-9*]*/g, ' ');
@@ -1890,7 +1802,6 @@
         return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-
     const _slidesByCard = {};
 
     function slideStage(slide) {
@@ -1899,9 +1810,6 @@
         }
         return `<img src="${escapeHtml(slide.src)}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=0.2">`;
     }
-
-    // photos are loaded lazily — only the slide you actually view fetches its
-    // image (no eager preloading of a card's whole gallery).
 
     function thumbSrc(slide) {
         if (slide.type === 'video') {
@@ -1931,7 +1839,6 @@
             </div>
         `;
 
-        // ბარათზე thumb-strip აღარ — ისრები (‹ ›) და მთვლელი საკმარისია
         return main;
     }
 
@@ -1964,7 +1871,6 @@
         const idx = parseInt(carousel.dataset.index, 10) || 0;
         openLightbox(slides, idx);
     };
-
 
     let _lightbox = null;
 
@@ -2067,7 +1973,6 @@
         return s;
     }
 
-    // სათაური დუბლირებული სიტყვებით (ბინძური წყარო: manufacturer და model ერთი და იგივე)
     function carTitle(car) {
         const words = [car.manufacturer, car.model].filter(Boolean).join(' ').split(/\s+/);
         const seen = new Set();
@@ -2082,13 +1987,11 @@
     }
 
     const _PIC = (d) => `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-    // სტატიკური ხატულები
     const _PILL_IC = {
         gauge:  _PIC('<path d="M13.4 13.4l2.6 -2.6"/><path d="M3.6 15a9 9 0 1 1 16.8 0"/>'),
         engine: _PIC('<rect x="3.5" y="10" width="11" height="7" rx="1.2"/><path d="M6 10V7.5h2V10M10 10V7.5h2V10"/><path d="M14.5 12h2.2l2.3 2.3v.6L16.7 17h-2.2"/><path d="M3.5 13.5H2M8 17v1.8"/>').replace('<svg ', '<svg data-ic="engine" '),
         bolt:   _PIC('<path d="M13 3l-9 11h7l-1 7l9 -11h-7z"/>'),
     };
-    // body-type — ცალკე ამოსაცნობი silhouette თითო ტიპზე
     function _bodyIcon(v) {
         const s = (v || '').toLowerCase();
         if (/კუპე|coupe/.test(s))   // fastback 2-door
@@ -2119,10 +2022,8 @@
             return _PIC('<circle cx="5.6" cy="16" r="2.9"/><circle cx="18.4" cy="16" r="2.9"/><path d="M5.6 16l1.9-4.2h5.6l2.7 3.4"/><path d="M13.1 11.8l-1.4-2.6M10.4 9.2h3.4M7.5 11.8l1.4-2"/>');
         if (/სპეცტ|special|ექსკავ|ტექნიკ|ამწე/.test(s))   // construction loader
             return _PIC('<path d="M3 17v-4h7v4"/><path d="M10 14l4-1 5 3v1h-2"/><path d="M10 13L7 9h2"/><circle cx="6" cy="17.5" r="1.6"/><circle cx="16" cy="17.5" r="1.6"/>');
-        // სედანი (default) — notchback 3-box
         return _PIC('<path d="M3 15h18"/><path d="M4.2 15l1.3-3.4A2 2 0 0 1 7.4 10.3h9.2a2 2 0 0 1 1.9 1.3L19.8 15"/><path d="M6.8 10.3l1-1.9A1.5 1.5 0 0 1 9.1 7.6h5.8a1.5 1.5 0 0 1 1.3.8l1 1.9"/><circle cx="7.5" cy="15.5" r="1.6"/><circle cx="16.5" cy="15.5" r="1.6"/>');
     }
-    // საწვავი — ცალკე ხატულა თითო ტიპზე
     function _fuelIcon(v) {
         const s = (v || '').toLowerCase();
         if (/ელექტ|electric|\bev\b/.test(s))   // bolt
@@ -2139,25 +2040,18 @@
             return _PIC('<path d="M8.5 21V10a3.5 3.5 0 0 1 7 0v11z"/><path d="M8.5 21h7M10 6.5h4M11 4.5h2v2h-2z"/>');
         if (/გაზ|gas/.test(s))   // ბენზინი/გაზი — droplet + flame
             return _PIC('<path d="M7.5 5c1.9 2.2 3 3.6 3 5.1a3 3 0 0 1-6 0c0-1.5 1.1-2.9 3-5.1z"/><path d="M17 5.5c2 2.3 2.8 3.9 2.8 5.5a2.8 2.8 0 0 1-5.6 0c0-1.1.5-2.2 1.4-3.3.2 1 .8 1.5 1.7 1.5 0-1.2-.4-2.4-.3-3.7z"/>');
-        // ბენზინი (default) — fuel pump
         return _PIC('<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5L17 6.5"/>');
     }
-    // გადაცემათა კოლოფი — ცალკე ხატულა ტიპზე
     function _gearIcon(v) {
         const s = (v || '').toLowerCase();
-        // ტიპტრონიკი/სტეპტრონიკი/DSG — ავტომატი მექანიკის რეჟიმით (+/-)
         if (/ტიპტ|tiptron|სტეპტ|steptron|დსგ|\bdsg\b|რობ|robot/.test(s))
             return _PIC('<rect x="5" y="3" width="9" height="18" rx="2"/><circle cx="9.5" cy="7" r="1"/><circle cx="9.5" cy="12" r="1"/><circle cx="9.5" cy="17" r="1"/><path d="M17 7.5h3M18.5 6v3M17 16.5h3"/>');
-        // მექანიკა — H-pattern
         if (/მექ|manual|\bmt\b/.test(s))
             return _PIC('<circle cx="6" cy="5" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="18" cy="5" r="1.6"/><path d="M6 6.6v4h12v-4M12 10.6v8.4M10 19h4"/>');
-        // ვარიატორი (CVT) — ორი ცვალებადი კონუს-ღარღარა ღვედით
         if (/ვარიატ|variator|\bcvt\b/.test(s))
             return _PIC('<path d="M4 5l4.5 3.5v7L4 19z"/><path d="M20 5l-4.5 3.5v7L20 19z"/><path d="M8.5 8.5h7M8.5 15.5h7"/>');
-        // ავტომატი (default) — P R N D გეითი
         return _PIC('<rect x="7" y="3" width="10" height="18" rx="2"/><circle cx="12" cy="6.5" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="12" cy="13.5" r="1"/><circle cx="12" cy="17" r="1"/>');
     }
-    // წამყვანი თვლები — 4 თვალი, წამყვანი ღერძი მუქი
     function _driveIcon(v) {
         const s = (v || '').toLowerCase();
         const on = '', off = ' opacity=".35"';
@@ -2168,10 +2062,7 @@
         return _PIC(`<circle cx="6.5" cy="7" r="2.5"${tl}/><circle cx="17.5" cy="7" r="2.5"${tr}/><circle cx="6.5" cy="17" r="2.5"${bl}/><circle cx="17.5" cy="17" r="2.5"${br}/><path d="M6.5 7v10M17.5 7v10" opacity=".45"/>`);
     }
 
-    // გარბენი — სპიდომეტრის ისარი მდებარეობით (დაბალი → მარცხნივ, მაღალი → მარჯვნივ)
     function _mileageGauge(km) {
-        // tachometer needle sweeps left (0 km) → right; 500k km pins it fully right and
-        // anything above stays pinned. Linear, so every 5,000 km nudges it a little further.
         const frac = Math.max(0, Math.min(1, (km || 0) / 500000));
         const ang = Math.PI * (1 - frac);
         const cx = 12, cy = 15.5, r = 7;
@@ -2180,7 +2071,6 @@
         return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
     }
 
-    // სორტირება — კატეგორია + ზრდადი/კლებადი სვეტები (მიმართულება ცხადად ჩანს)
     function _sortIcon(v) {
         const val = v || '';
         const bars = /asc/.test(val)
@@ -2191,7 +2081,6 @@
         if (/^mileage/.test(val)) return _PIC('<path d="M2.4 14.2a5.2 5.2 0 0 1 10.4 0"/><path d="M7.6 14.2l2.1-2.1"/><circle cx="7.6" cy="14.2" r=".85" fill="currentColor" stroke="none"/>' + bars);
         return _PIC('<path d="M4 7h13M4 12h9M4 17h5"/>');   // default (newest)
     }
-    // განბაჟება — ფარი ✓ (განბაჟებული) / ✗ (განუბაჟებელი)
     function _customsIcon(val) {
         const shield = '<path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/>';
         if (val === 'yes') return _PIC(shield + '<path d="M9 12l2 2 4-4"/>');
@@ -2199,7 +2088,6 @@
         return '';
     }
 
-    // cross-script + fuzzy filter matching (e.g. "цамри" / "ცამრი" → Camry)
     const _CYR = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'i','ь':'','э':'e','ю':'iu','я':'ia' };
     const _GEO = { 'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t','ი':'i','კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh','რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'p','ქ':'k','ღ':'gh','ყ':'k','შ':'sh','ჩ':'ch','ც':'c','ძ':'dz','წ':'c','ჭ':'ch','ხ':'h','ჯ':'j','ჰ':'h' };
     function _translit(str) {
@@ -2242,10 +2130,8 @@
         return `<span class="source-badge source-${escapeHtml(car.source)}">${escapeHtml(name)}</span>`;
     }
 
-    // hidden listings (stored locally) + a small undo toast
     const ICON_HIDE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.7a2 2 0 0 0 2.7 2.7"/><path d="M16.7 16.7A9 9 0 0 1 12 18c-5 0-8.3-4-9-6a14 14 0 0 1 3.3-3.8"/><path d="M9.9 5.2A9 9 0 0 1 12 5c5 0 8.3 4 9 6a14 14 0 0 1-1.6 2.4"/></svg>';
     const HIDDEN_KEY = 'cdb_hidden';
-    // stored as [{key,title,thumb}] (old format was a plain key array)
     function getHiddenList() { try { return JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]').map(x => typeof x === 'string' ? { key: x } : x); } catch { return []; } }
     function setHiddenList(list) { try { localStorage.setItem(HIDDEN_KEY, JSON.stringify(list)); } catch {} }
     function getHidden() { return new Set(getHiddenList().map(x => x.key)); }   // key set, used to filter results
@@ -2262,7 +2148,6 @@
             card.classList.add('is-hiding');
             setTimeout(() => {
                 card.remove();
-                // if the last visible card was hidden, fall back to the empty state
                 if (lastResponse && !document.querySelector('#results .rcard')) renderResults(lastResponse);
             }, 290);
         }
@@ -2297,7 +2182,6 @@
     }
     function hideToast() { const el = document.getElementById('toast'); if (el) el.classList.remove('show'); }
 
-    // compare tray — up to 4 cars side by side (stored locally)
     const ICON_COMPARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M17 4v16M3 8l4-4 4 4M21 16l-4 4-4-4"/></svg>';
     const ICON_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
     const COMPARE_KEY = 'cdb_compare';
@@ -2335,7 +2219,6 @@
     function renderCompareBar() {
         let bar = document.getElementById('cmp-bar');
         const list = getCompare();
-        // pad the results so the fixed tray never covers the pagination
         document.body.classList.toggle('has-cmpbar', list.length > 0);
         if (!bar) { bar = document.createElement('div'); bar.id = 'cmp-bar'; bar.className = 'cmp-bar'; document.body.appendChild(bar); }
         if (!list.length) { bar.classList.remove('show'); bar.innerHTML = ''; return; }
@@ -2365,7 +2248,6 @@
         renderCompareBar();
         if (list.length) renderCompareModal(); else closeCompare();
     };
-    // saved comparisons (snapshots of the compare set)
     const CMPSAVE_KEY = 'cdb_compsaves';
     function getCompSaves() { try { const v = JSON.parse(localStorage.getItem(CMPSAVE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } }
     function setCompSaves(l) { try { localStorage.setItem(CMPSAVE_KEY, JSON.stringify(l)); } catch {} }
@@ -2396,8 +2278,6 @@
         const s = (d || '').toLowerCase();
         return /4x4|4wd|awd|ოთხ|სრულ|толық|полн/.test(s) ? 2 : 1;
     }
-    // magnitude-aware value score: an attribute only counts as much as its gap is
-    // meaningful (a 150k km spread is decisive, a $300 one barely matters)
     const _CMP_FACTORS = [
         { weight: 3, better: 'high', ref: 8,      val: c => c.year || null },
         { weight: 3, better: 'low',  ref: 150000, val: c => c.mileage || null },
@@ -2443,7 +2323,6 @@
         if (_driveScore(w.drive) === 2 && list.some(c => _driveScore(c.drive) === 1)) reasons.push(t('cmp_reason_awd'));
         if (w.customs === true && list.some(c => c.customs === false)) reasons.push(t('cmp_reason_customs'));
         const tail = reasons.length ? ' — ' + reasons.join(', ') : '';
-        // identical-name cars are common, so pin the price to the winner's name to disambiguate
         const price = w.price > 0 ? ` · $${w.price.toLocaleString()}` : '';
         return `<strong>${escapeHtml(w.title)}${price}</strong> ${t('cmp_better_pick')}${tail}`;
     }
@@ -2484,7 +2363,6 @@
             });
         };
         const rowCells = rows.map(scoreRow);   // tallies `wins` as a side effect
-        // overall verdict weighs each attribute by how big (and how meaningful) its gap is
         const scores = multi ? _cmpScores(list) : list.map(() => 0);
         const topScore = Math.max(...scores);
         const sorted = [...scores].sort((a, b) => b - a);
@@ -2622,7 +2500,6 @@
         }).join('') + paginationHtml(data);
     }
 
-
     function buildSlides(car) {
         const slides = [];
         const ytId = youtubeId(car.video_url);
@@ -2653,7 +2530,6 @@
             </div>`;
     }
 
-    // აღწერას ადგილზევე თარგმნის — ენის არჩევანით (English / Русский / Қазақша)
     const _TR_LANGS = [['en', 'English'], ['ru', 'Русский'], ['kk', 'Қазақша']];
     window.translateDesc = function (btn) {
         const block = btn.closest('.desc-block');
@@ -2701,8 +2577,6 @@
         btn.textContent = t(clamped ? 'see_more' : 'see_less');
         if (from === to || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         // line-clamp hides the extra lines even mid-transition, so release it while
-        // the height animates and re-apply once collapsed. Cleanup runs on a timer:
-        // a second click cancels the transition, so transitionend can't be trusted.
         desc.classList.remove('clamped');
         desc.style.height = from + 'px';
         desc.style.overflow = 'hidden';
@@ -2801,7 +2675,6 @@
             </div>` : `<div class="dt-gallery"><div class="no-photo" style="aspect-ratio:4/3;border-radius:14px">${t('no_photos')}</div></div>`;
 
         const en = getLang() === 'en';
-        // highlighted spec tiles (the headline specs, shown as a grid)
         const hl = [];
         if (car.body_type)       hl.push([_bodyIcon(car.body_type), tval(car.body_type), t('filter_body')]);
         if (car.year)            hl.push([_PIC(_FILTER_ICONS.year), car.year, t('spec_year')]);
@@ -2906,8 +2779,6 @@
 
     window.goToCarDetail = function (key, ev) {
         if (ev) ev.preventDefault();
-        // close whatever overlay we navigated from — otherwise it stays on top
-        // of the detail page with the scroll still locked
         const cm = document.getElementById('cmp-modal');
         if (cm && cm.classList.contains('show')) closeCompare();
         if (document.querySelector('#saved-drawer.open')) closeSaved();
@@ -2946,8 +2817,6 @@
     };
 
     window.copyText = function (arg, maybeBtn) {
-        // accept either copyText(text, btn) or copyText(buttonEl) — the element form
-        // reads its value from data-copy, so scraped strings never enter a JS context
         let text, btn;
         if (arg && arg.nodeType === 1) { btn = arg; text = arg.getAttribute('data-copy') || ''; }
         else { text = arg; btn = maybeBtn; }
@@ -2974,16 +2843,11 @@
             .catch(() => {});
     })();
 
-    // shareable links are restored by restoreFromUrl (bottom of the script), which
-    // handles ?q= plus every filter param
-
-    // --- saved cars / searches / history (localStorage; no account needed) ---
     const _carData = {};
     const LS_CARS = 'cdb_saved', LS_SEARCHES = 'cdb_searches', LS_HIST = 'cdb_history', LS_VIEWED = 'cdb_viewed';
     function lsGet(k) { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
     function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
 
-    // ნანახი მანქანების ისტორია
     function pushViewed(car) {
         const item = {
             key: `${car.source}-${car.source_id}`, title: carTitle(car),
@@ -3016,7 +2880,6 @@
         });
     }
 
-    // შენახული ძიების ლამაზი წარწერა ყველა პარამეტრით
     function describeSearch(p) {
         const en = getLang() === 'en';
         const parts = [];
@@ -3037,8 +2900,6 @@
         return parts.join(' · ') || t('save_search');
     }
 
-    // structured breakdown of a saved search — one {label, value} per active filter,
-    // used both for the compact chip label and the expandable detail panel
     function _searchParts(p) {
         const en = getLang() === 'en';
         const out = [];
@@ -3061,7 +2922,6 @@
     function _payloadOf(item) {
         return (item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : (typeof item === 'string' ? { query: item } : {}));
     }
-    // compact chip: leading value + a "+N" badge for the remaining filters
     function _chipShort(item) {
         const parts = _searchParts(_payloadOf(item));
         if (!parts.length) return { text: (item && item.label) || t('save_search'), extra: 0 };
@@ -3078,7 +2938,6 @@
         const badge = short.extra ? `<span class="chip-more-n">+${short.extra}</span>` : '';
         return (saved ? ICON_HEART : '') + `<span class="chip-text">${escapeHtml(short.text)}</span>` + badge;
     }
-    // one compact search chip + its (hidden) expandable filter breakdown
     function _searchChip(o) {
         const save = o.saveKind ? `<button class="chip-save" data-kind="${o.saveKind}" data-i="${o.i}" aria-label="${escapeHtml(t('save_search'))}" title="${escapeHtml(t('save_search'))}">♡</button>` : '';
         return `<span class="chip-wrap">`
@@ -3088,7 +2947,6 @@
             + `<button class="chip-del" data-kind="${o.delKind}" data-i="${o.i}" aria-label="${escapeHtml(t('remove'))}">✕</button>`
             + `</span><div class="search-detail" id="${o.uid}" hidden>${_detailHtml(o.item)}</div>`;
     }
-    // toggle a chip's filter-breakdown panel open/closed
     function _wireChipExpand(scope) {
         scope.querySelectorAll('.chip-expand').forEach(b => {
             b.onclick = (e) => {
@@ -3188,7 +3046,6 @@
         if (!row) return;
         const allSaved = lsGet(LS_SEARCHES), allHist = lsGet(LS_HIST);
         if (!allSaved.length && !allHist.length) { row.innerHTML = ''; return; }
-        // phones get a shorter row — the chips were crowding out the results
         const narrow = matchMedia('(max-width: 560px)').matches;
         const SCAP = narrow ? 2 : 4, HCAP = narrow ? 3 : 5;
         const saved = _recentAll ? allSaved : allSaved.slice(0, SCAP);
@@ -3238,7 +3095,6 @@
         if (trig) trig.classList.toggle('has-items', n > 0);
     }
 
-    // long lists render in chunks; each section grows independently via "show more"
     const _DRAWER_PAGE = 8;
     let _drawerShown = {};
     function _loadMore(section, total, shown) {
@@ -3258,9 +3114,6 @@
         _savedOpener = null;
     };
 
-    // backup/restore — everything the user builds up lives in localStorage; these let
-    // them move it between browsers/devices (cid is deliberately excluded — it's the
-    // rate-limit identity, not user data)
     const EXPORT_KEYS = [LS_CARS, LS_SEARCHES, LS_HIST, LS_VIEWED, HIDDEN_KEY, CMPSAVE_KEY, 'cardb_lang'];
     window.exportData = function () {
         const payload = { app: 'cardb', version: 1, exported: new Date().toISOString(), data: {} };
@@ -3398,7 +3251,6 @@
         renderRecent();
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
-            // only when the drawer is actually open and nothing sits above it
             if (!document.querySelector('#saved-drawer.open')) return;
             if (_lightbox) return;
             const cm = document.getElementById('cmp-modal');
@@ -3408,7 +3260,6 @@
     })();
 
     window.addEventListener('popstate', () => {
-        // Back must not leave an overlay floating over the new view with the scroll locked
         if (_lightbox) closeLightbox();
         const cm = document.getElementById('cmp-modal');
         if (cm && cm.classList.contains('show')) closeCompare();
@@ -3427,11 +3278,8 @@
         else if (route.view === 'notfound') showNotFound();
     })();
 
-    /* ===== custom rounded dropdowns — native <select> popups can't be styled ===== */
-    // panel-ს ღილაკთან ათავსებს; თუ ქვემოთ ადგილი არ არის — ზემოთ გადააბრუნებს
     function _placeCddPanel(btn, panel) {
         const r = btn.getBoundingClientRect();
-        // size to content (at least the button width), capped to the viewport
         panel.style.width = 'auto';
         panel.style.minWidth = r.width + 'px';
         panel.style.maxWidth = Math.min(380, window.innerWidth - 16) + 'px';
@@ -3614,7 +3462,6 @@
             }
         });
 
-        // ── keyboard support (APG combobox/listbox) ──────────────────────
         let _activeIdx = -1;
         const focusOwner = () => (multi && searchable) ? panel.querySelector('.cdd-search') : btn;
         const rowEls = () => Array.from(panel.querySelectorAll('.cdd-rows > .cdd-opt, .cdd-rows > .cdd-grp'));
@@ -3689,8 +3536,6 @@
         document.querySelectorAll('select.filter-select').forEach(s => s._cdd && s._cdd.render());
     }
 
-    // small icon next to each sidebar filter label (injected as an absolute
-    // sibling so language switches, which rewrite the label text, leave it intact)
     const _FILTER_ICONS = {
         brand:    '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1-.6-1.4V5a1 1 0 0 1 1-1h7a2 2 0 0 1 1.4.6l6.4 6.4a2 2 0 0 1 0 2.8z"/><circle cx="8" cy="8" r="1.4"/>',
         model:    '<path d="M5 11l1.5-4.2A2 2 0 0 1 8.4 5.5h7.2a2 2 0 0 1 1.9 1.3L19 11M4.5 11h15v3.5a1 1 0 0 1-1 1H17a1 1 0 0 1-1-1v-.5H8v.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="13" r="1"/><circle cx="16.5" cy="13" r="1"/>',
@@ -3726,8 +3571,6 @@
     renderCompareBar();
     addFilterIcons();
 
-    // a shared /?q=…&brand=… link re-runs its search on load. List filters need the
-    // brand/facet option lists first; plain text/number links start immediately.
     (function restoreFromUrl() {
         if (parseRoute().view !== 'search' || !location.search) return;
         const p = paramsToPayload(new URLSearchParams(location.search));
@@ -3741,8 +3584,6 @@
         });
     })();
 
-    // dropdowns are enhanced before translations are applied (DOMContentLoaded),
-    // so re-render once labels exist — otherwise the sort button shows blank until clicked
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshDropdowns);
     else refreshDropdowns();
 
