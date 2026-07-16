@@ -732,7 +732,7 @@
         .cmp-x { background: none; border: 0; font-size: 20px; line-height: 1; color: #64748B; cursor: pointer; }
         .cmp-x:hover { color: #EF233C; }
         .cmp-body { overflow-x: auto; }
-        .cmp-table { width: 100%; border-collapse: collapse; }
+        .cmp-table { width: 100%; border-collapse: separate; border-spacing: 0; }
         .cmp-table th, .cmp-table td { padding: 11px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #F0F3F5; font-size: 13.5px; color: #2B2D42; }
         .cmp-rowlabel { color: #64748B; font-weight: 500; width: 130px; white-space: nowrap; }
         .cmp-car-img { width: 150px; aspect-ratio: 4/3; object-fit: cover; border-radius: 9px; background: #F3F6F8; display: block; }
@@ -744,10 +744,11 @@
         .cmp-table td.cmp-worst { background: #FEF2F3; color: #D90429; box-shadow: inset 3px 0 0 #F4879A; }
         .cmp-wins { display: inline-block; font-size: 12px; color: #15803D; font-weight: 600; margin-top: 4px; background: #E7FBEF; border-radius: 999px; padding: 1px 9px; }
         .cmp-table th.cmp-winner { background: linear-gradient(180deg, #FFF4CE, #FFFDF4);
-            border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; border-top: 3px solid #F5B301; }
+            border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; border-top: 3px solid #F5B301;
+            border-radius: 12px 12px 0 0; }
         .cmp-table td.cmp-wincol { border-left: 2px solid #F5B301; border-right: 2px solid #F5B301; }
         .cmp-table td.cmp-wincol:not(.cmp-best):not(.cmp-worst) { background: #FFFCEF; }
-        .cmp-table tr:last-child td.cmp-wincol { border-bottom: 2px solid #F5B301; }
+        .cmp-table tr:last-child td.cmp-wincol { border-bottom: 2px solid #F5B301; border-radius: 0 0 12px 12px; }
         .cmp-table th.cmp-winner .cmp-car-title { color: #92600B; font-weight: 700; }
         .cmp-table th.cmp-winner .cmp-car-img { animation: winnerGlow 2s ease-in-out infinite; }
         @keyframes winnerGlow {
