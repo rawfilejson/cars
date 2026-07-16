@@ -182,6 +182,7 @@
             width: 22px; height: 22px; border-radius: 999px; background: #FDE6E8; color: #EF233C;
             font-size: 11px; font-weight: 700; flex-shrink: 0; transition: background .15s, color .15s; }
         .cdd-group-head.cdd-grp:hover .grp-badge, .cdd-group-head.cdd-grp.open .grp-badge { background: #EF233C; color: #fff; }
+        .cdd-group-head.cdd-grp .brand-badge { width: 24px; height: 24px; border-radius: 7px; font-size: 10px; }
         .cdd-group-head.cdd-grp .grp-label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cdd-group-head.cdd-grp .grp-n { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500;
             color: #6B7280; background: #F3F6F8; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
@@ -1529,14 +1530,15 @@
                 if (ms.length < 2) { flat.push(...ms); groups.delete(series); }
             }
             const prefix = multiBrand ? (b + ' · ') : '';
+            const bAttr = ` data-brand="${escapeHtml(b)}"`;
             if (groups.size) {
                 for (const [series, ms] of groups.entries()) {
-                    out.push(`<option disabled data-n="${ms.length}">${escapeHtml(prefix + series)}</option>`);
+                    out.push(`<option disabled data-n="${ms.length}"${bAttr}>${escapeHtml(prefix + series)}</option>`);
                     ms.forEach(m => out.push(opt(m)));
                 }
-                if (flat.length) { out.push(`<option disabled data-n="${flat.length}">${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
+                if (flat.length) { out.push(`<option disabled data-n="${flat.length}"${bAttr}>${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
             } else {
-                if (multiBrand) out.push(`<option disabled data-n="${flat.length}">${escapeHtml(b)}</option>`);
+                if (multiBrand) out.push(`<option disabled data-n="${flat.length}"${bAttr}>${escapeHtml(b)}</option>`);
                 flat.forEach(m => out.push(opt(m)));
             }
         }
@@ -3391,10 +3393,14 @@
                     if (o.textContent) {
                         group = i;
                         const label = o.textContent;
+                        const brand = o.dataset.brand || '';
                         const mono = (label.split('·').pop() || '').trim().charAt(0).toUpperCase();
                         const n = o.dataset.n || '';
+                        // model groups show the brand's logo (with an initials fallback); other
+                        // grouped dropdowns fall back to the class letter
+                        const badge = brand ? _brandBadge(brand) : `<span class="grp-badge">${escapeHtml(mono)}</span>`;
                         return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" id="${listId}-o${i}" role="option" aria-selected="false" aria-expanded="${_expanded.has(i) ? 'true' : 'false'}" data-group="${i}">`
-                            + `<span class="grp-badge">${escapeHtml(mono)}</span>`
+                            + badge
                             + `<span class="grp-label">${escapeHtml(label)}</span>`
                             + (n ? `<span class="grp-n">${escapeHtml(n)}</span>` : '')
                             + `<svg class="grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>`;
