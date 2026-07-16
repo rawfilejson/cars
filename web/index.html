@@ -138,10 +138,13 @@
         .cdd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cdd-chev { color: #64748B; font-size: 11px; transition: transform .15s; flex-shrink: 0; }
         .cdd.open .cdd-chev { transform: rotate(180deg); }
-        .cdd-panel { display: none; position: fixed; z-index: 60;
+        .cdd-panel { display: none; position: fixed; z-index: 1250;
             background: #fff; border: 1px solid #DCE3EA; border-radius: 14px; box-shadow: 0 14px 36px rgba(43,45,66,.18);
             padding: 6px; max-height: 290px; overflow-y: auto; }
         .cdd.open .cdd-panel { display: block; animation: cddIn .14s ease both; }
+        /* an open filter dropdown lifts the whole sidebar (a sticky stacking context that
+           otherwise lets result cards paint over the fixed panel) above the results/tray */
+        body.cdd-open .sidebar { z-index: 1250; }
         @keyframes cddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
         .cdd-opt { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; font-size: 14px; color: #2B2D42; cursor: pointer; white-space: nowrap; }
         .cdd-opt:hover { background: #F3F6F8; }
@@ -1126,18 +1129,18 @@
         document.querySelectorAll('[data-search-btn]').forEach(b => { b.textContent = label; });
     }
 
-    let _countTimer = null;
-    function scheduleLiveCount() { clearTimeout(_countTimer); _countTimer = setTimeout(fetchLiveCount, 450); }
+    let _countTimer = null, _countSeq = 0;
+    function scheduleLiveCount() { clearTimeout(_countTimer); _countTimer = setTimeout(fetchLiveCount, 400); }
     async function fetchLiveCount() {
-        if (document.getElementById('search-input').value.trim()) { _lastCount = null; updateSearchBtnCount(); return; }
         const payload = buildSearchPayload();
         delete payload.page; delete payload.sort;
+        const seq = ++_countSeq;   // ignore a slow response that a newer request already superseded
         try {
             const resp = await fetch(`${API_BASE}/search/count`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            if (!resp.ok) return;
+            if (!resp.ok || seq !== _countSeq) return;
             _lastCount = (await resp.json()).total_count;
             updateSearchBtnCount();
         } catch (_) {}
@@ -3279,11 +3282,15 @@
         else if (route.view === 'notfound') showNotFound();
     })();
 
-    function _placeCddPanel(btn, panel) {
+    // keepSize=true only re-anchors position on scroll; the size is frozen at open time
+    // so scrolling never shrinks the panel
+    function _placeCddPanel(btn, panel, keepSize) {
         const r = btn.getBoundingClientRect();
-        panel.style.width = 'auto';
-        panel.style.minWidth = r.width + 'px';
-        panel.style.maxWidth = Math.min(380, window.innerWidth - 16) + 'px';
+        if (!keepSize) {
+            panel.style.width = 'auto';
+            panel.style.minWidth = r.width + 'px';
+            panel.style.maxWidth = Math.min(380, window.innerWidth - 16) + 'px';
+        }
         const pw = Math.min(panel.offsetWidth || r.width, window.innerWidth - 16);
         let left = r.left;
         if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;   // clamp right edge
@@ -3295,29 +3302,35 @@
         if (below >= ph || below >= above) {
             panel.style.top = (r.bottom + 6) + 'px';
             panel.style.bottom = 'auto';
-            panel.style.maxHeight = Math.max(120, Math.min(300, below)) + 'px';
+            if (!keepSize) panel.style.maxHeight = Math.max(120, Math.min(300, below)) + 'px';
         } else {
             panel.style.top = 'auto';
             panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-            panel.style.maxHeight = Math.max(120, Math.min(300, above)) + 'px';
+            if (!keepSize) panel.style.maxHeight = Math.max(120, Math.min(300, above)) + 'px';
         }
     }
 
     function enhanceDropdowns() {
         document.querySelectorAll('select.filter-select').forEach(enhanceSelect);
-        const closeAll = () => document.querySelectorAll('.cdd.open').forEach(d => {
-            d.classList.remove('open');
-            const b = d.querySelector('.cdd-btn'); if (b) { b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-activedescendant'); }
-        });
+        const closeAll = () => {
+            document.body.classList.remove('cdd-open');
+            document.querySelectorAll('.cdd.open').forEach(d => {
+                d.classList.remove('open');
+                const b = d.querySelector('.cdd-btn'); if (b) { b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-activedescendant'); }
+            });
+        };
         document.addEventListener('click', closeAll);
         window.addEventListener('resize', closeAll);
-        window.addEventListener('scroll', () => {
+        window.addEventListener('scroll', (e) => {
             const open = document.querySelector('.cdd.open');
             if (!open) return;
-            const btn = open.querySelector('.cdd-btn'), panel = open.querySelector('.cdd-panel');
+            const panel = open.querySelector('.cdd-panel');
+            // scrolling inside the panel must not reflow it (that was shrinking the panel)
+            if (panel.contains(e.target)) return;
+            const btn = open.querySelector('.cdd-btn');
             const r = btn.getBoundingClientRect();
-            if (r.bottom < 4 || r.top > window.innerHeight - 4) { open.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); return; }
-            _placeCddPanel(btn, panel);
+            if (r.bottom < 4 || r.top > window.innerHeight - 4) { closeAll(); return; }
+            _placeCddPanel(btn, panel, true);
         }, true);
     }
 
@@ -3480,12 +3493,14 @@
             if (sel.disabled) return;
             document.querySelectorAll('.cdd.open').forEach(d => { d.classList.remove('open'); const b = d.querySelector('.cdd-btn'); if (b) b.setAttribute('aria-expanded', 'false'); });
             _filter = ''; render(); wrap.classList.add('open'); btn.setAttribute('aria-expanded', 'true');
+            document.body.classList.add('cdd-open');   // lifts the sidebar's stacking context above the results
             _placeCddPanel(btn, panel); panel.scrollTop = 0;
             const fo = focusOwner(); if (fo && fo !== btn) fo.focus();
             setActive(at === 'last' ? rowEls().length - 1 : 0);
         };
         const closePanel = (focusBtn) => {
             wrap.classList.remove('open'); btn.setAttribute('aria-expanded', 'false');
+            document.body.classList.remove('cdd-open');
             const fo = focusOwner(); if (fo) fo.removeAttribute('aria-activedescendant');
             _activeIdx = -1;
             if (focusBtn) btn.focus();

@@ -6,7 +6,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.api.schemas import SearchRequest
-from src.api.search import _build_query, _normalize_phone_query, _looks_like_phone
+from src.api.search import _build_query, _count_where, _normalize_phone_query, _looks_like_phone
 
 
 def _build_filter_only(**kwargs):
@@ -33,6 +33,32 @@ def _build_filter_only(**kwargs):
 def test_normalize_phone_query(raw, expected):
     """ნებისმიერი user input → ბოლო 9 ციფრი (ან ნაკლები)."""
     assert _normalize_phone_query(raw) == expected
+
+
+def test_count_where_filters_only():
+    where, params = _count_where(SearchRequest(manufacturers=["Toyota"]))
+    assert "lower(manufacturer) IN (%s)" in where
+    assert params == ("toyota",)
+
+
+def test_count_where_text_query_applies_words_and_filters():
+    """A freeform query must be counted (word LIKEs) together with the filters."""
+    where, params = _count_where(SearchRequest(query="camry", manufacturers=["Toyota"]))
+    assert "search_blob LIKE %s" in where
+    assert "lower(manufacturer) IN (%s)" in where
+    assert params == ("%camry%", "toyota")
+
+
+def test_count_where_vin_query():
+    where, params = _count_where(SearchRequest(query="JT2BF22K1W0123456"))
+    assert where.startswith("vin = %s")
+    assert params == ("JT2BF22K1W0123456",)
+
+
+def test_count_where_empty_is_unfiltered():
+    where, params = _count_where(SearchRequest())
+    assert where == ""
+    assert params == ()
 
 
 @pytest.mark.parametrize("text,expected", [

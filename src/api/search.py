@@ -411,17 +411,41 @@ def search(req: SearchRequest, request: Request, background_tasks: BackgroundTas
     )
 
 
+def _count_where(req: SearchRequest) -> tuple[str, tuple]:
+    """WHERE clause + params for the live count — mirrors the real search routing
+    (VIN / phone / freeform text, each combined with the active filters) so the
+    count always matches what a search would return."""
+    text = (req.query or req.free_text or "").strip()
+    frags, fparams = _filter_clauses(req)
+    filter_tail = (" AND " + " AND ".join(frags)) if frags else ""
+
+    if text:
+        upper = text.upper()
+        if _VIN_RE.match(upper):
+            return "vin = %s" + filter_tail, (upper, *fparams)
+        if _looks_like_phone(text):
+            suffix = _normalize_phone_query(text)
+            return (
+                r"regexp_replace(phone, '\D', '', 'g') LIKE %s" + filter_tail,
+                ("%" + suffix, *fparams),
+            )
+        words = [w for w in text.split() if w]
+        if words and len(text) >= 2:
+            word_clauses = " AND ".join([f"{_SEARCH_BLOB} LIKE %s"] * len(words))
+            patterns = [f"%{w.lower()}%" for w in words]
+            return word_clauses + filter_tail, (*patterns, *fparams)
+
+    # no usable text — filters only
+    return (" AND ".join(frags) if frags else ""), tuple(fparams)
+
+
 @router.post("/count", response_model=SearchCount)
 def search_count(req: SearchRequest) -> SearchCount:
-    """Match count for the current filters (browse) — drives the live count on the
-    search button. No rows, no rate limit; cached like searches. A free-text/VIN/
-    phone query isn't counted here (the real search returns its total)."""
-    frags, params = _filter_clauses(req)
-    if frags:
-        sql = "SELECT COUNT(*) AS n FROM cars WHERE " + " AND ".join(frags)
-        rows = _query_rows(sql, tuple(params))
-    else:
-        rows = _query_rows("SELECT COUNT(*) AS n FROM cars", ())
+    """Match count for the current query + filters — drives the live count on the
+    search button. No rows, no rate limit; cached like searches."""
+    where, params = _count_where(req)
+    sql = "SELECT COUNT(*) AS n FROM cars" + (f" WHERE {where}" if where else "")
+    rows = _query_rows(sql, params)
     return SearchCount(total_count=int(rows[0]["n"]) if rows else 0)
 
 
