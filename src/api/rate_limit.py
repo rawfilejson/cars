@@ -11,8 +11,9 @@ token-ს ვიღებთ (X-Client-Id, localStorage-დან): ერთ �
   * საათობრივი ჭერი: IP-ზე (backstop)
 
 დრო DB-ის NOW()-ით იზომება — კლიენტის საათს არ ვენდობით.
-IP X-Forwarded-For-ის ბოლო (proxy-ჩამატებულ) ჩანაწერიდან — კლიენტს
-მარცხნიდან ცრუ IP-ის prepend არ შეუძლია.
+IP-ს CF-Connecting-IP-დან ვიღებთ: origin Cloudflare-ის უკან დგას, ამ header-ს
+Cloudflare ავსებს რეალური კლიენტით და ცრუ მნიშვნელობას ჩამოაცილებს, ე.ი. მისი
+გაყალბება არ ხერხდება. fallback (Cloudflare-ის გარეშე): XFF-ის ბოლო public IP.
 """
 
 from __future__ import annotations
@@ -52,10 +53,14 @@ def _is_ip(value: str) -> bool:
 def client_ip(request: Request) -> str | None:
     """რეალური კლიენტის IP, ან None თუ ვერ დავადგინეთ.
 
-    X-Forwarded-For-ის ბოლო (rightmost) public IP-ს ვიღებთ: ამ ჩანაწერს
-    hosting proxy ამატებს კავშირის რეალური IP-ით, ხოლო კლიენტის მიერ
-    მარცხნიდან prepend-ული ცრუ IP-ები იგნორდება. fallback: peer host.
+    Cloudflare-ის CF-Connecting-IP-ს ვენდობით: origin მხოლოდ Cloudflare-ის edge-ით
+    მიიწვდომება, ე.ი. კლიენტს ამ header-ის მიწოდება/გაყალბება არ შეუძლია. თუ
+    Cloudflare-ის გარეშე გაეშვა, fallback — XFF-ის ბოლო public IP, მერე peer host.
     """
+    cf = request.headers.get("cf-connecting-ip", "").strip()
+    if _is_public_ip(cf):
+        return cf
+
     fwd = request.headers.get("x-forwarded-for", "")
     for part in reversed(fwd.split(",")):
         ip = part.strip()

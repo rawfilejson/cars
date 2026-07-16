@@ -1,4 +1,4 @@
-"""client identity resolution — XFF rightmost-public scan, token format.
+"""client identity resolution — CF-Connecting-IP first, XFF/peer fallback, token format.
 
 These helpers don't touch the DB, so a fake request (headers + client) is enough.
 """
@@ -20,17 +20,23 @@ def _req(headers: dict | None = None, client_host: str | None = None):
     return SimpleNamespace(headers=Headers(headers or {}), client=client)
 
 
-def test_cf_connecting_ip_not_trusted():
-    """API isn't behind Cloudflare — a client-set cf-connecting-ip must be ignored."""
+def test_cf_connecting_ip_is_trusted():
+    """Behind Cloudflare, CF-Connecting-IP is the real client and wins over XFF/peer."""
     req = _req(
         {"cf-connecting-ip": "8.8.8.8", "x-forwarded-for": "1.1.1.1"},
         client_host="9.9.9.9",
     )
-    assert client_ip(req) == "1.1.1.1"   # rightmost public XFF, not the spoofable header
+    assert client_ip(req) == "8.8.8.8"
 
 
-def test_xff_prepended_spoof_is_ignored():
-    """Client prepends a fake IP; the proxy appends the real one — we take the real (rightmost)."""
+def test_cf_connecting_ip_private_is_ignored():
+    """A private CF-Connecting-IP is meaningless — fall through to the XFF scan."""
+    req = _req({"cf-connecting-ip": "10.0.0.5", "x-forwarded-for": "8.8.4.4"})
+    assert client_ip(req) == "8.8.4.4"
+
+
+def test_xff_used_when_no_cf_header():
+    """Without Cloudflare (fallback), rightmost public XFF is taken."""
     req = _req({"x-forwarded-for": "6.6.6.6, 8.8.4.4"})
     assert client_ip(req) == "8.8.4.4"
 
