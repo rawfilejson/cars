@@ -1403,6 +1403,10 @@
         if (rest.length) html += '<option disabled></option>';   // separator line
         html += rest.map(opt).join('');
         const brand = document.getElementById('f-brand');
+        // rebuild (keep the "all brands" placeholder) — idempotent if ever called twice
+        const placeholder = brand.querySelector('option[value=""]');
+        brand.innerHTML = '';
+        if (placeholder) brand.appendChild(placeholder);
         brand.insertAdjacentHTML('beforeend', html);
         if (brand._cdd) brand._cdd.render();
     }
