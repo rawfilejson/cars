@@ -162,10 +162,20 @@
         .cdd-opt.cdd-check { display: flex; align-items: center; gap: 10px; }
         .cdd-opt.cdd-check.on { background: transparent; color: #2B2D42; font-weight: 600; }
         .cdd-opt.cdd-check:hover { background: #F3F6F8; }
-        .cdd-box { flex: 0 0 18px; width: 18px; height: 18px; border: 1.6px solid #C3CCD8; border-radius: 6px;
-            display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1;
-            color: #fff; transition: background .12s, border-color .12s; }
-        .cdd-opt.cdd-check.on .cdd-box { background: #EF233C; border-color: #EF233C; }
+        .cdd-box { flex: 0 0 20px; width: 20px; height: 20px; border: 2px solid #C3CCD8; border-radius: 6px; background: #fff;
+            display: inline-flex; align-items: center; justify-content: center; position: relative;
+            transition: background .16s cubic-bezier(.2,.7,.2,1), border-color .16s; }
+        .cdd-box svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round;
+            stroke-dasharray: 18; stroke-dashoffset: 18; }
+        .cdd-box.on { background: #EF233C; border-color: #EF233C; animation: cddBoxPop .28s cubic-bezier(.2,.7,.2,1); }
+        .cdd-box.on svg { animation: cddTick .3s ease .03s forwards; }
+        .cdd-box.mixed { background: #EF233C; border-color: #EF233C; }
+        .cdd-box.mixed::after { content: ''; position: absolute; width: 10px; height: 2.5px; background: #fff; border-radius: 2px; }
+        @keyframes cddBoxPop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+        @keyframes cddTick { to { stroke-dashoffset: 0; } }
+        .cdd-selectall { border-bottom: 1px solid #EEF2F5; margin-bottom: 2px; font-weight: 700; }
+        .cdd-group-head.cdd-grp .grp-check { flex: 0 0 18px; width: 18px; height: 18px; }
+        .cdd-group-head.cdd-grp .grp-check svg { width: 11px; height: 11px; }
         .cdd-label.is-empty { color: #64748B; }
         .cdd-count { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px;
             padding: 0 5px; border-radius: 999px; background: #EF233C; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
@@ -661,6 +671,8 @@
             svg[data-ic="engine"], .save-btn.pop svg, .rcard-compare.pop svg { animation: none !important; }
             .mrange-fill { transition: none !important; }
             .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img, .search-detail { animation: none !important; }
+            .cdd-box.on, .cdd-box.on svg { animation: none !important; }
+            .cdd-box svg { stroke-dashoffset: 0; }
         }
 
         .clear-x { color: #6B7280; font-size: 17px; line-height: 1; padding: 0 10px; background: transparent; border: 0; cursor: pointer; transition: color .12s; align-self: center; }
@@ -1220,6 +1232,11 @@
             const sel = document.getElementById(id);
             if (!sel) continue;
             const vals = Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
+            // every model of the brand selected = brand-only; skip the redundant, oversized list
+            if (id === 'f-model') {
+                const total = Array.from(sel.options).filter(o => o.value && !o.disabled).length;
+                if (total && vals.length >= total) continue;
+            }
             if (vals.length) payload[key] = vals;
         }
 
@@ -3340,6 +3357,8 @@
         }, true);
     }
 
+    const CDD_TICK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>';
+
     function enhanceSelect(sel) {
         if (sel._cdd) return;
         const multi = sel.multiple;
@@ -3389,9 +3408,16 @@
             }
         };
 
+        // grouped multi-select: a group header can toggle all its members at once
+        const _groupMembers = (gi) => { const out = []; for (let j = gi + 1; j < sel.options.length; j++) { const o = sel.options[j]; if (o.disabled) break; if (o.value) out.push(j); } return out; };
+        const _groupState = (gi) => { const m = _groupMembers(gi); if (!m.length) return 'none'; const c = m.filter(j => sel.options[j].selected).length; return c === 0 ? 'none' : c === m.length ? 'all' : 'some'; };
+        const _allValueIdx = () => { const out = []; for (let j = 0; j < sel.options.length; j++) { const o = sel.options[j]; if (o.value && !o.disabled) out.push(j); } return out; };
+        const _allState = () => { const a = _allValueIdx(); if (!a.length) return 'none'; const c = a.filter(j => sel.options[j].selected).length; return c === 0 ? 'none' : c === a.length ? 'all' : 'some'; };
+        const _boxCls = (st) => st === 'all' ? 'on' : st === 'some' ? 'mixed' : '';
+
         const rowsHtml = () => {
             let group = null;   // index of the current series header (or null = ungrouped)
-            return Array.from(sel.options).map((o, i) => {
+            const rows = Array.from(sel.options).map((o, i) => {
                 if (o.disabled) {
                     if (multi && searchable && _filter) return '';   // hide headers while searching
                     if (o.textContent) {
@@ -3403,8 +3429,10 @@
                         // model groups show the brand's logo (with an initials fallback); other
                         // grouped dropdowns fall back to the class letter
                         const badge = brand ? _brandBadge(brand) : `<span class="grp-badge">${escapeHtml(mono)}</span>`;
+                        const gst = _groupState(i);
+                        const gcheck = multi ? `<span class="grp-check cdd-box ${_boxCls(gst)}" data-groupcheck="${i}" role="checkbox" aria-checked="${gst === 'all' ? 'true' : gst === 'some' ? 'mixed' : 'false'}" aria-label="${escapeHtml(t('select_all_group'))}">${CDD_TICK}</span>` : '';
                         return `<div class="cdd-group-head cdd-grp ${_expanded.has(i) ? 'open' : ''}" id="${listId}-o${i}" role="option" aria-selected="false" aria-expanded="${_expanded.has(i) ? 'true' : 'false'}" data-group="${i}">`
-                            + badge
+                            + gcheck + badge
                             + `<span class="grp-label">${escapeHtml(label)}</span>`
                             + (n ? `<span class="grp-n">${escapeHtml(n)}</span>` : '')
                             + `<svg class="grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>`;
@@ -3423,12 +3451,21 @@
                         sel.id === 'f-gearbox'  ? _gearIcon(o.value) :
                         sel.id === 'f-drive'    ? _driveIcon(o.value) :
                         sel.id === 'f-location' ? _PIC('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>') : '') : '';
-                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box">${o.selected ? '✓' : ''}</span>${badge}${facetIc}${escapeHtml(o.textContent)}</div>`;
+                    return `<div class="cdd-opt cdd-check ${o.selected ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${o.selected ? 'true' : 'false'}" data-i="${i}"><span class="cdd-box ${o.selected ? 'on' : ''}">${CDD_TICK}</span>${badge}${facetIc}${escapeHtml(o.textContent)}</div>`;
                 }
                 const singleIc = sel.id === 'f-sort' ? _sortIcon(o.value) : (sel.id === 'f-customs' ? _customsIcon(o.value) : '');
                 return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${singleIc}${escapeHtml(o.textContent)}</div>`;
             }).join('');
+            // a "select all" master row for the model multi-select, when not filtering
+            const selectAll = (multi && sel.id === 'f-model' && !_filter && _allValueIdx().length)
+                ? `<div class="cdd-opt cdd-check cdd-selectall" data-selectall="1" role="option"><span class="cdd-box ${_boxCls(_allState())}">${CDD_TICK}</span>${escapeHtml(t('select_all_models'))}</div>`
+                : '';
+            return selectAll + rows;
         };
+        // in-place sync so a toggle animates the box instead of re-rendering every row
+        const _syncOptRow = (i) => { const el = panel.querySelector(`.cdd-opt[data-i="${i}"]`); if (!el) return; const on = sel.options[i].selected; el.classList.toggle('on', on); el.setAttribute('aria-selected', on ? 'true' : 'false'); const box = el.querySelector('.cdd-box'); if (box) { box.classList.remove('mixed'); box.classList.toggle('on', on); } };
+        const _syncGroupChecks = () => { panel.querySelectorAll('[data-groupcheck]').forEach(gc => { const st = _groupState(+gc.dataset.groupcheck); gc.classList.toggle('on', st === 'all'); gc.classList.toggle('mixed', st === 'some'); gc.setAttribute('aria-checked', st === 'all' ? 'true' : st === 'some' ? 'mixed' : 'false'); }); };
+        const _syncSelectAll = () => { const sa = panel.querySelector('[data-selectall] .cdd-box'); if (!sa) return; const st = _allState(); sa.classList.toggle('on', st === 'all'); sa.classList.toggle('mixed', st === 'some'); };
 
         const render = () => {
             wrap.classList.toggle('disabled', sel.disabled);
@@ -3458,7 +3495,34 @@
             if (sel.disabled) return;
             wrap.classList.contains('open') ? closePanel(false) : openPanel('first');
         });
+        const _clearAny = () => { const any = Array.from(sel.options).find(x => !x.value); if (any) any.selected = false; };
         panel.addEventListener('click', (e) => {
+            // group header's select-all checkbox — toggle every model in the class
+            const gcheck = e.target.closest('[data-groupcheck]');
+            if (gcheck) {
+                e.stopPropagation();
+                const gi = +gcheck.dataset.groupcheck;
+                const members = _groupMembers(gi);
+                const turnOn = _groupState(gi) !== 'all';
+                members.forEach(j => sel.options[j].selected = turnOn);
+                if (turnOn) _clearAny();
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                members.forEach(_syncOptRow); _syncGroupChecks(); _syncSelectAll(); updateLabel();
+                return;
+            }
+            // "select all models" master row
+            const sa = e.target.closest('[data-selectall]');
+            if (sa) {
+                e.stopPropagation();
+                const all = _allValueIdx();
+                const turnOn = _allState() !== 'all';
+                all.forEach(j => sel.options[j].selected = turnOn);
+                _clearAny();
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                updateLabel();
+                return;
+            }
             const grp = e.target.closest('.cdd-grp');
             if (grp) {
                 e.stopPropagation();
@@ -3473,10 +3537,15 @@
             const i = +opt.dataset.i;
             if (multi) {
                 const o = sel.options[i];
-                if (!o.value) { Array.from(sel.options).forEach(x => x.selected = false); }
-                else { o.selected = !o.selected; const any = Array.from(sel.options).find(x => !x.value); if (any) any.selected = false; }
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-                const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                if (!o.value) {
+                    Array.from(sel.options).forEach(x => x.selected = false);
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    const rowsEl = panel.querySelector('.cdd-rows'); if (rowsEl) rowsEl.innerHTML = rowsHtml();
+                } else {
+                    o.selected = !o.selected; _clearAny();
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    _syncOptRow(i); _syncGroupChecks(); _syncSelectAll();
+                }
                 updateLabel();
             } else {
                 sel.selectedIndex = i;
