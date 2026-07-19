@@ -68,6 +68,7 @@ const TRANSLATIONS = {
         compare_clear:  "გასუფთავება",
         compare_max:    "მაქსიმუმ 4 მანქანა",
         cmp_wins: "{n} მოგება",
+        cmp_leads_in: "ჯობს {n}/{m}",
         cmp_better_pick: "უკეთესი არჩევანი ჩანს",
         cmp_reason_newer: "უფრო ახალი",
         cmp_reason_mileage: "ნაკლები გარბენი",
@@ -105,6 +106,8 @@ const TRANSLATIONS = {
 
         err_fetch: "შეცდომა: {msg}",
         offline_msg: "ინტერნეტთან კავშირი გაწყდა",
+        boot_loading: "მონაცემები იტვირთება",
+        boot_sub: "ბაზა იღვიძებს — დაელოდე წამით…",
         err_unknown: "დაფიქსირდა შეცდომა, სცადეთ მოგვიანებით.",
         err_query_too_vague:
             "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — დაამატე წელი, " +
@@ -223,6 +226,7 @@ const TRANSLATIONS = {
         compare_clear:  "Clear",
         compare_max:    "Up to 4 cars",
         cmp_wins: "{n} wins",
+        cmp_leads_in: "wins {n}/{m}",
         cmp_better_pick: "looks like the better pick",
         cmp_reason_newer: "newer",
         cmp_reason_mileage: "lower mileage",
@@ -260,6 +264,8 @@ const TRANSLATIONS = {
 
         err_fetch: "Error: {msg}",
         offline_msg: "You're offline — check your connection",
+        boot_loading: "Loading data",
+        boot_sub: "The database is waking up — one moment…",
         err_unknown: "Something went wrong, please try again later.",
         err_query_too_vague:
             "Please be more specific — add the year, city, or trim " +
@@ -373,6 +379,7 @@ const TRANSLATIONS = {
         compare_clear: "Очистить",
         compare_max: "До 4 машин",
         cmp_wins: "{n} побед",
+        cmp_leads_in: "лучше {n}/{m}",
         cmp_better_pick: "выглядит лучшим выбором",
         cmp_reason_newer: "новее",
         cmp_reason_mileage: "меньше пробег",
@@ -406,6 +413,8 @@ const TRANSLATIONS = {
         no_results: "По вашему запросу автомобилей не найдено",
         err_fetch: "Ошибка: {msg}",
         offline_msg: "Нет подключения к интернету",
+        boot_loading: "Загрузка данных",
+        boot_sub: "База просыпается — секундочку…",
         err_unknown: "Что-то пошло не так, попробуйте позже.",
         err_query_too_vague: "Пожалуйста, уточните запрос — добавьте год, город или комплектацию (например, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Введите запрос для поиска или используйте фильтры.",
@@ -508,6 +517,7 @@ const TRANSLATIONS = {
         compare_clear: "Тазалау",
         compare_max: "4 көлікке дейін",
         cmp_wins: "{n} жеңіс",
+        cmp_leads_in: "{n}/{m} озық",
         cmp_better_pick: "үздік таңдау сияқты",
         cmp_reason_newer: "жаңарақ",
         cmp_reason_mileage: "жүрісі аз",
@@ -541,6 +551,8 @@ const TRANSLATIONS = {
         no_results: "Сіздің сұранысыңыз бойынша көлік табылмады",
         err_fetch: "Қате: {msg}",
         offline_msg: "Интернет байланысы жоқ",
+        boot_loading: "Деректер жүктелуде",
+        boot_sub: "Дерекқор оянып жатыр — бір сәт…",
         err_unknown: "Бірдеңе дұрыс болмады, кейінірек қайталап көріңіз.",
         err_query_too_vague: "Нақтырақ көрсетіңіз — жылын, қаласын немесе жинақталымын қосыңыз (мысалы, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Іздеу үшін бірдеңе енгізіңіз немесе сүзгілерді пайдаланыңыз.",
