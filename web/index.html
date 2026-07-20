@@ -1439,7 +1439,12 @@
             const hasVal = ids.some((id) => {
                 const el = document.getElementById(id);
                 if (!el) return false;
-                if (el.multiple) return Array.from(el.selectedOptions).some(o => o.value);
+                if (el.multiple) {
+                    // a subset narrows; none or all selected both mean "all" (no filter)
+                    const sel = Array.from(el.selectedOptions).filter(o => o.value).length;
+                    const total = Array.from(el.options).filter(o => o.value).length;
+                    return sel > 0 && sel < total;
+                }
                 return !!el.value;
             });
             group.classList.toggle('has-val', hasVal);
@@ -1597,12 +1602,12 @@
             const bAttr = ` data-brand="${escapeHtml(b)}"`;
             if (groups.size) {
                 for (const [series, ms] of groups.entries()) {
-                    out.push(`<option disabled data-n="${ms.length}"${bAttr}>${escapeHtml(prefix + series)}</option>`);
+                    out.push(`<option disabled value="" data-n="${ms.length}"${bAttr}>${escapeHtml(prefix + series)}</option>`);
                     ms.forEach(m => out.push(opt(m)));
                 }
-                if (flat.length) { out.push(`<option disabled data-n="${flat.length}"${bAttr}>${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
+                if (flat.length) { out.push(`<option disabled value="" data-n="${flat.length}"${bAttr}>${escapeHtml(prefix + t('other'))}</option>`); flat.forEach(m => out.push(opt(m))); }
             } else {
-                if (multiBrand) out.push(`<option disabled data-n="${flat.length}"${bAttr}>${escapeHtml(b)}</option>`);
+                if (multiBrand) out.push(`<option disabled value="" data-n="${flat.length}"${bAttr}>${escapeHtml(b)}</option>`);
                 flat.forEach(m => out.push(opt(m)));
             }
         }
@@ -1616,6 +1621,10 @@
         const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
         model.innerHTML = _buildModelOptions(brands, keep);
         model.disabled = brands.length === 0;
+        // default: all models of the picked brand(s) are selected (none matched a prior
+        // pick, e.g. a fresh brand choice) — the user narrows down from there
+        const opts = Array.from(model.options).filter(o => o.value);
+        if (opts.length && !opts.some(o => o.selected)) opts.forEach(o => o.selected = true);
         if (model._cdd) model._cdd.render();
         updateFilterResets();
     }
@@ -3450,7 +3459,11 @@
         const updateLabel = () => {
             if (multi) {
                 const s = realSel();
-                if (!s.length) { btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return; }
+                const totalOpts = Array.from(sel.options).filter(o => o.value).length;
+                // none OR all selected both read as "all" — show the placeholder, not a wall of chips
+                if (!s.length || (totalOpts && s.length === totalOpts)) {
+                    btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return;
+                }
                 const MAX = 2;
                 const chips = s.slice(0, MAX).map(o => {
                     const logo = sel.id === 'f-brand'
@@ -3499,6 +3512,8 @@
                     return `<div class="cdd-sep" role="presentation"></div>`;
                 }
                 if (multi) {
+                    // the model dropdown has its own "all models" master row, so drop the placeholder
+                    if (!o.value && sel.id === 'f-model') return '';
                     const collapsed = group !== null && !_expanded.has(group) && !(searchable && _filter);
                     if (collapsed) return '';
                     if (searchable && _filter && o.value && !_matchFilter(o.textContent, _filter)) return '';
