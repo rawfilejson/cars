@@ -34,9 +34,11 @@ class SearchRequest(BaseModel):
 
     # multi-select filters (new filter UI). The singular fields above are kept
     # for backward compatibility; the server merges both into one IN per column.
-    manufacturers: list[_FilterValue] | None = Field(None, max_length=60)
-    # models can be picked individually per class; a brand may have a couple hundred
-    models:        list[_FilterValue] | None = Field(None, max_length=250)
+    # every option is checked by default, so "all but a few" can send nearly the
+    # whole list — the caps hold the entire catalogue with headroom to grow.
+    manufacturers: list[_FilterValue] | None = Field(None, max_length=300)
+    # models can be picked individually per class; a few brands add up quickly
+    models:        list[_FilterValue] | None = Field(None, max_length=1000)
     body_types:    list[_FilterValue] | None = Field(None, max_length=40)
     fuels:         list[_FilterValue] | None = Field(None, max_length=40)
     gearboxes:     list[_FilterValue] | None = Field(None, max_length=40)

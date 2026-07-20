@@ -1321,12 +1321,11 @@
         for (const [id, key] of Object.entries(MULTI)) {
             const sel = document.getElementById(id);
             if (!sel) continue;
-            const vals = Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
-            // every model of the brand selected = brand-only; skip the redundant, oversized list
-            if (id === 'f-model') {
-                const total = Array.from(sel.options).filter(o => o.value && !o.disabled).length;
-                if (total && vals.length >= total) continue;
-            }
+            const selOpts = Array.from(sel.selectedOptions).filter(o => o.value);
+            const total = Array.from(sel.options).filter(o => o.value && !o.disabled).length;
+            // none OR all selected both mean "no constraint" — skip the redundant, oversized list
+            if (total && selOpts.length >= total) continue;
+            const vals = selOpts.flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
             if (vals.length) payload[key] = vals;
         }
 
@@ -1517,10 +1516,17 @@
         const brand = document.getElementById('f-brand');
         // rebuild (keep the "all brands" placeholder) — idempotent if ever called twice
         const placeholder = brand.querySelector('option[value=""]');
+        const hadSelection = Array.from(brand.selectedOptions).some(o => o.value);
         brand.innerHTML = '';
         if (placeholder) brand.appendChild(placeholder);
         brand.insertAdjacentHTML('beforeend', html);
+        // all brands checked by default (== no brand filter); a fresh visit only
+        if (!brand.dataset.filled && !hadSelection) {
+            Array.from(brand.options).forEach(o => { o.selected = !!o.value; });
+        }
+        brand.dataset.filled = '1';
         if (brand._cdd) brand._cdd.render();
+        onBrandChange();   // keeps the model dropdown in sync with the brand state
     }
 
     const _BRAND_COLORS = {
@@ -1586,8 +1592,10 @@
         const sel = document.getElementById(id);
         if (!sel || !values) return;
         const keep = new Set(Array.from(sel.selectedOptions).map(o => o.value));
+        const firstFill = !sel.dataset.filled;   // all checked by default on the initial fill only
         sel.innerHTML = `<option value="">${t(anyKey || 'any_opt')}</option>` +
-            values.map(v => `<option value="${escapeHtml(v)}"${keep.has(v) ? ' selected' : ''}>${escapeHtml(tval(v))}</option>`).join('');
+            values.map(v => `<option value="${escapeHtml(v)}"${(firstFill || keep.has(v)) ? ' selected' : ''}>${escapeHtml(tval(v))}</option>`).join('');
+        sel.dataset.filled = '1';
         if (sel._cdd) sel._cdd.render();
     }
 
@@ -1614,6 +1622,7 @@
         const sel = document.getElementById('f-location');
         if (!sel || !values) return;
         const keep = new Set(Array.from(sel.selectedOptions).flatMap(o => o.value.split(_LOC_SEP)));
+        const firstFill = !sel.dataset.filled;   // all checked by default on the initial fill only
         const groups = new Map();
         for (const v of values) {
             const label = locLabel(v);
@@ -1623,8 +1632,9 @@
         }
         sel.innerHTML = `<option value="">${t('location_any')}</option>` +
             Array.from(groups, ([label, raws]) =>
-                `<option value="${escapeHtml(raws.join(_LOC_SEP))}"${raws.some(r => keep.has(r)) ? ' selected' : ''}>${escapeHtml(label)}</option>`
+                `<option value="${escapeHtml(raws.join(_LOC_SEP))}"${(firstFill || raws.some(r => keep.has(r))) ? ' selected' : ''}>${escapeHtml(label)}</option>`
             ).join('');
+        sel.dataset.filled = '1';
         if (sel._cdd) sel._cdd.render();
     }
 
@@ -1680,9 +1690,14 @@
         const brand = document.getElementById('f-brand');
         const model = document.getElementById('f-model');
         const brands = Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean);
+        const totalBrands = Array.from(brand.options).filter(o => o.value).length;
+        // models only mean something once you narrow to a handful of brands; "all brands"
+        // (== no brand filter) or a near-complete set leaves the model dropdown empty/disabled
+        const MODEL_MAX_BRANDS = 5;
+        const narrowed = brands.length > 0 && brands.length < totalBrands && brands.length <= MODEL_MAX_BRANDS;
         const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
-        model.innerHTML = _buildModelOptions(brands, keep);
-        model.disabled = brands.length === 0;
+        model.innerHTML = _buildModelOptions(narrowed ? brands : [], keep);
+        model.disabled = !narrowed;
         // default: all models of the picked brand(s) are selected (none matched a prior
         // pick, e.g. a fresh brand choice) — the user narrows down from there
         const opts = Array.from(model.options).filter(o => o.value);
@@ -3143,7 +3158,12 @@
     function _setMulti(id, values) {
         const sel = document.getElementById(id);
         if (!sel) return;
-        const set = new Set(values || []);
+        // empty == "no filter" == all checked, to match the all-selected-by-default filters
+        if (!values || !values.length) {
+            Array.from(sel.options).forEach(o => { o.selected = !!o.value; });
+            return;
+        }
+        const set = new Set(values);
         Array.from(sel.options).forEach(o => { o.selected = o.value ? o.value.split(_LOC_SEP).some(v => set.has(v)) : false; });
     }
     function applySearchPayload(p) {
@@ -3578,8 +3598,8 @@
                     return `<div class="cdd-sep" role="presentation"></div>`;
                 }
                 if (multi) {
-                    // the model dropdown has its own "all models" master row, so drop the placeholder
-                    if (!o.value && sel.id === 'f-model') return '';
+                    // every multi-select has a "select all" master row, so drop the "any" placeholder
+                    if (!o.value) return '';
                     const collapsed = group !== null && !_expanded.has(group) && !(searchable && _filter);
                     if (collapsed) return '';
                     if (searchable && _filter && o.value && !_matchFilter(o.textContent, _filter)) return '';
@@ -3595,8 +3615,8 @@
                 const singleIc = sel.id === 'f-sort' ? _sortIcon(o.value) : (sel.id === 'f-customs' ? _customsIcon(o.value) : '');
                 return `<div class="cdd-opt ${i === sel.selectedIndex ? 'on' : ''}" id="${listId}-o${i}" role="option" aria-selected="${i === sel.selectedIndex ? 'true' : 'false'}" data-i="${i}">${singleIc}${escapeHtml(o.textContent)}</div>`;
             }).join('');
-            // a "select all" master row for the model multi-select, when not filtering
-            const selectAll = (multi && sel.id === 'f-model' && !_filter && _allValueIdx().length)
+            // a "select all" master row for every multi-select, when not filtering
+            const selectAll = (multi && !_filter && _allValueIdx().length)
                 ? `<div class="cdd-opt cdd-check cdd-selectall" data-selectall="1" role="option"><span class="cdd-box ${_boxCls(_allState())}">${CDD_TICK}</span>${escapeHtml(t('select_all_models'))}</div>`
                 : '';
             return selectAll + rows;
