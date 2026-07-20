@@ -304,8 +304,22 @@
         .dt-srow .k { color: #64748B; }
         .dt-srow .v { font-weight: 600; color: #2B2D42; text-align: right; }
         .dt-calls { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
-        .dt-call { display: block; text-align: center; background: #EF233C; color: #fff; border-radius: 999px; padding: 14px; font-size: 16px; font-weight: 700; }
+        .dt-call { position: relative; display: block; text-align: center; background: #EF233C; color: #fff; border-radius: 999px; padding: 14px; font-size: 16px; font-weight: 700; }
         .dt-call:hover { background: #D90429; }
+        .dt-call::after { content: ''; position: absolute; inset: 0; border-radius: 999px; pointer-events: none; animation: callPulse 2.4s ease-out infinite; }
+        @keyframes callPulse { 0% { box-shadow: 0 0 0 0 rgba(239,35,60,.45); } 70%, 100% { box-shadow: 0 0 0 12px rgba(239,35,60,0); } }
+        /* prominent VIN card — labeled, mono, with a slow shine to catch the eye */
+        .dt-vin-card { display: flex; align-items: center; gap: 10px; margin: 14px 0; padding: 11px 13px;
+            background: linear-gradient(120deg, #F5F8FA, #EEF3F6); border: 1px solid #DCE3EA; border-radius: 14px; position: relative; overflow: hidden; }
+        .dt-vin-card::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: linear-gradient(100deg, transparent 34%, rgba(255,255,255,.65) 50%, transparent 66%); transform: translateX(-120%); animation: vinShine 4s ease-in-out infinite; }
+        @keyframes vinShine { 0%, 55% { transform: translateX(-120%); } 82%, 100% { transform: translateX(120%); } }
+        .dt-vin-badge { flex-shrink: 0; font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #fff; background: #2B2D42; border-radius: 6px; padding: 4px 8px; position: relative; z-index: 1; }
+        .dt-vin-code { flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; letter-spacing: .03em; color: #2B2D42; overflow-x: auto; white-space: nowrap; position: relative; z-index: 1; }
+        .dt-vin-copy { flex-shrink: 0; background: #fff; border: 1px solid #DCE3EA; border-radius: 8px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: #64748B; cursor: pointer; position: relative; z-index: 1; transition: color .12s, border-color .12s, background .12s, transform .1s; }
+        .dt-vin-copy:hover { color: #EF233C; border-color: #FBD5DA; background: #FDE6E8; }
+        .dt-vin-copy:active { transform: scale(.9); }
+        .dt-vin-copy svg { width: 16px; height: 16px; }
         .dt-source { display: block; text-align: center; background: #fff; color: #2B2D42; border: 1px solid #DCE3EA; border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 600; margin-top: 10px; }
         .dt-source:hover { border-color: #2B2D42; }
         .dt-desc { background: #fff; border: 1px solid #DCE3EA; border-radius: 18px; padding: 22px; margin-top: 22px; }
@@ -627,6 +641,23 @@
         .spec-pill { display: inline-flex; align-items: center; gap: 6px; background: #F3F6F8; border: 1px solid #E7ECF1; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #2B2D42; transition: transform .12s ease, background .12s, border-color .12s; }
         .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
         .spec-pill:hover .pill-ic { color: #EF233C; }
+        /* each spec icon animates to life on hover — the car drives, the tacho sweeps, etc. */
+        .spec-pill[data-ic="body"]:hover .pill-ic { animation: pillDrive .55s ease; }
+        @keyframes pillDrive { 0% { transform: translateX(0); } 30% { transform: translateX(3px); } 62% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
+        .spec-pill[data-ic="mileage"] .mg-needle { transform-box: view-box; transform-origin: 12px 15.5px; }
+        .spec-pill[data-ic="mileage"]:hover .mg-needle { animation: needleSweep .62s cubic-bezier(.2,.85,.3,1); }
+        @keyframes needleSweep { 0% { transform: rotate(-78deg); } 72% { transform: rotate(7deg); } 100% { transform: rotate(0); } }
+        .spec-pill[data-ic="engine"] .pill-ic { transform-origin: 50% 60%; }
+        .spec-pill[data-ic="engine"]:hover .pill-ic { animation: pillCrank .5s ease; }
+        @keyframes pillCrank { 0%, 100% { transform: rotate(0); } 18% { transform: rotate(-10deg); } 38% { transform: rotate(8deg); } 58% { transform: rotate(-5deg); } 78% { transform: rotate(3deg); } }
+        .spec-pill[data-ic="power"]:hover .pill-ic { animation: pillZap .45s ease; }
+        @keyframes pillZap { 0%, 100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.28) rotate(-7deg); } 62% { transform: scale(.9); } }
+        .spec-pill[data-ic="fuel"]:hover .pill-ic { animation: pillFuel .5s ease; }
+        @keyframes pillFuel { 0% { transform: translateY(2px); } 50% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+        .spec-pill[data-ic="gearbox"]:hover .pill-ic { animation: pillShift .45s ease; }
+        @keyframes pillShift { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2.5px); } 55% { transform: translateX(2.5px); } 80% { transform: translateX(-1px); } }
+        .spec-pill[data-ic="drive"]:hover .pill-ic { animation: pillSpin .7s cubic-bezier(.3,.1,.2,1); }
+        @keyframes pillSpin { to { transform: rotate(360deg); } }
         .rcard-bot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px 12px; margin-top: auto; flex-wrap: wrap; }
         .rcard-price { font-size: 22px; font-weight: 800; color: #EF233C; letter-spacing: -.02em; background: #FEF2F3; border: 1px solid #FBE0E4; border-radius: 10px; padding: 4px 12px; }
         .rcard-price.negotiable { font-size: 14px; font-weight: 700; letter-spacing: 0; padding: 7px 12px; }
@@ -690,6 +721,9 @@
             .cmp-modal, .cmp-sheet, .cmp-crown, .cmp-crown span, .cmp-table th.cmp-winner .cmp-car-img, .search-detail { animation: none !important; }
             .cdd-box.on, .cdd-box.on svg { animation: none !important; }
             .cdd-box svg { stroke-dashoffset: 0; }
+            .spec-pill[data-ic]:hover .pill-ic, .spec-pill[data-ic="mileage"]:hover .mg-needle { animation: none !important; }
+            .boot-overlay { transition: none !important; }
+            .dt-call::after, .dt-vin-card::before { animation: none !important; }
         }
 
         .clear-x { color: #6B7280; font-size: 17px; line-height: 1; padding: 0 10px; background: transparent; border: 0; cursor: pointer; transition: color .12s; align-self: center; }
@@ -2150,7 +2184,7 @@
         const cx = 12, cy = 15.5, r = 7;
         const nx = (cx + r * Math.cos(ang)).toFixed(1);
         const ny = (cy - r * Math.sin(ang)).toFixed(1);
-        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
+        return `<svg class="pill-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15.5a8 8 0 0 1 16 0"/><line class="mg-needle" x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"/><circle cx="${cx}" cy="${cy}" r="1.1" fill="currentColor" stroke="none"/></svg>`;
     }
 
     function _sortIcon(v) {
@@ -2189,14 +2223,14 @@
     function carSpecPills(car) {
         const en = getLang() === 'en';
         const pills = [];
-        if (car.body_type)       pills.push([_bodyIcon(car.body_type), tval(car.body_type)]);
-        if (car.mileage_km)      pills.push([_mileageGauge(car.mileage_km), car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
-        if (car.engine_volume_l) pills.push([_PILL_IC.engine, car.engine_volume_l + ' L']);
-        if (car.power_hp)        pills.push([_PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.')]);
-        if (car.engine_type)     pills.push([_fuelIcon(car.engine_type), tval(car.engine_type)]);
-        if (car.gearbox)         pills.push([_gearIcon(car.gearbox), tval(car.gearbox)]);
-        if (car.drive_wheels)    pills.push([_driveIcon(car.drive_wheels), tval(car.drive_wheels)]);
-        return pills.map(([ic, x]) => `<span class="spec-pill">${ic}${escapeHtml(x)}</span>`).join('');
+        if (car.body_type)       pills.push(['body', _bodyIcon(car.body_type), tval(car.body_type)]);
+        if (car.mileage_km)      pills.push(['mileage', _mileageGauge(car.mileage_km), car.mileage_km.toLocaleString() + (en ? ' km' : ' კმ')]);
+        if (car.engine_volume_l) pills.push(['engine', _PILL_IC.engine, car.engine_volume_l + ' L']);
+        if (car.power_hp)        pills.push(['power', _PILL_IC.bolt, car.power_hp + (en ? ' hp' : ' ც.ძ.')]);
+        if (car.engine_type)     pills.push(['fuel', _fuelIcon(car.engine_type), tval(car.engine_type)]);
+        if (car.gearbox)         pills.push(['gearbox', _gearIcon(car.gearbox), tval(car.gearbox)]);
+        if (car.drive_wheels)    pills.push(['drive', _driveIcon(car.drive_wheels), tval(car.drive_wheels)]);
+        return pills.map(([type, ic, x]) => `<span class="spec-pill" data-ic="${type}">${ic}${escapeHtml(x)}</span>`).join('');
     }
 
     function customsBadgeHtml(car) {
@@ -2799,10 +2833,13 @@
         _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
         _carFull[carKey] = car;
         const saved = isCarSaved(carKey);
+        // VIN gets its own prominent, shimmering card — sellers and buyers look for it first
+        const detailVin = car.vin || vinFromText(car.description) || '';
+        const vinCard = detailVin
+            ? `<div class="dt-vin-card"><span class="dt-vin-badge">VIN</span><span class="dt-vin-code mono">${escapeHtml(detailVin)}</span><button class="dt-vin-copy" data-copy="${escapeHtml(detailVin)}" onclick="copyText(this)" title="${escapeHtml(t('copy_link'))}" aria-label="Copy VIN">${ICON_COPY}</button></div>`
+            : '';
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',
-            car.vin ? `<div class="dt-cline"><span class="dt-clabel">${t('section_vin')}</span><span class="dt-cval mono">${escapeHtml(car.vin)}<button class="copy-btn" data-copy="${escapeHtml(car.vin)}" onclick="copyText(this)" aria-label="Copy VIN" title="Copy VIN">${ICON_COPY}</button></span></div>` : '',
-            phones.length ? `<div class="dt-cline"><span class="dt-clabel">${t('section_phone')}</span><span class="dt-cval">${phones.map(p => escapeHtml(p)).join(', ')}</span></div>` : '',
         ].filter(Boolean).join('');
 
         document.getElementById('results').innerHTML = `
@@ -2826,6 +2863,7 @@
                 </div>
                 ${hlGrid}
                 <div class="dt-pricebox"><span class="dt-price${priceMissing ? ' negotiable' : ''}">${price}</span>${customs}</div>
+                ${vinCard}
                 ${specs.length ? `<div class="dt-specs">${specs.join('')}</div>` : ''}
                 ${calls ? `<div class="dt-calls">${calls}</div>` : ''}
                 ${contact ? `<div class="dt-contact">${contact}</div>` : ''}
