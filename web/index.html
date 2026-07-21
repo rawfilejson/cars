@@ -587,6 +587,24 @@
         }
         .btn-search:active, .apply-btn:active, .dt-call:active, .dt-source:active, .chip:active,
         .pager-btn:active, .detail-btn:active, .saved-trigger:active, .cdd-btn:active { transform: scale(.96); }
+
+        /* unified button motion — buttons that only changed colour now ease and react to press */
+        .cmp-bar-open, .cmp-save-btn, .cmp-x, .cmp-bar-clear, .lang-trigger, .filter-clear,
+        .filter-reset, .drawer-clear, .recent-clear, .chip-expand, .chip-save, .chip-del,
+        .see-more, .tr-pop-x, .cmp-thumb-x, .lang-opt {
+            transition: transform .13s ease, background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+        }
+        /* primary red CTAs lift and glow on hover */
+        .btn-search:not(:disabled):hover, .apply-btn:hover, .dt-call:hover,
+        .cmp-bar-open:hover, .cmp-save-btn:hover { transform: translateY(-1px); box-shadow: 0 7px 18px rgba(239,35,60,.28); }
+        .cmp-bar-open:hover { background: #D90429; }
+        /* secondary outline pills lift a touch */
+        .dt-source:hover, .saved-trigger:hover, .pager-btn:hover:not(:disabled) { transform: translateY(-1px); }
+        /* the close (×) spins as it highlights */
+        .cmp-x:hover, .tr-pop-x:hover { transform: rotate(90deg); color: #EF233C; }
+        /* small text/ghost buttons press in on click */
+        .cmp-bar-clear:active, .filter-clear:active, .filter-reset:active, .drawer-clear:active,
+        .recent-clear:active, .see-more:active, .chip-expand:active, .chip-save:active, .chip-del:active { transform: scale(.9); }
         .description {
             color: #2B2D42; font-size: 14px; line-height: 1.55;
             white-space: pre-wrap; word-break: break-word;
@@ -711,6 +729,8 @@
         @media (prefers-reduced-motion: reduce) {
             #results .rcard, .chip { animation: none !important; transition: none !important; }
             #results .rcard:hover, .spec-pill:hover, .chip:hover, .hist-chip:hover { transform: none; }
+            .btn-search:hover, .apply-btn:hover, .dt-call:hover, .cmp-bar-open:hover, .cmp-save-btn:hover,
+            .dt-source:hover, .saved-trigger:hover, .pager-btn:hover, .cmp-x:hover, .tr-pop-x:hover { transform: none !important; }
             *:active { transform: none !important; }
             .btn-search.is-busy { animation: none !important; }
             .rcard.is-hiding { animation: none !important; opacity: 0; }
