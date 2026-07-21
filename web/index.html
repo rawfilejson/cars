@@ -3186,8 +3186,14 @@
         refreshDropdowns(); updateFilterResets();
         document.getElementById('search-input').dispatchEvent(new Event('input'));
     }
+    // running a saved search/history item from a car page must return to the search route,
+    // else doSearch's URL sync no-ops and the address bar stays stuck on /car/<key>
+    function _ensureSearchRoute() {
+        if (parseRoute().view !== 'search') history.pushState({ view: 'search' }, '', '/');
+    }
     function runSavedSearch(item) {
         closeSaved();
+        _ensureSearchRoute();
         applySearchPayload((item && item.payload) || (item && item.q != null ? { query: item.q, sort: item.sort } : {}));
         doSearch();
     }
@@ -3195,6 +3201,7 @@
         if (item && item.payload) return runSavedSearch(item);
         const q = typeof item === 'string' ? item : '';
         closeSaved();
+        _ensureSearchRoute();
         const el = document.getElementById('search-input'); el.value = q; el.dispatchEvent(new Event('input')); doSearch();
     }
 
