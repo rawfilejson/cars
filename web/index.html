@@ -1416,13 +1416,12 @@
         if (window._resetMileage) window._resetMileage();
         document.getElementById('f-sort').value = '';
         document.getElementById('f-customs').value = '';
+        // back to the default state: every multi-select all checked (== no filter)
         for (const id of ['f-brand', 'f-body', 'f-fuel', 'f-gearbox', 'f-drive', 'f-location']) {
             const sel = document.getElementById(id);
-            if (sel) Array.from(sel.options).forEach(o => o.selected = false);
+            if (sel) Array.from(sel.options).forEach(o => o.selected = !!o.value);
         }
-        const model = document.getElementById('f-model');
-        model.innerHTML = `<option value="">${t('model_any')}</option>`;
-        model.disabled = true;
+        onBrandChange();   // empties + disables the model dropdown while brands are all-selected
         updateFilterResets();
         refreshDropdowns();
     };
@@ -1460,20 +1459,15 @@
     };
 
     window.resetFilter = function (kind) {
-        if (kind === 'brand') {
-            Array.from(document.getElementById('f-brand').options).forEach(o => o.selected = false);
-            const model = document.getElementById('f-model');
-            model.innerHTML = `<option value="">${t('model_any')}</option>`;
-            model.disabled = true;
-        } else {
-            (_RESET_GROUPS[kind] || []).forEach((id) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                if (el.multiple) Array.from(el.options).forEach(o => o.selected = false);
-                else el.value = '';
-            });
-            if (kind === 'mileage' && window._resetMileage) window._resetMileage();
-        }
+        (_RESET_GROUPS[kind] || []).forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // the default state of a multi-select is all checked (== no filter)
+            if (el.multiple) Array.from(el.options).forEach(o => o.selected = !!o.value);
+            else el.value = '';
+        });
+        if (kind === 'brand') onBrandChange();
+        if (kind === 'mileage' && window._resetMileage) window._resetMileage();
         updateFilterResets();
         refreshDropdowns();
     };
@@ -1696,7 +1690,12 @@
         const MODEL_MAX_BRANDS = 5;
         const narrowed = brands.length > 0 && brands.length < totalBrands && brands.length <= MODEL_MAX_BRANDS;
         const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
+        // a newly-added brand starts with all its models included — adding a brand should
+        // widen results, never silently exclude it through an unselected model subset
+        const prevBrands = model._brands || [];
+        for (const b of brands) if (!prevBrands.includes(b)) for (const m of (_makes[b] || [])) keep.add(m);
         model.innerHTML = _buildModelOptions(narrowed ? brands : [], keep);
+        model._brands = narrowed ? brands.slice() : [];
         model.disabled = !narrowed;
         // default: all models of the picked brand(s) are selected (none matched a prior
         // pick, e.g. a fresh brand choice) — the user narrows down from there
@@ -1780,7 +1779,9 @@
         if (q) p.query = q.slice(0, 200);
         for (const [k, f] of Object.entries(_URL_LISTS)) {
             const v = sp.get(k);
-            if (v) p[f] = v.split('|').map(s => s.trim()).filter(Boolean).slice(0, 30);
+            // cap generously so an "all but a few" share/reload isn't silently narrowed;
+            // the server still validates per-field, and a browser URL can't hold much more
+            if (v) p[f] = v.split('|').map(s => s.trim()).filter(Boolean).slice(0, 300);
         }
         for (const [k, f] of Object.entries(_URL_NUMS)) {
             const n = parseInt(sp.get(k), 10);
@@ -2535,7 +2536,8 @@
         const sorted = [...scores].sort((a, b) => b - a);
         const decisive = multi && topScore > 0 && (topScore - (sorted[1] || 0)) >= 0.4;
         const winnerIdx = decisive ? scores.indexOf(topScore) : -1;
-        const scored = rows.filter(r => r.val).length;   // how many metrics are comparable
+        // count only metrics that actually produced a winner (both cars present, not a tie)
+        const scored = rowCells.filter(cells => cells.some(c => c === 'cmp-best')).length;
         const head = list.map((c, ci) =>
             `<th class="${ci === winnerIdx ? 'cmp-winner' : ''}">` +
             (ci === winnerIdx ? `<div class="cmp-crown"><span>★</span> ${t('cmp_best_overall')}</div>` : '') +
@@ -2879,7 +2881,7 @@
         // VIN gets its own prominent, shimmering card — sellers and buyers look for it first
         const detailVin = car.vin || vinFromText(car.description) || '';
         const vinCard = detailVin
-            ? `<div class="dt-vin-card"><span class="dt-vin-badge">VIN</span><span class="dt-vin-code mono">${escapeHtml(detailVin)}</span><button class="dt-vin-copy" data-copy="${escapeHtml(detailVin)}" onclick="copyText(this)" title="${escapeHtml(t('copy_link'))}" aria-label="Copy VIN">${ICON_COPY}</button></div>`
+            ? `<div class="dt-vin-card"><span class="dt-vin-badge">VIN</span><span class="dt-vin-code mono">${escapeHtml(detailVin)}</span><button class="dt-vin-copy" data-copy="${escapeHtml(detailVin)}" onclick="copyText(this)" title="${escapeHtml(t('copy_vin'))}" aria-label="${escapeHtml(t('copy_vin'))}">${ICON_COPY}</button></div>`
             : '';
         const contact = [
             car.seller_name ? `<div class="dt-cline"><span class="dt-clabel">${t('section_seller')}</span><span class="dt-cval">${escapeHtml(car.seller_name)}</span></div>` : '',

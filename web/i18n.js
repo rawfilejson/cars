@@ -151,6 +151,7 @@ const TRANSLATIONS = {
 
         back_to_search:    "← მთავარი",
         copy_link:         "ბმულის კოპირება",
+        copy_vin:          "VIN-ის კოპირება",
         detail_loading:    "იტვირთება...",
         detail_open_source:"წყარო",
         notfound_msg:      "გვერდი ვერ მოიძებნა.",
@@ -309,6 +310,7 @@ const TRANSLATIONS = {
 
         back_to_search:    "← Home",
         copy_link:         "Copy link",
+        copy_vin:          "Copy VIN",
         detail_loading:    "Loading...",
         detail_open_source:"Source",
         notfound_msg:      "Page not found.",
@@ -448,6 +450,7 @@ const TRANSLATIONS = {
         no_photos: "нет фото",
         back_to_search: "← Главная",
         copy_link: "Скопировать ссылку",
+        copy_vin: "Скопировать VIN",
         detail_loading: "Загрузка...",
         detail_open_source: "Источник",
         notfound_msg: "Страница не найдена.",
@@ -586,6 +589,7 @@ const TRANSLATIONS = {
         no_photos: "сурет жоқ",
         back_to_search: "← Басты бет",
         copy_link: "Сілтемені көшіру",
+        copy_vin: "VIN көшіру",
         detail_loading: "Жүктелуде...",
         detail_open_source: "Дереккөз",
         notfound_msg: "Бет табылмады.",
