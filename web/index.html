@@ -1528,16 +1528,15 @@
         if (rest.length) html += '<option disabled></option>';   // separator line
         html += rest.map(opt).join('');
         const brand = document.getElementById('f-brand');
-        // rebuild (keep the "all brands" placeholder) — idempotent if ever called twice
+        // rebuild, carrying any existing pick across — a second call must not wipe it
         const placeholder = brand.querySelector('option[value=""]');
-        const hadSelection = Array.from(brand.selectedOptions).some(o => o.value);
+        const keep = new Set(Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean));
         brand.innerHTML = '';
         if (placeholder) brand.appendChild(placeholder);
         brand.insertAdjacentHTML('beforeend', html);
-        // all brands checked by default (== no brand filter); a fresh visit only
-        if (!brand.dataset.filled && !hadSelection) {
-            Array.from(brand.options).forEach(o => { o.selected = !!o.value; });
-        }
+        // all brands checked by default (== no brand filter), on the first fill only
+        const firstFill = !brand.dataset.filled && !keep.size;
+        Array.from(brand.options).forEach(o => { o.selected = !!o.value && (firstFill || keep.has(o.value)); });
         brand.dataset.filled = '1';
         if (brand._cdd) brand._cdd.render();
         onBrandChange();   // keeps the model dropdown in sync with the brand state
