@@ -1,13 +1,12 @@
-"""CSV export — DB-ის გვერდით სუფთა archive-ი exports/ ფოლდერში.
-
-ფაილის სქემა: `exports/{source}-{YYYY-MM-DD}.csv`. ერთი ფაილი per source per
-დღე. ერთიდაიგივე დღეს მეორე ჯერ run-ი — append-ი, header არ იწერება ხელახლა.
-
-Headers — Car.model_fields-დან, ანუ ერთიდაიგივე სქემა autopapa/myauto-სთვის.
-
-list ფილდები (image_urls, image_keys) → `";"` separator-ით (ერთი ცელი).
-bool-ები → "true"/"false"/"". None → ცარიელი string (არა "None").
-"""
+# CSV export — DB-ის გვერდით სუფთა archive-ი exports/ ფოლდერში.
+#
+# ფაილის სქემა: `exports/{source}-{YYYY-MM-DD}.csv`. ერთი ფაილი per source per
+# დღე. ერთიდაიგივე დღეს მეორე ჯერ run-ი — append-ი, header არ იწერება ხელახლა.
+#
+# Headers — Car.model_fields-დან, ანუ ერთიდაიგივე სქემა autopapa/myauto-სთვის.
+#
+# list ფილდები (image_urls, image_keys) → `";"` separator-ით (ერთი ცელი).
+# bool-ები → "true"/"false"/"". None → ცარიელი string (არა "None").
 
 from __future__ import annotations
 
@@ -25,7 +24,7 @@ _FIELDS: tuple[str, ...] = tuple(Car.model_fields.keys())
 
 
 def csv_path(source: str, day: date | None = None) -> Path:
-    """ფაილის ბილიკი — `exports/{source}-{YYYY-MM-DD}.csv`."""
+    # ფაილის ბილიკი — `exports/{source}-{YYYY-MM-DD}.csv`.
     day = day or date.today()
     return EXPORTS_DIR / f"{source}-{day.isoformat()}.csv"
 
@@ -46,10 +45,9 @@ def _car_to_row(car: Car) -> dict[str, str]:
 
 
 def append_cars_to_csv(cars: list[Car], source: str, day: date | None = None) -> int:
-    """Append batch-ი ფაილში. ფაილი არ არსებობს → headers-ი იწერება ჯერ.
-
-    Returns the number of rows written.
-    """
+    # Append batch-ი ფაილში. ფაილი არ არსებობს → headers-ი იწერება ჯერ.
+    #
+    # Returns the number of rows written.
     if not cars:
         return 0
 

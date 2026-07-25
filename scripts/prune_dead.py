@@ -1,18 +1,17 @@
-"""Remove listings that have disappeared from their source site.
-
-A listing is a *candidate* when nothing has touched it in --days. Note
-the scrapers skip listings that are already saved, so an old updated_at
-does NOT mean the listing is gone — every candidate is verified against
-the source, and only listings the source confirms are gone get deleted.
-Anything unverifiable (blocked, timeout, odd status) is skipped — we
-never delete on doubt. Verified-alive rows get their updated_at bumped
-(with --apply) so successive runs move on to new candidates.
-
-Dry run (default) prints what would happen; --apply deletes.
-
-    DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py
-    DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py --apply --days 30 --limit 500
-"""
+# Remove listings that have disappeared from their source site.
+#
+# A listing is a *candidate* when nothing has touched it in --days. Note
+# the scrapers skip listings that are already saved, so an old updated_at
+# does NOT mean the listing is gone — every candidate is verified against
+# the source, and only listings the source confirms are gone get deleted.
+# Anything unverifiable (blocked, timeout, odd status) is skipped — we
+# never delete on doubt. Verified-alive rows get their updated_at bumped
+# (with --apply) so successive runs move on to new candidates.
+#
+# Dry run (default) prints what would happen; --apply deletes.
+#
+#     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py
+#     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py --apply --days 30 --limit 500
 
 from __future__ import annotations
 
@@ -36,7 +35,7 @@ DELAY_SECONDS = 0.35   # be polite to the sources
 
 
 def check_myauto(client: httpx.Client, source_id: str) -> str:
-    """'alive' | 'dead' | 'unknown' for a myauto listing."""
+    # 'alive' | 'dead' | 'unknown' for a myauto listing.
     try:
         r = client.get(
             f"https://api2.myauto.ge/ka/products/{source_id}",

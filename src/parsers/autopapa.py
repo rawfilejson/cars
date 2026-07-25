@@ -1,13 +1,12 @@
-"""Scraper for autopapa.ge listings.
-
-We use Playwright (not plain HTTP) because the VIN reveal needs a click,
-and the price-with-customs block is rendered after page load.
-
-Flow:
-  1. Walk through the search results paginating with the `next` button.
-  2. For each listing URL, open the detail page and pull out everything.
-  3. Batch-insert into Postgres (ON CONFLICT updates existing rows).
-"""
+# Scraper for autopapa.ge listings.
+#
+# We use Playwright (not plain HTTP) because the VIN reveal needs a click,
+# and the price-with-customs block is rendered after page load.
+#
+# Flow:
+#   1. Walk through the search results paginating with the `next` button.
+#   2. For each listing URL, open the detail page and pull out everything.
+#   3. Batch-insert into Postgres (ON CONFLICT updates existing rows).
 
 from __future__ import annotations
 
@@ -52,7 +51,7 @@ def extract_id(url: str) -> str:
 
 
 def first_int(text: str | None) -> int | None:
-    """First integer in `text`. "4/5" → 4, "26 000 კმ" → 26000."""
+    # First integer in `text`. "4/5" → 4, "26 000 კმ" → 26000.
     if not text:
         return None
     s = str(text)
@@ -65,10 +64,9 @@ def first_int(text: str | None) -> int | None:
 
 
 def parse_features(text: str | None) -> dict[str, str]:
-    """`.comment-all` reads "feature1, key: value, feature2, ..." — pull the key:value pairs.
-
-    Plain features (ABS, ESP) are skipped here; they show up in the description text instead.
-    """
+    # `.comment-all` reads "feature1, key: value, feature2, ..." — pull the key:value pairs.
+    #
+    # Plain features (ABS, ESP) are skipped here; they show up in the description text instead.
     if not text:
         return {}
     result: dict[str, str] = {}
@@ -84,7 +82,7 @@ def parse_features(text: str | None) -> dict[str, str]:
 
 
 def merge_params(info: dict[str, str], features: dict[str, str]) -> dict[str, str]:
-    """InfoObject values override feature-text values when both present."""
+    # InfoObject values override feature-text values when both present.
     merged = dict(features)
     for key, value in info.items():
         if value:
@@ -97,11 +95,10 @@ def has_keyword(text: str | None, *keywords: str) -> bool:
 
 
 async def collect_listing_links(page: Page, max_pages: int | None = None) -> list[str]:
-    """Paginate through search results, return all detail-page URLs.
-
-    max_pages caps the number of pages walked (None = until pagination runs out).
-    Useful for smoke runs.
-    """
+    # Paginate through search results, return all detail-page URLs.
+    #
+    # max_pages caps the number of pages walked (None = until pagination runs out).
+    # Useful for smoke runs.
     links: list[str] = []
     pages_seen = 0
 
@@ -145,7 +142,7 @@ async def extract_info_params(page: Page) -> dict[str, str]:
 
 
 async def fetch_vin_by_click(page: Page) -> str:
-    """Click the "show VIN" button and read the popup contents."""
+    # Click the "show VIN" button and read the popup contents.
     try:
         btn = await page.query_selector("button.hidden-vin")
         if not btn:
@@ -166,7 +163,7 @@ async def fetch_vin_by_click(page: Page) -> str:
 
 
 async def fetch_vin_via_ajax(context: BrowserContext, car_id: str) -> str:
-    """Fallback: hit the JSON endpoint autopapa uses internally."""
+    # Fallback: hit the JSON endpoint autopapa uses internally.
     vin_url = f"{HOST}/get_vin/ge/{car_id}"
     if not await robots.can_fetch(vin_url):
         return ""
@@ -182,7 +179,7 @@ async def fetch_vin_via_ajax(context: BrowserContext, car_id: str) -> str:
 
 
 async def extract_contact(page: Page) -> tuple[str, str]:
-    """Returns (location, seller_name). Seller is often empty (just a phone)."""
+    # Returns (location, seller_name). Seller is often empty (just a phone).
     raw = await page.evaluate(
         "() => document.querySelector('.contactObjectNew > div')?.innerText?.trim() || ''"
     )
@@ -199,7 +196,7 @@ async def extract_contact(page: Page) -> tuple[str, str]:
 
 
 async def extract_meta(page: Page) -> tuple[int | None, str]:
-    """Returns (views, posted_date)."""
+    # Returns (views, posted_date).
     views: int | None = None
     posted = ""
     for item in await page.query_selector_all(".info-ads-page .item"):
@@ -235,7 +232,7 @@ async def extract_photos(page: Page) -> list[str]:
 
 
 async def extract_prices(page: Page) -> tuple[int | None, str, int | None]:
-    """Returns (price, currency, price_with_georgian_customs)."""
+    # Returns (price, currency, price_with_georgian_customs).
     price_el = await page.query_selector(".priceObject")
     price_raw = (await price_el.inner_text()).strip() if price_el else ""
     price_amount, price_currency = split_price(price_raw)
@@ -354,11 +351,10 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
 
 
 async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
-    """Full parser.
-
-    max_pages: cap on listing pagination (None = all). Smoke runs use 1.
-    refresh_all: if True, re-scrape rows we already have (default skips them).
-    """
+    # Full parser.
+    #
+    # max_pages: cap on listing pagination (None = all). Smoke runs use 1.
+    # refresh_all: if True, re-scrape rows we already have (default skips them).
     print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES}, max_pages={max_pages})")
 
     if not await robots.can_fetch(START_URL):

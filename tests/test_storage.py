@@ -1,4 +1,4 @@
-"""storage.py — key gen, idempotent download, retry, R2 head-check."""
+# storage.py — key gen, idempotent download, retry, R2 head-check.
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def temp_photos_dir(monkeypatch):
 
 @pytest.fixture
 def fast_retries(monkeypatch):
-    """No actual sleeping between retries in tests."""
+    # No actual sleeping between retries in tests.
     monkeypatch.setattr(storage, "_RETRY_DELAYS", (0, 0, 0))
 
 
@@ -75,8 +75,8 @@ async def test_download_to_local_writes_file(temp_photos_dir, fast_retries):
 
 
 async def test_download_to_local_atomic_no_part_file_left(temp_photos_dir, fast_retries):
-    """Success writes the complete final file via a temp `.part`, then renames —
-    no half-written file and no leftover `.part` on success."""
+    # Success writes the complete final file via a temp `.part`, then renames —
+    # no half-written file and no leftover `.part` on success.
     def handler(request):
         return httpx.Response(200, content=b"complete-bytes")
 
@@ -158,7 +158,7 @@ async def test_download_to_local_uses_referer(temp_photos_dir, fast_retries):
 
 
 def make_r2_client_mock(existing_keys: set[str]) -> MagicMock:
-    """Mock boto3 S3 client with HeadObject that returns 404 for unknown keys."""
+    # Mock boto3 S3 client with HeadObject that returns 404 for unknown keys.
     from botocore.exceptions import ClientError
 
     client = MagicMock()

@@ -1,4 +1,4 @@
-"""ფასეტ-ფილტრების მნიშვნელობები — ძარა/საწვავი/კოლოფი/წამყვანი dropdown-ებისთვის."""
+# ფასეტ-ფილტრების მნიშვნელობები — ძარა/საწვავი/კოლოფი/წამყვანი dropdown-ებისთვის.
 
 from __future__ import annotations
 
@@ -39,18 +39,18 @@ _CANON = {
 
 
 def facet_canon(value: str) -> str:
-    """raw მნიშვნელობას კანონიკურამდე ამცირებს."""
+    # raw მნიშვნელობას კანონიკურამდე ამცირებს.
     return _CANON.get(value, value)
 
 
 def facet_variants(value: str) -> list[str]:
-    """კანონიკურ მნიშვნელობას უბრუნებს ყველა raw variant-ს (ფილტრში IN-ისთვის)."""
+    # კანონიკურ მნიშვნელობას უბრუნებს ყველა raw variant-ს (ფილტრში IN-ისთვის).
     out = [value] + [raw for raw, canon in _CANON.items() if canon == value]
     return list(dict.fromkeys(out))
 
 
 class FacetsResponse(BaseModel):
-    """{facet: [მნიშვნელობები]} — სიხშირის მიხედვით."""
+    # {facet: [მნიშვნელობები]} — სიხშირის მიხედვით.
 
     facets: dict[str, list[str]]
 
@@ -81,7 +81,7 @@ def _load_facets() -> FacetsResponse:
 
 @router.get("", response_model=FacetsResponse)
 def get_facets(response: Response) -> FacetsResponse:
-    """ფასეტ-მნიშვნელობები. საათში ერთხელ ქეშდება."""
+    # ფასეტ-მნიშვნელობები. საათში ერთხელ ქეშდება.
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()

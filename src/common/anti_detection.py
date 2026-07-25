@@ -1,8 +1,7 @@
-"""Playwright setup with light anti-bot measures.
-
-These won't get us past Cloudflare bot-fight or DataDome. For autopapa.ge
-and myauto.ge's current setup, this is enough.
-"""
+# Playwright setup with light anti-bot measures.
+#
+# These won't get us past Cloudflare bot-fight or DataDome. For autopapa.ge
+# and myauto.ge's current setup, this is enough.
 
 from __future__ import annotations
 
@@ -78,7 +77,7 @@ if (originalQuery) {
 
 
 async def create_stealth_context(playwright: Playwright) -> tuple:
-    """Returns (browser, context). Caller must close both."""
+    # Returns (browser, context). Caller must close both.
     browser = await playwright.chromium.launch(
         headless=True,
         args=[

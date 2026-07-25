@@ -1,12 +1,10 @@
-"""
-ბაზის ინიციალიზაცია — schema.sql-ის გაშვება ცარიელ PostgreSQL-ზე.
-
-გამოყენება:
-    python -m src.scripts.init_db
-
-Supabase / Neon / cloud DB-ში schema უნდა გაუშვა ერთხელ. Docker-ის შემთხვევაში
-schema.sql ავტომატურად იდგმება docker-compose-ის entrypoint-ით.
-"""
+# ბაზის ინიციალიზაცია — schema.sql-ის გაშვება ცარიელ PostgreSQL-ზე.
+#
+# გამოყენება:
+#     python -m src.scripts.init_db
+#
+# Supabase / Neon / cloud DB-ში schema უნდა გაუშვა ერთხელ. Docker-ის შემთხვევაში
+# schema.sql ავტომატურად იდგმება docker-compose-ის entrypoint-ით.
 
 from __future__ import annotations
 

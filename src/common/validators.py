@@ -1,9 +1,8 @@
-"""Sanity checks on a scraped Car before we trust it.
-
-These don't block the insert — they just return a list of issues we can log.
-The point is visibility: if 30% of cars come back with `year 1850`, we know
-the parser's broken before we ship.
-"""
+# Sanity checks on a scraped Car before we trust it.
+#
+# These don't block the insert — they just return a list of issues we can log.
+# The point is visibility: if 30% of cars come back with `year 1850`, we know
+# the parser's broken before we ship.
 
 from __future__ import annotations
 
@@ -23,7 +22,7 @@ VALID_CURRENCIES = {"USD", "EUR", "GEL", ""}
 
 
 def validate_car(car: Car) -> list[str]:
-    """Return a list of issue strings. Empty list = clean."""
+    # Return a list of issue strings. Empty list = clean.
     issues: list[str] = []
 
     if not car.source:

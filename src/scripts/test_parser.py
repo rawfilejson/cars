@@ -1,12 +1,10 @@
-"""
-პარსერის სწრაფი ტესტი — მცირე რაოდენობის მანქანებზე.
-
-გაშვება:
-    uv run python -m src.scripts.test_parser --limit 5
-
-ეს არ ცვლის სრულ parser-ს — უბრალოდ ვამოწმებთ პიპლაინი მუშაობს თუ არა
-სრულად (links → scrape → DB).
-"""
+# პარსერის სწრაფი ტესტი — მცირე რაოდენობის მანქანებზე.
+#
+# გაშვება:
+#     uv run python -m src.scripts.test_parser --limit 5
+#
+# ეს არ ცვლის სრულ parser-ს — უბრალოდ ვამოწმებთ პიპლაინი მუშაობს თუ არა
+# სრულად (links → scrape → DB).
 
 from __future__ import annotations
 

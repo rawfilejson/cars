@@ -1,20 +1,18 @@
-"""
-Rate limiting — ბრაუზერის ანონიმური token-ი (მთავარი) + IP (backstop).
-
-ანონიმური საიტი, ავტორიზაცია არ გვაქვს. ერთ public IP-ს ხშირად ბევრი კაცი
-იზიარებს (სახლის WiFi, ოპერატორის CGNAT), ამიტომ მთავარ იდენტობად ბრაუზერის
-token-ს ვიღებთ (X-Client-Id, localStorage-დან): ერთ ქსელში ორი ადამიანი
-ერთმანეთს ლიმიტს აღარ უჭამს. IP მხოლოდ abuse-ის ჭერია (token-ის როტაცია).
-
-  * Cooldown: ცდებს შორის მინ. N წამი — token-ზე
-  * საათობრივი ლიმიტი: token-ზე
-  * საათობრივი ჭერი: IP-ზე (backstop)
-
-დრო DB-ის NOW()-ით იზომება — კლიენტის საათს არ ვენდობით.
-IP-ს CF-Connecting-IP-დან ვიღებთ: origin Cloudflare-ის უკან დგას, ამ header-ს
-Cloudflare ავსებს რეალური კლიენტით და ცრუ მნიშვნელობას ჩამოაცილებს, ე.ი. მისი
-გაყალბება არ ხერხდება. fallback (Cloudflare-ის გარეშე): XFF-ის ბოლო public IP.
-"""
+# Rate limiting — ბრაუზერის ანონიმური token-ი (მთავარი) + IP (backstop).
+#
+# ანონიმური საიტი, ავტორიზაცია არ გვაქვს. ერთ public IP-ს ხშირად ბევრი კაცი
+# იზიარებს (სახლის WiFi, ოპერატორის CGNAT), ამიტომ მთავარ იდენტობად ბრაუზერის
+# token-ს ვიღებთ (X-Client-Id, localStorage-დან): ერთ ქსელში ორი ადამიანი
+# ერთმანეთს ლიმიტს აღარ უჭამს. IP მხოლოდ abuse-ის ჭერია (token-ის როტაცია).
+#
+#   * Cooldown: ცდებს შორის მინ. N წამი — token-ზე
+#   * საათობრივი ლიმიტი: token-ზე
+#   * საათობრივი ჭერი: IP-ზე (backstop)
+#
+# დრო DB-ის NOW()-ით იზომება — კლიენტის საათს არ ვენდობით.
+# IP-ს CF-Connecting-IP-დან ვიღებთ: origin Cloudflare-ის უკან დგას, ამ header-ს
+# Cloudflare ავსებს რეალური კლიენტით და ცრუ მნიშვნელობას ჩამოაცილებს, ე.ი. მისი
+# გაყალბება არ ხერხდება. fallback (Cloudflare-ის გარეშე): XFF-ის ბოლო public IP.
 
 from __future__ import annotations
 
@@ -51,12 +49,11 @@ def _is_ip(value: str) -> bool:
 
 
 def client_ip(request: Request) -> str | None:
-    """რეალური კლიენტის IP, ან None თუ ვერ დავადგინეთ.
-
-    Cloudflare-ის CF-Connecting-IP-ს ვენდობით: origin მხოლოდ Cloudflare-ის edge-ით
-    მიიწვდომება, ე.ი. კლიენტს ამ header-ის მიწოდება/გაყალბება არ შეუძლია. თუ
-    Cloudflare-ის გარეშე გაეშვა, fallback — XFF-ის ბოლო public IP, მერე peer host.
-    """
+    # რეალური კლიენტის IP, ან None თუ ვერ დავადგინეთ.
+    #
+    # Cloudflare-ის CF-Connecting-IP-ს ვენდობით: origin მხოლოდ Cloudflare-ის edge-ით
+    # მიიწვდომება, ე.ი. კლიენტს ამ header-ის მიწოდება/გაყალბება არ შეუძლია. თუ
+    # Cloudflare-ის გარეშე გაეშვა, fallback — XFF-ის ბოლო public IP, მერე peer host.
     cf = request.headers.get("cf-connecting-ip", "").strip()
     if _is_public_ip(cf):
         return cf
@@ -72,7 +69,7 @@ def client_ip(request: Request) -> str | None:
 
 
 def client_token(request: Request) -> str | None:
-    """ბრაუზერის ანონიმური id (X-Client-Id header). ფორმატით ვამოწმებთ."""
+    # ბრაუზერის ანონიმური id (X-Client-Id header). ფორმატით ვამოწმებთ.
     tok = request.headers.get("x-client-id", "").strip()
     return tok if _CLIENT_ID_RE.match(tok) else None
 
@@ -94,14 +91,13 @@ def _limit_error(limit: int) -> HTTPException:
 
 
 def check_rate_limit(request: Request, is_pagination: bool = False) -> int | None:
-    """ცდის ჩატარებამდე rate-limit-ის შემოწმება. აბრუნებს დარჩენილ ცდებს.
-
-    is_pagination=True (page>1) — cooldown-ს არ ვამოწმებთ: არსებული შედეგის
-    გვერდებზე გადასვლა ახალი ძიება არ არის (IP-ის საათობრივი ჭერი მაინც მოქმედებს).
-
-    Raises:
-        HTTPException 429 — cooldown, token-ის საათობრივი, ან IP-ის ჭერი.
-    """
+    # ცდის ჩატარებამდე rate-limit-ის შემოწმება. აბრუნებს დარჩენილ ცდებს.
+    #
+    # is_pagination=True (page>1) — cooldown-ს არ ვამოწმებთ: არსებული შედეგის
+    # გვერდებზე გადასვლა ახალი ძიება არ არის (IP-ის საათობრივი ჭერი მაინც მოქმედებს).
+    #
+    # Raises:
+    #     HTTPException 429 — cooldown, token-ის საათობრივი, ან IP-ის ჭერი.
     ip = client_ip(request)
     token = client_token(request)
 
@@ -165,7 +161,7 @@ def log_search(
     query_type: str,
     results_count: int,
 ) -> None:
-    """საძიებო event-ის DB-ში ჩაწერა."""
+    # საძიებო event-ის DB-ში ჩაწერა.
     ip = client_ip(request)
     token = client_token(request)
     user_agent = request.headers.get("user-agent", "")[:500]

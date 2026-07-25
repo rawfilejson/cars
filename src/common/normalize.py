@@ -1,8 +1,7 @@
-"""Cleanup helpers for messy data from car listing sites.
-
-Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი",
-"2.5 ლ". We turn that into numbers we can sort and search by.
-"""
+# Cleanup helpers for messy data from car listing sites.
+#
+# Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი",
+# "2.5 ლ". We turn that into numbers we can sort and search by.
 
 from __future__ import annotations
 
@@ -15,7 +14,7 @@ _PRICE_GEL = re.compile(r"₾|gel|ლარ", re.IGNORECASE)
 
 
 def clean_int(text: str | None) -> int | None:
-    """Strip everything non-digit, return int. Empty in → None."""
+    # Strip everything non-digit, return int. Empty in → None.
     if not text:
         return None
     digits = re.sub(r"\D", "", str(text))
@@ -23,11 +22,10 @@ def clean_int(text: str | None) -> int | None:
 
 
 def sane_int(text: str | None, lo: int, hi: int) -> int | None:
-    """clean_int + range check. Out-of-range → None.
-
-    Use for fields where sellers commonly enter garbage (e.g. HP "2490"
-    when they meant engine cc). Better to drop than to lie.
-    """
+    # clean_int + range check. Out-of-range → None.
+    #
+    # Use for fields where sellers commonly enter garbage (e.g. HP "2490"
+    # when they meant engine cc). Better to drop than to lie.
     value = clean_int(text)
     if value is None or value < lo or value > hi:
         return None
@@ -47,7 +45,7 @@ def clean_decimal(text: str | None) -> float | None:
 
 
 def split_price(raw: str | None) -> tuple[int | None, str]:
-    """`$9 500` → (9500, "USD"). Detects $, €, ₾, or GEL/USD/EUR words."""
+    # `$9 500` → (9500, "USD"). Detects $, €, ₾, or GEL/USD/EUR words.
     if not raw:
         return None, ""
 
@@ -66,19 +64,18 @@ def split_price(raw: str | None) -> tuple[int | None, str]:
 
 
 def format_phone(raw: str | None) -> str:
-    """ქართული ნომრის display ფორმატი: "+995 595 515 141".
-
-    ძიება არ უყურებს space-ებს — `regexp_replace(phone, '\\D', '', 'g')`
-    გვაძლევს ციფრებს, შემდეგ LIKE. ანუ ჩვენ ვინახავთ ლამაზად, ვძებნით
-    ციფრებით.
-
-    Examples:
-      "tel:+995595515141" → "+995 595 515 141"
-      "595 51 51 41"      → "+995 595 515 141"
-      "+995595515141"     → "+995 595 515 141"
-      "+7 916 123 45 67"  → "+7 916 123 45 67"
-      ""                  → ""
-    """
+    # ქართული ნომრის display ფორმატი: "+995 595 515 141".
+    #
+    # ძიება არ უყურებს space-ებს — `regexp_replace(phone, '\\D', '', 'g')`
+    # გვაძლევს ციფრებს, შემდეგ LIKE. ანუ ჩვენ ვინახავთ ლამაზად, ვძებნით
+    # ციფრებით.
+    #
+    # Examples:
+    #   "tel:+995595515141" → "+995 595 515 141"
+    #   "595 51 51 41"      → "+995 595 515 141"
+    #   "+995595515141"     → "+995 595 515 141"
+    #   "+7 916 123 45 67"  → "+7 916 123 45 67"
+    #   ""                  → ""
     if not raw:
         return ""
 
@@ -98,7 +95,7 @@ def format_phone(raw: str | None) -> str:
 
 
 def _format_ge(nine_digits: str) -> str:
-    """9-ციფრიანი ქართული მობილური → "+995 595 515 141" (3-3-3)."""
+    # 9-ციფრიანი ქართული მობილური → "+995 595 515 141" (3-3-3).
     return f"+995 {nine_digits[:3]} {nine_digits[3:6]} {nine_digits[6:]}"
 
 
@@ -106,8 +103,8 @@ _PHONE_IN_TEXT_RE = re.compile(r"(?:\+?\s?995[\s\-.]?)?5\d{2}(?:[\s\-.]?\d){6}")
 
 
 def phone_from_text(text: str | None) -> str:
-    """ქართული მობილურის (5XX XXX XXX) ამოღება თავისუფალი ტექსტიდან — როცა
-    გამყიდველმა ნომერი აღწერაში ჩაწერა და არა ცალკე ველში. ფორმატებული ნომერი ან ""."""
+    # ქართული მობილურის (5XX XXX XXX) ამოღება თავისუფალი ტექსტიდან — როცა
+    # გამყიდველმა ნომერი აღწერაში ჩაწერა და არა ცალკე ველში. ფორმატებული ნომერი ან "".
     if not text:
         return ""
     match = _PHONE_IN_TEXT_RE.search(str(text))
@@ -132,7 +129,7 @@ def normalize_steering(text: str | None) -> str:
 
 
 def parse_customs(text: str | None) -> bool | None:
-    """Returns True if cleared, False if not, None if unknown."""
+    # Returns True if cleared, False if not, None if unknown.
     if not text:
         return None
     text = text.strip()
@@ -155,7 +152,7 @@ def parse_bool_yes_no(text: str | None) -> bool | None:
 
 
 def clean_text(text: str | None) -> str:
-    """Collapse extra whitespace, leave structure intact."""
+    # Collapse extra whitespace, leave structure intact.
     if not text:
         return ""
     cleaned = re.sub(r"\n{3,}", "\n\n", text)
@@ -164,12 +161,11 @@ def clean_text(text: str | None) -> str:
 
 
 def clean_engine_volume(text: str | None) -> float | None:
-    """Engine volume in liters. Handles common bad-data cases:
-
-      "2.5 ლ"    → 2.5
-      "1499"     → 1.499 (was entered in CC instead of L)
-      "460"      → None (impossible, treat as garbage)
-    """
+    # Engine volume in liters. Handles common bad-data cases:
+    #
+    # "2.5 ლ"    → 2.5
+    # "1499"     → 1.499 (was entered in CC instead of L)
+    # "460"      → None (impossible, treat as garbage)
     value = clean_decimal(text)
     if value is None:
         return None

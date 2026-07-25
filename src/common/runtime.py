@@ -1,13 +1,12 @@
-"""asyncio + Windows console glue.
-
-Two Windows-specific annoyances we hide here:
-  - stdout defaults to cp1252 and crashes on Georgian text
-  - some libraries (e.g. older psycopg async) prefer SelectorEventLoop
-
-We leave the default event loop (ProactorEventLoop) alone because
-Playwright needs it for subprocesses. psycopg runs sync in a thread instead
-(see db.py).
-"""
+# asyncio + Windows console glue.
+#
+# Two Windows-specific annoyances we hide here:
+#   - stdout defaults to cp1252 and crashes on Georgian text
+#   - some libraries (e.g. older psycopg async) prefer SelectorEventLoop
+#
+# We leave the default event loop (ProactorEventLoop) alone because
+# Playwright needs it for subprocesses. psycopg runs sync in a thread instead
+# (see db.py).
 
 from __future__ import annotations
 

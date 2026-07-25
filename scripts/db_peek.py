@@ -1,4 +1,4 @@
-"""ბაზის სწრაფი გადახედვა — count-ი, sample row-ები, phone ფორმატები."""
+# ბაზის სწრაფი გადახედვა — count-ი, sample row-ები, phone ფორმატები.
 from __future__ import annotations
 
 import sys

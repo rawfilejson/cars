@@ -1,17 +1,15 @@
-"""
-ფოტოების სინქრონიზაცია — ბაზიდან წავიკითხავთ image_urls-ს, რომ ჯერ ვერ
-ჩატვირთული ფოტოები ჩავტვირთოთ ლოკალურად + R2-ში.
-
-გაშვება:
-    python -m src.scripts.sync_photos              # ყველა მანქანა
-    python -m src.scripts.sync_photos --source autopapa --limit 100
-
-რა ხდება:
-  1. ბაზიდან ვირჩევთ მანქანებს რომელთა image_keys ჯერ ცარიელია.
-  2. თითო მანქანის image_urls-ს ვტვირთავთ ლოკალურ photos/ ფოლდერში.
-  3. თუ R2 კონფიგურირებულია — იქაც ვტვირთავთ.
-  4. ბაზაში ვაახლებთ image_keys-ს (ლისტი key-ების).
-"""
+# ფოტოების სინქრონიზაცია — ბაზიდან წავიკითხავთ image_urls-ს, რომ ჯერ ვერ
+# ჩატვირთული ფოტოები ჩავტვირთოთ ლოკალურად + R2-ში.
+#
+# გაშვება:
+#     python -m src.scripts.sync_photos              # ყველა მანქანა
+#     python -m src.scripts.sync_photos --source autopapa --limit 100
+#
+# რა ხდება:
+#   1. ბაზიდან ვირჩევთ მანქანებს რომელთა image_keys ჯერ ცარიელია.
+#   2. თითო მანქანის image_urls-ს ვტვირთავთ ლოკალურ photos/ ფოლდერში.
+#   3. თუ R2 კონფიგურირებულია — იქაც ვტვირთავთ.
+#   4. ბაზაში ვაახლებთ image_keys-ს (ლისტი key-ების).
 
 from __future__ import annotations
 
@@ -30,11 +28,10 @@ from src.common.storage import fetch_and_store
 def fetch_pending_sync(
     source: str | None, limit: int | None, shard: tuple[int, int] | None = None
 ) -> list[tuple[int, str, str, list[str]]]:
-    """ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს.
-
-    shard=(x, n) — მხოლოდ ის მანქანები სადაც id %% n == x. პარალელური blitz-ისთვის:
-    n runner თითო თავის ნაწილს ამუშავებს, overlap-ის გარეშე.
-    """
+    # ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს.
+    #
+    # shard=(x, n) — მხოლოდ ის მანქანები სადაც id %% n == x. პარალელური blitz-ისთვის:
+    # n runner თითო თავის ნაწილს ამუშავებს, overlap-ის გარეშე.
     query = """
         SELECT id, source, source_id, image_urls
         FROM cars
@@ -81,7 +78,7 @@ async def _fetch_one(
     upload_to_cloud: bool,
     keep_local: bool,
 ) -> str | None:
-    """ერთი ფოტო — never raises. photo_sem ზღუდავს ერთდროულ I/O-ს."""
+    # ერთი ფოტო — never raises. photo_sem ზღუდავს ერთდროულ I/O-ს.
     async with photo_sem:
         try:
             return await fetch_and_store(
@@ -104,11 +101,10 @@ async def process_car(
     upload_to_cloud: bool,
     keep_local: bool = True,
 ) -> int:
-    """ერთი მანქანის ფოტოები პარალელურად — never raises, always returns int.
-
-    gather თანმიმდევრობას ინახავს, ამიტომ key-ები ფოტოს index-ის რიგზე რჩება;
-    ჩავარდნილი ფოტო None-ია და ისე იჭრება.
-    """
+    # ერთი მანქანის ფოტოები პარალელურად — never raises, always returns int.
+    #
+    # gather თანმიმდევრობას ინახავს, ამიტომ key-ები ფოტოს index-ის რიგზე რჩება;
+    # ჩავარდნილი ფოტო None-ია და ისე იჭრება.
     results = await asyncio.gather(*(
         _fetch_one(
             http_client, photo_sem, source, source_id, index, url,

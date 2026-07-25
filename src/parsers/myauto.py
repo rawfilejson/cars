@@ -1,18 +1,17 @@
-"""myauto.ge-ის parser — HTML scrape Playwright-ით.
-
-ძველი API-based ვერსია გადავიყვანეთ HTML-ზე რომ:
-  * არ ვმოქმედებდეთ ფარულ API endpoint-ზე (myauto-მ შეცვალოს — ჩვენ ჩავარდებით)
-  * ნამდვილი user-ის ნახულობას ვაჯერებდეთ — visible HTML იგივეა რასაც მომხმარებელი ხედავს
-  * ერთიდაიგივე pattern გვქონდეს autopapa-სთან — სამომავლოდ ერთად მოვლა გვინდა
-
-ნაკადი:
-  1. listing pages → მანქანების URL-ების სია
-  2. ყოველი URL → scrape_one() → Car
-  3. batch upsert DB-ში + CSV append
-
-ფონტ-obfuscation აღარ არსებობს (იყო თუ არა — დღეს არ ჩანს). სუფთა HTML ემთხვევა
-რენდერდ ეკრანს.
-"""
+# myauto.ge-ის parser — HTML scrape Playwright-ით.
+#
+# ძველი API-based ვერსია გადავიყვანეთ HTML-ზე რომ:
+#   * არ ვმოქმედებდეთ ფარულ API endpoint-ზე (myauto-მ შეცვალოს — ჩვენ ჩავარდებით)
+#   * ნამდვილი user-ის ნახულობას ვაჯერებდეთ — visible HTML იგივეა რასაც მომხმარებელი ხედავს
+#   * ერთიდაიგივე pattern გვქონდეს autopapa-სთან — სამომავლოდ ერთად მოვლა გვინდა
+#
+# ნაკადი:
+#   1. listing pages → მანქანების URL-ების სია
+#   2. ყოველი URL → scrape_one() → Car
+#   3. batch upsert DB-ში + CSV append
+#
+# ფონტ-obfuscation აღარ არსებობს (იყო თუ არა — დღეს არ ჩანს). სუფთა HTML ემთხვევა
+# რენდერდ ეკრანს.
 
 from __future__ import annotations
 
@@ -51,7 +50,7 @@ _ID_FROM_URL_RE = re.compile(r"/pr/(\d+)(?:/|$)")
 
 
 def extract_id(url: str) -> str:
-    """URL-დან car_id. `.../pr/120183626/sale` → `"120183626"`."""
+    # URL-დან car_id. `.../pr/120183626/sale` → `"120183626"`.
     match = _ID_FROM_URL_RE.search(url)
     return match.group(1) if match else ""
 
@@ -106,7 +105,7 @@ def _to_int(value) -> int | None:
 
 
 def _positive_int(value) -> int | None:
-    """0 → None. myauto uses 0 for unknown numeric fields."""
+    # 0 → None. myauto uses 0 for unknown numeric fields.
     n = _to_int(value)
     return n if n and n > 0 else None
 
@@ -147,7 +146,7 @@ def _build_description_from_api(item: dict) -> str:
 
 
 def _build_phone_from_api(item: dict) -> str:
-    """Listings endpoint returns phone masked ('995557607***'). Masked → ''."""
+    # Listings endpoint returns phone masked ('995557607***'). Masked → ''.
     raw = item.get("client_phone")
     if raw is None:
         return ""
@@ -178,7 +177,7 @@ def _build_model_from_api(item: dict) -> str:
 
 
 def item_to_car(item: dict) -> Car | None:
-    """Convert one API item → Car. Returns None if missing required fields."""
+    # Convert one API item → Car. Returns None if missing required fields.
     car_id = item.get("car_id")
     if not car_id:
         return None
@@ -259,7 +258,7 @@ _BOOL_FIELDS = {"tech_inspection", "has_catalyst"}
 
 
 def _convert_spec_value(field: str, raw: str) -> object:
-    """Raw სტრინგი → Car-ის field-ის შესაბამისი ტიპი."""
+    # Raw სტრინგი → Car-ის field-ის შესაბამისი ტიპი.
     if field == "engine_volume_l":
         return clean_engine_volume(raw)
     if field == "doors":
@@ -322,7 +321,7 @@ _TITLE_RE = re.compile(r"^(\d{4})\s+(\S+)\s+(.*)$")
 
 
 async def extract_title(page: Page) -> tuple[int | None, str, str]:
-    """Title-ი ფორმატის "2014 Lexus ES 350 Base" → (year, manufacturer, model)."""
+    # Title-ი ფორმატის "2014 Lexus ES 350 Base" → (year, manufacturer, model).
     el = await page.query_selector('p.leading-\\[100\\%\\]')
     if not el:
         el = await page.query_selector("h1")
@@ -341,7 +340,7 @@ async def extract_title(page: Page) -> tuple[int | None, str, str]:
 
 
 async def extract_description(page: Page) -> str:
-    """აღწერა — `p.text-raisin-80.whitespace-pre-wrap`."""
+    # აღწერა — `p.text-raisin-80.whitespace-pre-wrap`.
     el = await page.query_selector('p[class*="text-raisin-80"][class*="whitespace-pre-wrap"]')
     if not el:
         return ""
@@ -349,7 +348,7 @@ async def extract_description(page: Page) -> str:
 
 
 async def extract_photos(page: Page) -> list[str]:
-    """ფოტოები — `/large/` ვერსიები. Thumbs-ი → large-ად გადავაქცევთ."""
+    # ფოტოები — `/large/` ვერსიები. Thumbs-ი → large-ად გადავაქცევთ.
     photos: list[str] = []
     seen: set[str] = set()
     elements = await page.query_selector_all("img[src*='/photos/']")
@@ -370,11 +369,10 @@ _PHOTO_N_RE = re.compile(r"/large/(\d+)_(\d+)\.jpg")
 
 
 def _ensure_all_photos(photos: list[str], car_id: str, max_photos: int = 40) -> list[str]:
-    """თუ HTML-ში მხოლოდ thumbs ჩანდა (გვერდმა lazy load გვერდით), მაინც
-    ვაშენებთ ყველა _1.jpg, _2.jpg, ... _N.jpg URL-ს რომელიც ხელმისაწვდომი იყო.
-
-    გავიგებთ პატერნს პირველი URL-დან, შემდეგ ვამატებთ მისი ვარიანტებს.
-    """
+    # თუ HTML-ში მხოლოდ thumbs ჩანდა (გვერდმა lazy load გვერდით), მაინც
+    # ვაშენებთ ყველა _1.jpg, _2.jpg, ... _N.jpg URL-ს რომელიც ხელმისაწვდომი იყო.
+    #
+    # გავიგებთ პატერნს პირველი URL-დან, შემდეგ ვამატებთ მისი ვარიანტებს.
     if not photos:
         return []
 
@@ -430,7 +428,7 @@ _PRICE_AND_CURRENCY_JS = """
 
 
 async def extract_price(page: Page) -> tuple[int | None, str]:
-    """ფასი + ვალუტა (active currency switcher ღილაკიდან)."""
+    # ფასი + ვალუტა (active currency switcher ღილაკიდან).
     result = await page.evaluate(_PRICE_AND_CURRENCY_JS)
     if not result:
         return None, ""
@@ -443,7 +441,7 @@ _NO_VIN_MARKER = "გამყიდველს არ აქვს VIN კო�
 
 
 async def extract_vin(page: Page, description: str) -> str:
-    """VIN ფილდიდან, თუ არსებობს. სხვაგვარად description-ში ვეძებთ."""
+    # VIN ფილდიდან, თუ არსებობს. სხვაგვარად description-ში ვეძებთ.
     body_text = await page.evaluate("() => document.body.innerText")
 
     if _NO_VIN_MARKER in body_text:
@@ -460,11 +458,10 @@ _MASK_CHARS = "*"
 
 
 async def extract_phone(page: Page) -> str:
-    """myauto-ს phone reveal — auth-ის გარეშე ფარულია, ვაბრუნებთ ცარიელს.
-
-    თუ რომელიმე გვერდმა მაინც გვერდს გვაჩვენოს სრული ნომერი (test, future feature, ან
-    cached state), ვაბრუნებთ format_phone-ით. სხვა შემთხვევაში "".
-    """
+    # myauto-ს phone reveal — auth-ის გარეშე ფარულია, ვაბრუნებთ ცარიელს.
+    #
+    # თუ რომელიმე გვერდმა მაინც გვერდს გვაჩვენოს სრული ნომერი (test, future feature, ან
+    # cached state), ვაბრუნებთ format_phone-ით. სხვა შემთხვევაში "".
     link = await page.query_selector('a[data-testid^="show-number-modal-phone"]')
     if not link:
         link = await page.query_selector('a[href^="tel:+995"]:not([href*="32 280"])')
@@ -479,7 +476,7 @@ async def extract_phone(page: Page) -> str:
 
 
 async def extract_seller_name(page: Page) -> str:
-    """პროდავცის სახელი — როცა ჩანს."""
+    # პროდავცის სახელი — როცა ჩანს.
     for selector in (
         '[data-testid="seller-name"]',
         'div[class*="seller-name"]',
@@ -506,7 +503,7 @@ GE_CITIES = (
 
 
 async def extract_location(page: Page, spec: dict) -> str:
-    """spec ცხრილში თუ არ არის, page title-დან ვცდით ქალაქის ამოღებას."""
+    # spec ცხრილში თუ არ არის, page title-დან ვცდით ქალაქის ამოღებას.
     for key in ("ადგილმდებარეობა", "ლოკაცია", "მდებარეობა", "ქალაქი"):
         if key in spec:
             return spec[key]
@@ -523,10 +520,9 @@ async def scrape_one(
     url: str,
     semaphore: asyncio.Semaphore | None = None,
 ) -> Car | None:
-    """ერთი detail page-ი → Car. retry-ით.
-
-    semaphore არასავალდებულოა — manual smoke test-ისთვის None გადააცი.
-    """
+    # ერთი detail page-ი → Car. retry-ით.
+    #
+    # semaphore არასავალდებულოა — manual smoke test-ისთვის None გადააცი.
     if semaphore is None:
         semaphore = asyncio.Semaphore(1)
 
@@ -637,12 +633,11 @@ MYAUTO_UA = (
 
 
 async def _warmup(context: BrowserContext) -> None:
-    """myauto.ge-ს ვხსნით, Cloudflare cookies-ი მოვიდეს.
-
-    SPA-ის სრულ ჰიდრატაციას არ ვუცდით — `commit` wait-ით ვაგროვებთ პასუხს,
-    შემდეგ მცირე pause cookies-ის დასაყენებლად. domcontentloaded ხანდახან
-    25s-ში ვერ ხდება.
-    """
+    # myauto.ge-ს ვხსნით, Cloudflare cookies-ი მოვიდეს.
+    #
+    # SPA-ის სრულ ჰიდრატაციას არ ვუცდით — `commit` wait-ით ვაგროვებთ პასუხს,
+    # შემდეგ მცირე pause cookies-ის დასაყენებლად. domcontentloaded ხანდახან
+    # 25s-ში ვერ ხდება.
     page = await context.new_page()
     try:
         await page.route("**/*", block_heavy_resources)
@@ -656,7 +651,7 @@ async def _warmup(context: BrowserContext) -> None:
 
 
 async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[dict], int]:
-    """Returns (items, last_page). items have FULL car data, not just IDs."""
+    # Returns (items, last_page). items have FULL car data, not just IDs.
     headers = {
         "Accept": "*/*",
         "Accept-Language": "ka",
@@ -699,7 +694,7 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
 
 
 async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[str], int]:
-    """Returns (car_ids, last_page). Legacy — kept for the HTML scrape path."""
+    # Returns (car_ids, last_page). Legacy — kept for the HTML scrape path.
     items, last_page = await _fetch_page_raw(context, page_num)
     ids = [str(item["car_id"]) for item in items if item.get("car_id")]
     return ids, last_page
@@ -708,7 +703,7 @@ async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[
 async def collect_all_ids(
     context: BrowserContext, max_pages: int | None = None
 ) -> list[str]:
-    """ყველა გვერდი → car_id-ების სრული სია (dedup-ით)."""
+    # ყველა გვერდი → car_id-ების სრული სია (dedup-ით).
     print("  Warming up (visiting myauto.ge for CF cookies)...")
     await _warmup(context)
 
@@ -760,16 +755,15 @@ def _save_cached_ids(ids: list[str]) -> None:
 
 
 async def run(max_pages: int | None = None) -> None:
-    """API-fast mode: each /products page returns full car data, not just IDs.
-    Single pass: fetch → parse → upsert. No per-car Playwright detail scrape.
-
-    Speed: ~5-10 min for full ~50k cars. Tradeoffs:
-      - Phones are masked in the listing endpoint (we store '') — same as HTML
-      - Photo URLs are built from item.photo / item.pic_number (deterministic)
-      - Description = car_desc + feature flags
-
-    To use the slower HTML scrape per car instead, call run_html().
-    """
+    # API-fast mode: each /products page returns full car data, not just IDs.
+    # Single pass: fetch → parse → upsert. No per-car Playwright detail scrape.
+    #
+    # Speed: ~5-10 min for full ~50k cars. Tradeoffs:
+    #   - Phones are masked in the listing endpoint (we store '') — same as HTML
+    #   - Photo URLs are built from item.photo / item.pic_number (deterministic)
+    #   - Description = car_desc + feature flags
+    #
+    # To use the slower HTML scrape per car instead, call run_html().
     print(f"MyAuto parser (API-fast mode, page-concurrency={CONCURRENT_PAGES})")
 
     already_saved = await get_existing_ids(SOURCE)
@@ -857,10 +851,9 @@ async def run(max_pages: int | None = None) -> None:
 
 
 async def run_html(max_pages: int | None = None) -> None:
-    """Slower HTML-detail scrape path (one Playwright page per car).
-
-    Kept for reference / debugging. The API-fast `run()` is preferred.
-    """
+    # Slower HTML-detail scrape path (one Playwright page per car).
+    #
+    # Kept for reference / debugging. The API-fast `run()` is preferred.
     print(f"MyAuto parser (HTML scrape mode, concurrency={CONCURRENT_PAGES})")
 
     already_saved = await get_existing_ids(SOURCE)
@@ -940,13 +933,12 @@ async def _scrape_all(
 
 
 async def smoke_test(url: str) -> Car | None:
-    """ერთი URL-ის სრული გავლა — debug-ისთვის.
-
-    Usage:
-        uv run python -c "from src.common.runtime import run as r; \\
-            from src.parsers.myauto import smoke_test; \\
-            r(smoke_test('https://www.myauto.ge/ka/pr/120183626/sale'))"
-    """
+    # ერთი URL-ის სრული გავლა — debug-ისთვის.
+    #
+    # Usage:
+    #     uv run python -c "from src.common.runtime import run as r; \\
+    #         from src.parsers.myauto import smoke_test; \\
+    #         r(smoke_test('https://www.myauto.ge/ka/pr/120183626/sale'))"
     async with async_playwright() as playwright:
         browser, context = await create_stealth_context(playwright)
         try:

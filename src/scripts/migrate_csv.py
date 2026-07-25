@@ -1,26 +1,24 @@
-"""
-ძველი CSV ფაილების მიგრაცია → PostgreSQL.
-
-ვადარდებთ ორ ფორმატს:
-
-  ფორმატი A (ძველი AutoPapa.csv):
-    ID, Manufacturer, Model, Engine_Volume, Mileage, Price, Year,
-    Engine_Type, Steering, Phone, Customs, VIN, Description, URL, Media
-
-  ფორმატი B (ახალი MyAuto.csv):
-    ID, Source, Manufacturer, Model, Year, Body_Type, Price, Currency,
-    Price_With_Customs, ... Image_1..Image_20
-
-ვცნობთ ფორმატს header-ით.
-
-გაშვება:
-    python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
-    python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
-
-შენიშვნა: ძველი AutoPapa.csv-ში ნომრები გადაკეთებულია scientific notation-ად
-(მაგ: 9.96E+11). ვერ აღვადგენთ — phone-ი ცარიელად დარჩება. შემდეგი
-პარსერის გაშვება მათ ხელახლა შეავსებს.
-"""
+# ძველი CSV ფაილების მიგრაცია → PostgreSQL.
+#
+# ვადარდებთ ორ ფორმატს:
+#
+#   ფორმატი A (ძველი AutoPapa.csv):
+#     ID, Manufacturer, Model, Engine_Volume, Mileage, Price, Year,
+#     Engine_Type, Steering, Phone, Customs, VIN, Description, URL, Media
+#
+#   ფორმატი B (ახალი MyAuto.csv):
+#     ID, Source, Manufacturer, Model, Year, Body_Type, Price, Currency,
+#     Price_With_Customs, ... Image_1..Image_20
+#
+# ვცნობთ ფორმატს header-ით.
+#
+# გაშვება:
+#     python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
+#     python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
+#
+# შენიშვნა: ძველი AutoPapa.csv-ში ნომრები გადაკეთებულია scientific notation-ად
+# (მაგ: 9.96E+11). ვერ აღვადგენთ — phone-ი ცარიელად დარჩება. შემდეგი
+# პარსერის გაშვება მათ ხელახლა შეავსებს.
 
 from __future__ import annotations
 
@@ -46,11 +44,10 @@ csv.field_size_limit(10 * 1024 * 1024)
 
 
 def _detect_format(header: list[str]) -> str:
-    """ფორმატის ამოცნობა header-ის ველებიდან.
-
-    'B'-ში Image_1, Image_2... ცალკე ველებში წერია;
-    'A'-ში ფოტოები Media-ში comma-separated string-ად არის.
-    """
+    # ფორმატის ამოცნობა header-ის ველებიდან.
+    #
+    # 'B'-ში Image_1, Image_2... ცალკე ველებში წერია;
+    # 'A'-ში ფოტოები Media-ში comma-separated string-ად არის.
     columns = {h.strip().lower() for h in header}
     if "image_1" in columns:
         return "B"
@@ -167,7 +164,7 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
 
 
 def _iter_cars(path: str, source: str) -> Iterable[Car]:
-    """ერთი ფაილიდან Car ობიექტების iterator."""
+    # ერთი ფაილიდან Car ობიექტების iterator.
     with open(path, "r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         if reader.fieldnames is None:

@@ -1,6 +1,4 @@
-"""
-სტატისტიკის endpoint — total cars count, sources breakdown.
-"""
+# სტატისტიკის endpoint — total cars count, sources breakdown.
 
 from __future__ import annotations
 
@@ -21,7 +19,7 @@ _cache_lock = threading.Lock()
 
 
 class Stats(BaseModel):
-    """საერთო რაოდენობები — ვებსაიტის header-ისთვის."""
+    # საერთო რაოდენობები — ვებსაიტის header-ისთვის.
 
     total_cars: int
     by_source: dict[str, int]
@@ -30,7 +28,7 @@ class Stats(BaseModel):
 
 
 def _get_stats_sync() -> Stats:
-    """ერთი query — ყველაფერი."""
+    # ერთი query — ყველაფერი.
     with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -61,7 +59,7 @@ def _get_stats_sync() -> Stats:
 
 @router.get("", response_model=Stats)
 def get_stats(response: Response) -> Stats:
-    """საერთო სტატისტიკა — TTL-ქეშით, რომ ყოველ page load-ზე COUNT არ გავუშვათ."""
+    # საერთო სტატისტიკა — TTL-ქეშით, რომ ყოველ page load-ზე COUNT არ გავუშვათ.
     global _cache
     response.headers["Cache-Control"] = "public, max-age=60"
     now = time.monotonic()

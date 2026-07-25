@@ -1,5 +1,5 @@
-"""validate_car() tests — every range and rule has at least one positive +
-negative case."""
+# validate_car() tests — every range and rule has at least one positive +
+# negative case.
 
 from __future__ import annotations
 

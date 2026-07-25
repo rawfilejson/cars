@@ -1,11 +1,9 @@
-"""
-ძიების endpoint — ერთიანი smart search + legacy ცალკეული ფილდები.
-
-ახალი ფრონტი: `query` ერთად, backend ცნობს რა ტიპისაა (VIN/phone/ტექსტი).
-ძველი ფრონტი (Carba): vin/phone/free_text ცალკე ფილდები. deprecated.
-
-სრულიად უფასო, ანონიმური — მხოლოდ IP-ით ლიმიტი.
-"""
+# ძიების endpoint — ერთიანი smart search + legacy ცალკეული ფილდები.
+#
+# ახალი ფრონტი: `query` ერთად, backend ცნობს რა ტიპისაა (VIN/phone/ტექსტი).
+# ძველი ფრონტი (Carba): vin/phone/free_text ცალკე ფილდები. deprecated.
+#
+# სრულიად უფასო, ანონიმური — მხოლოდ IP-ით ლიმიტი.
 
 from __future__ import annotations
 
@@ -72,7 +70,7 @@ _FX_TO_USD = FX_RATES_TO_USD
 
 
 def _clean_price(amount: int | None, currency: str | None) -> int | None:
-    """junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → None (sort-ის იგივე ლოგიკა)."""
+    # junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → None (sort-ის იგივე ლოგიკა).
     if not amount or amount <= 0:
         return None
     usd = _FX_TO_USD.get(currency or "", 1.0) * amount
@@ -90,13 +88,13 @@ _SORT_CLAUSES = {
 
 
 def _normalize_phone_query(raw: str) -> str:
-    """ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური)."""
+    # ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური).
     digits = re.sub(r"\D", "", raw)
     return digits[-9:] if len(digits) > 9 else digits
 
 
 def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
-    """Merge a legacy single value + the new multi-select list — de-duped, non-empty."""
+    # Merge a legacy single value + the new multi-select list — de-duped, non-empty.
     out: list[str] = []
     if singular:
         out.append(singular)
@@ -106,7 +104,7 @@ def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
 
 
 def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
-    """Filter SQL fragments + their parameter values."""
+    # Filter SQL fragments + their parameter values.
     fragments: list[str] = []
     params: list = []
     if req.year_from is not None:
@@ -174,7 +172,7 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
 
 
 def _sort_clause(sort: str | None) -> str:
-    """ORDER BY tail string. Default = newest."""
+    # ORDER BY tail string. Default = newest.
     return _SORT_CLAUSES.get(sort or "newest", _SORT_CLAUSES["newest"])
 
 
@@ -195,7 +193,7 @@ _PHONE_CHARS_RE = re.compile(r"[\d\s+()\-.]+")
 
 
 def _looks_like_phone(text: str) -> bool:
-    """7+ ციფრი + ფონის სიმბოლოები (digits, spaces, +, -, parens, dots)."""
+    # 7+ ციფრი + ფონის სიმბოლოები (digits, spaces, +, -, parens, dots).
     digits = re.sub(r"\D", "", text)
     if len(digits) < 7:
         return False
@@ -206,9 +204,9 @@ def _looks_like_phone(text: str) -> bool:
 
 def _paginate(where_sql: str, where_params: tuple, order_by: str,
               order_params: tuple, page: int) -> tuple[str, tuple]:
-    """შედეგების გვერდი CTE-ით: id + total პატარა სვეტებზე ვიღებთ, შემდეგ სრულ
-    row-ებს (description/ფოტოები TOAST-შია) მხოლოდ ამ 25-სთვის ვკითხულობთ —
-    Supabase free-tier-ის ნელ დისკზე ბევრ-შედეგიან ძიებას მკვეთრად აჩქარებს."""
+    # შედეგების გვერდი CTE-ით: id + total პატარა სვეტებზე ვიღებთ, შემდეგ სრულ
+    # row-ებს (description/ფოტოები TOAST-შია) მხოლოდ ამ 25-სთვის ვკითხულობთ —
+    # Supabase free-tier-ის ნელ დისკზე ბევრ-შედეგიან ძიებას მკვეთრად აჩქარებს.
     offset = (page - 1) * PAGE_SIZE
     sql = (
         f"WITH ids AS (SELECT id, COUNT(*) OVER () AS _total FROM cars "
@@ -219,8 +217,8 @@ def _paginate(where_sql: str, where_params: tuple, order_by: str,
 
 
 def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
-    """Auto-detect VIN / phone / freeform text. Filters + sort apply to
-    freeform/browse (VIN/phone are exact lookups — filters don't make sense)."""
+    # Auto-detect VIN / phone / freeform text. Filters + sort apply to
+    # freeform/browse (VIN/phone are exact lookups — filters don't make sense).
     text = text.strip()
     if not text:
         return _browse_query(req)
@@ -257,7 +255,7 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
 
 
 def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
-    """No text — just filters + sort. e.g. all 2018-2022 cars under $20k."""
+    # No text — just filters + sort. e.g. all 2018-2022 cars under $20k.
     if not _has_any_filter(req):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -269,7 +267,7 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
 
 
 def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
-    """Routes to smart-search if `query` set, otherwise legacy logic, otherwise browse."""
+    # Routes to smart-search if `query` set, otherwise legacy logic, otherwise browse.
     if req.query:
         return _smart_route(req, req.query)
 
@@ -301,7 +299,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
 
 
 def _row_to_public(row: dict) -> CarPublic:
-    """DB row → CarPublic. ფოტოები R2 public URL-ად."""
+    # DB row → CarPublic. ფოტოები R2 public URL-ად.
     image_keys = row.get("image_keys") or []
     image_urls_public = [
         f"{R2_PUBLIC_URL.rstrip('/')}/{key}" if R2_PUBLIC_URL else key
@@ -356,9 +354,9 @@ _RESULT_CACHE_LOCK = threading.Lock()
 
 
 def _cache_put(key: str, rows: list, now: float) -> None:
-    """ქეშში ჩაწერა + capacity-ის შენარჩუნება. ზედმეტ ჩანაწერებს უძველესიდან
-    ვაცლით (clear()-ის ნაცვლად), რომ პოპულარული ძიების ქეში ცივ-სტარტში
-    ერთიანად არ დაიკარგოს."""
+    # ქეშში ჩაწერა + capacity-ის შენარჩუნება. ზედმეტ ჩანაწერებს უძველესიდან
+    # ვაცლით (clear()-ის ნაცვლად), რომ პოპულარული ძიების ქეში ცივ-სტარტში
+    # ერთიანად არ დაიკარგოს.
     with _RESULT_CACHE_LOCK:
         _RESULT_CACHE[key] = (now, rows)
         _RESULT_CACHE.move_to_end(key)
@@ -385,7 +383,7 @@ def _query_rows(sql: str, params: tuple) -> list:
 
 @router.post("", response_model=SearchResponse)
 def search(req: SearchRequest, request: Request, background_tasks: BackgroundTasks) -> SearchResponse:
-    """ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო."""
+    # ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო.
 
     remaining = check_rate_limit(request, is_pagination=req.page > 1)
 
@@ -412,9 +410,9 @@ def search(req: SearchRequest, request: Request, background_tasks: BackgroundTas
 
 
 def _count_where(req: SearchRequest) -> tuple[str, tuple]:
-    """WHERE clause + params for the live count — mirrors the real search routing
-    (VIN / phone / freeform text, each combined with the active filters) so the
-    count always matches what a search would return."""
+    # WHERE clause + params for the live count — mirrors the real search routing
+    # (VIN / phone / freeform text, each combined with the active filters) so the
+    # count always matches what a search would return.
     text = (req.query or req.free_text or "").strip()
     frags, fparams = _filter_clauses(req)
     filter_tail = (" AND " + " AND ".join(frags)) if frags else ""
@@ -441,8 +439,8 @@ def _count_where(req: SearchRequest) -> tuple[str, tuple]:
 
 @router.post("/count", response_model=SearchCount)
 def search_count(req: SearchRequest) -> SearchCount:
-    """Match count for the current query + filters — drives the live count on the
-    search button. No rows, no rate limit; cached like searches."""
+    # Match count for the current query + filters — drives the live count on the
+    # search button. No rows, no rate limit; cached like searches.
     where, params = _count_where(req)
     sql = "SELECT COUNT(*) AS n FROM cars" + (f" WHERE {where}" if where else "")
     rows = _query_rows(sql, params)
@@ -451,8 +449,8 @@ def search_count(req: SearchRequest) -> SearchCount:
 
 @car_router.get("/{key}", response_model=CarPublic)
 def get_car(key: str, response: Response) -> CarPublic:
-    """ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
-    მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება."""
+    # ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
+    # მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება.
     m = _CAR_KEY_RE.match(key)
     if not m:
         raise HTTPException(

@@ -1,11 +1,10 @@
-"""VIN extraction and validation.
-
-A VIN is exactly 17 characters: digits and uppercase letters,
-excluding I, O and Q (so they don't get confused with 1 and 0).
-
-We don't verify the checksum — real-world listings often have invalid
-checksums and we'd rather show them than drop them.
-"""
+# VIN extraction and validation.
+#
+# A VIN is exactly 17 characters: digits and uppercase letters,
+# excluding I, O and Q (so they don't get confused with 1 and 0).
+#
+# We don't verify the checksum — real-world listings often have invalid
+# checksums and we'd rather show them than drop them.
 
 from __future__ import annotations
 
@@ -22,11 +21,10 @@ def is_valid_vin(text: str) -> bool:
 
 
 def find_vin(text: str) -> str:
-    """Return the first VIN found in `text`, uppercased.
-
-    Masked VINs like "KMHL34*****" are skipped — we wipe out any token
-    containing `*` before searching.
-    """
+    # Return the first VIN found in `text`, uppercased.
+    #
+    # Masked VINs like "KMHL34*****" are skipped — we wipe out any token
+    # containing `*` before searching.
     if not text:
         return ""
 
@@ -42,7 +40,7 @@ def find_vin(text: str) -> str:
 
 
 def best_vin(*sources: str) -> str:
-    """Try each source in order, return first valid VIN found."""
+    # Try each source in order, return first valid VIN found.
     for src in sources:
         vin = find_vin(src) if src else ""
         if vin:

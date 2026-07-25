@@ -1,12 +1,11 @@
-"""Shared psycopg connection pool for the API.
-
-Each search before this opened a fresh TLS connection to Supabase
-(~2s connect time on top of ~150ms of real query work). With a pool that
-keeps connections warm, that 2s overhead is gone.
-
-The pool is created lazily so module import doesn't block, and closed
-cleanly via FastAPI lifespan.
-"""
+# Shared psycopg connection pool for the API.
+#
+# Each search before this opened a fresh TLS connection to Supabase
+# (~2s connect time on top of ~150ms of real query work). With a pool that
+# keeps connections warm, that 2s overhead is gone.
+#
+# The pool is created lazily so module import doesn't block, and closed
+# cleanly via FastAPI lifespan.
 
 from __future__ import annotations
 
@@ -39,13 +38,13 @@ def get_pool() -> ConnectionPool:
 
 @contextmanager
 def connection() -> Iterator[psycopg.Connection]:
-    """Yield a pooled connection. Auto-returns to pool."""
+    # Yield a pooled connection. Auto-returns to pool.
     with get_pool().connection() as conn:
         yield conn
 
 
 def close_pool() -> None:
-    """Close the pool — called on FastAPI shutdown."""
+    # Close the pool — called on FastAPI shutdown.
     global _pool
     if _pool is not None:
         _pool.close()

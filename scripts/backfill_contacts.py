@@ -1,18 +1,17 @@
-"""One-off backfill: recover VIN and phone from a listing's description
-when the structured field is empty.
-
-New listings already get this during scraping; this applies the same tested
-extractors (src.common.vin.find_vin / src.common.normalize.phone_from_text)
-to rows already in the database.
-
-Usage (dry run prints counts, writes nothing):
-
-    DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py
-
-Add --apply to write the updates:
-
-    DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py --apply
-"""
+# One-off backfill: recover VIN and phone from a listing's description
+# when the structured field is empty.
+#
+# New listings already get this during scraping; this applies the same tested
+# extractors (src.common.vin.find_vin / src.common.normalize.phone_from_text)
+# to rows already in the database.
+#
+# Usage (dry run prints counts, writes nothing):
+#
+#     DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py
+#
+# Add --apply to write the updates:
+#
+#     DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py --apply
 
 from __future__ import annotations
 

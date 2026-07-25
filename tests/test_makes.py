@@ -1,4 +1,4 @@
-"""make/model base-name extraction — strip trims, keep two-word model names."""
+# make/model base-name extraction — strip trims, keep two-word model names.
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def test_base_model_drops_manufacturer_case_insensitive():
 
 
 def test_rare_submodel_folds_into_base_class():
-    """C 43 (2 ცალი) არ ქრება — კლასის "C" ჩანაწერს ემატება."""
+    # C 43 (2 ცალი) არ ქრება — კლასის "C" ჩანაწერს ემატება.
     from unittest.mock import MagicMock, patch
 
     from src.api import makes as makes_mod
@@ -67,7 +67,7 @@ def test_rare_submodel_folds_into_base_class():
 
 
 def test_order_makes_by_popularity():
-    """მწარმოებლები/მოდელები count-ის კლებადობით; იშვიათი მოდელები იჭრება."""
+    # მწარმოებლები/მოდელები count-ის კლებადობით; იშვიათი მოდელები იჭრება.
     agg = {
         "Toyota": {"camry": ("Camry", 50), "prius": ("Prius", 5), "rare": ("Rare", 2)},
         "BMW": {"320": ("320", 30), "x5": ("X5", 40)},
@@ -81,7 +81,7 @@ def test_order_makes_by_popularity():
 
 
 def test_small_brand_with_single_listing_still_appears():
-    """ერთადერთი Bugatti-ც კი dropdown-ში უნდა მოხვდეს — ბრენდი არ იკარგება."""
+    # ერთადერთი Bugatti-ც კი dropdown-ში უნდა მოხვდეს — ბრენდი არ იკარგება.
     agg = {
         "Toyota": {"camry": ("Camry", 50)},
         "Bugatti": {"chiron": ("Chiron", 1)},

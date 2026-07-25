@@ -1,14 +1,12 @@
-"""
-FastAPI მთავარი ფაილი — backend-ის entry point.
-
-გაშვება ლოკალურად:
-    uv run uvicorn src.api.main:app --reload --port 8765
-
-ვებსაიტი:
-    http://localhost:8765/docs    — Swagger UI (auto-generated API docs)
-    http://localhost:8765/healthz — health check
-    http://localhost:8765/stats   — total cars count
-"""
+# FastAPI მთავარი ფაილი — backend-ის entry point.
+#
+# გაშვება ლოკალურად:
+#     uv run uvicorn src.api.main:app --reload --port 8765
+#
+# ვებსაიტი:
+#     http://localhost:8765/docs    — Swagger UI (auto-generated API docs)
+#     http://localhost:8765/healthz — health check
+#     http://localhost:8765/stats   — total cars count
 
 from __future__ import annotations
 
@@ -78,7 +76,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    """ყველა პასუხს ვამატებთ security header-ებს."""
+    # ყველა პასუხს ვამატებთ security header-ებს.
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -98,7 +96,7 @@ app.include_router(facets_router)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """ნებისმიერი unexpected exception → 500 + უარყოფა stack trace-ის."""
+    # ნებისმიერი unexpected exception → 500 + უარყოფა stack trace-ის.
     log.exception("Unhandled exception on %s %s", request.method, request.url.path)
 
     if IS_PRODUCTION:
@@ -114,7 +112,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/healthz", response_model=HealthCheck)
 def health_check() -> HealthCheck:
-    """Health check — DB და R2 ხელმისაწვდომია?"""
+    # Health check — DB და R2 ხელმისაწვდომია?
     from src.api.db_pool import connection
 
     db_ok = False

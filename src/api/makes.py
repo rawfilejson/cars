@@ -1,4 +1,4 @@
-"""მწარმოებელი → მოდელების სია — ძიების dropdown მენიუსთვის."""
+# მწარმოებელი → მოდელების სია — ძიების dropdown მენიუსთვის.
 
 from __future__ import annotations
 
@@ -37,13 +37,13 @@ _SERIES_NUM_RE = re.compile(r"\d{2,3}[a-z]{0,2}", re.IGNORECASE)
 
 
 def _canon_token(tok: str) -> str:
-    """რიცხვით trim-ს ბაზურ ნომრამდე ამცირებს (320i/320d → 320)."""
+    # რიცხვით trim-ს ბაზურ ნომრამდე ამცირებს (320i/320d → 320).
     m = _TRIM_NUM_RE.fullmatch(tok)
     return m.group(1) if m else tok
 
 
 def _base_model(manufacturer: str, model: str) -> str:
-    """სრული trim-სტრიქონიდან ბაზური მოდელის სახელს გამოყოფს."""
+    # სრული trim-სტრიქონიდან ბაზური მოდელის სახელს გამოყოფს.
     model = re.sub(r"[×](?=\d)", "x", model)
     toks = [t for t in re.split(r"[\s/]+", model.strip())
             if t and t.lower() != manufacturer.lower()]
@@ -63,7 +63,7 @@ def _base_model(manufacturer: str, model: str) -> str:
 
 
 class MakesResponse(BaseModel):
-    """{მწარმოებელი: [მოდელები]} — პოპულარობის რიგზე (ყველაზე ბევრი → ნაკლები)."""
+    # {მწარმოებელი: [მოდელები]} — პოპულარობის რიგზე (ყველაზე ბევრი → ნაკლები).
 
     makes: dict[str, list[str]]
 
@@ -71,12 +71,11 @@ class MakesResponse(BaseModel):
 def _order_makes(
     agg: dict[str, dict[str, tuple[str, int]]],
 ) -> dict[str, list[str]]:
-    """აგრეგირებული count-ები → {მწარმოებელი: [მოდელები]} პოპულარობის რიგზე.
-
-    მწარმოებლები — ყველაზე ბევრი განცხადება პირველი; თითოეულში მოდელებიც
-    count-ის კლებადობით (ტოლობისას ანბანურად). იშვიათი მოდელები ეთიშება,
-    მაგრამ ბრენდი განცხადებით ყოველთვის ჩანს — თუნდაც ერთი მანქანა იყოს.
-    """
+    # აგრეგირებული count-ები → {მწარმოებელი: [მოდელები]} პოპულარობის რიგზე.
+    #
+    # მწარმოებლები — ყველაზე ბევრი განცხადება პირველი; თითოეულში მოდელებიც
+    # count-ის კლებადობით (ტოლობისას ანბანურად). იშვიათი მოდელები ეთიშება,
+    # მაგრამ ბრენდი განცხადებით ყოველთვის ჩანს — თუნდაც ერთი მანქანა იყოს.
     ranked: list[tuple[str, int, list[str]]] = []
     for manu, bucket in agg.items():
         kept = [(disp, cnt) for disp, cnt in bucket.values() if cnt >= _MIN_COUNT]
@@ -133,7 +132,7 @@ def _load_makes() -> MakesResponse:
 
 @router.get("", response_model=MakesResponse)
 def get_makes(response: Response) -> MakesResponse:
-    """მწარმოებელი → მოდელები. საათში ერთხელ ქეშდება (იშვიათად იცვლება)."""
+    # მწარმოებელი → მოდელები. საათში ერთხელ ქეშდება (იშვიათად იცვლება).
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()

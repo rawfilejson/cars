@@ -1,4 +1,4 @@
-"""facets canonicalization — dirty variant → one canonical value, and back."""
+# facets canonicalization — dirty variant → one canonical value, and back.
 
 from __future__ import annotations
 

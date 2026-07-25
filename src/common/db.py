@@ -1,15 +1,13 @@
-"""
-PostgreSQL-თან მუშაობა.
-
-Windows-ის async ეკოსისტემაში პრობლემაა: Playwright-ი ითხოვს ProactorEventLoop-ს
-(subprocess-ისთვის), psycopg-ის async ვერსია — SelectorEventLoop-ს. ერთად ვერ
-მუშაობენ. ამიტომ აქ ვიყენებთ psycopg-ის sync ვერსიას + asyncio.to_thread-ით
-ვაგზავნით ცალკე thread-ში. გარეთ API იგივე async ფუნქციებია.
-
-მთავარი ფუნქციები:
-  * `get_existing_ids(source)` — უკვე შენახული მანქანების id-ები (resume-სთვის)
-  * `upsert_cars(cars)` — batch ჩაწერა (ბევრი ერთად)
-"""
+# PostgreSQL-თან მუშაობა.
+#
+# Windows-ის async ეკოსისტემაში პრობლემაა: Playwright-ი ითხოვს ProactorEventLoop-ს
+# (subprocess-ისთვის), psycopg-ის async ვერსია — SelectorEventLoop-ს. ერთად ვერ
+# მუშაობენ. ამიტომ აქ ვიყენებთ psycopg-ის sync ვერსიას + asyncio.to_thread-ით
+# ვაგზავნით ცალკე thread-ში. გარეთ API იგივე async ფუნქციებია.
+#
+# მთავარი ფუნქციები:
+#   * `get_existing_ids(source)` — უკვე შენახული მანქანების id-ები (resume-სთვის)
+#   * `upsert_cars(cars)` — batch ჩაწერა (ბევრი ერთად)
 
 from __future__ import annotations
 
@@ -121,7 +119,7 @@ ON CONFLICT (source, source_id) DO UPDATE SET
 
 
 def _car_to_params(car: Car) -> dict:
-    """Pydantic მოდელი → dict შესაბამისი SQL placeholders-ისთვის."""
+    # Pydantic მოდელი → dict შესაბამისი SQL placeholders-ისთვის.
     data = car.model_dump()
     data.setdefault("image_urls", [])
     data.setdefault("image_keys", [])
@@ -153,29 +151,28 @@ def _update_image_keys_sync(car_db_id: int, keys: list[str]) -> None:
 
 
 async def get_existing_ids(source: str) -> set[str]:
-    """უკვე შენახული მანქანების source_id-ები. resume-სთვის.
-
-    მაგ: თუ script-ი დასრულდა შუა გზაზე, შემდეგ run-ზე ვიცით რომ ეს
-    მანქანები უკვე გვაქვს — ხელახლა არ შევეცეთ.
-    """
+    # უკვე შენახული მანქანების source_id-ები. resume-სთვის.
+    #
+    # მაგ: თუ script-ი დასრულდა შუა გზაზე, შემდეგ run-ზე ვიცით რომ ეს
+    # მანქანები უკვე გვაქვს — ხელახლა არ შევეცეთ.
     return await asyncio.to_thread(_get_existing_ids_sync, source)
 
 
 async def count_cars(source: str | None = None) -> int:
-    """რამდენი მანქანა გვაქვს ბაზაში (ან კონკრეტული წყაროდან)."""
+    # რამდენი მანქანა გვაქვს ბაზაში (ან კონკრეტული წყაროდან).
     return await asyncio.to_thread(_count_cars_sync, source)
 
 
 async def upsert_cars(cars: Iterable[Car]) -> int:
-    """ბევრი მანქანის ჩასმა ერთ transaction-ში."""
+    # ბევრი მანქანის ჩასმა ერთ transaction-ში.
     return await asyncio.to_thread(_upsert_cars_sync, list(cars))
 
 
 async def upsert_car(car: Car) -> None:
-    """ერთი მანქანის ჩასმა — convenience helper."""
+    # ერთი მანქანის ჩასმა — convenience helper.
     await asyncio.to_thread(_upsert_cars_sync, [car])
 
 
 async def update_image_keys(car_db_id: int, keys: list[str]) -> None:
-    """ფოტოების R2 key-ების შენახვა."""
+    # ფოტოების R2 key-ების შენახვა.
     await asyncio.to_thread(_update_image_keys_sync, car_db_id, keys)

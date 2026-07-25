@@ -1,6 +1,4 @@
-"""
-API-ის request/response მოდელები. Pydantic-ით ვალიდირდება ავტომატურად.
-"""
+# API-ის request/response მოდელები. Pydantic-ით ვალიდირდება ავტომატურად.
 
 from __future__ import annotations
 
@@ -15,7 +13,7 @@ _FilterValue = Annotated[str, StringConstraints(max_length=60)]
 
 
 class SearchRequest(BaseModel):
-    """ძიების მოთხოვნა."""
+    # ძიების მოთხოვნა.
 
     query: str | None = Field(None, min_length=1, max_length=200)
 
@@ -55,7 +53,7 @@ class SearchRequest(BaseModel):
 
 
 class CarPublic(BaseModel):
-    """ერთი მანქანის public ფორმა — რას ვაჩვენებთ მომხმარებელს."""
+    # ერთი მანქანის public ფორმა — რას ვაჩვენებთ მომხმარებელს.
 
     id: int
     source: str
@@ -96,7 +94,7 @@ class CarPublic(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """ძიების შედეგი."""
+    # ძიების შედეგი.
 
     query_type: str
     results: list[CarPublic]
@@ -108,13 +106,13 @@ class SearchResponse(BaseModel):
 
 
 class SearchCount(BaseModel):
-    """მხოლოდ რაოდენობა — ცოცხალი counter ძიების ღილაკზე."""
+    # მხოლოდ რაოდენობა — ცოცხალი counter ძიების ღილაკზე.
 
     total_count: int
 
 
 class HealthCheck(BaseModel):
-    """რა მუშაობს და რა არა."""
+    # რა მუშაობს და რა არა.
 
     status: str
     db: bool

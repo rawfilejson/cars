@@ -1,10 +1,9 @@
-"""Photo storage — download from source CDN to local + Cloudflare R2.
-
-R2 is S3-compatible, so boto3 works. We just point it at R2's endpoint.
-
-Key layout (same in local and R2):
-    {source}/{source_id}/{index}.jpg
-"""
+# Photo storage — download from source CDN to local + Cloudflare R2.
+#
+# R2 is S3-compatible, so boto3 works. We just point it at R2's endpoint.
+#
+# Key layout (same in local and R2):
+#     {source}/{source_id}/{index}.jpg
 
 from __future__ import annotations
 
@@ -64,10 +63,9 @@ _RETRY_DELAYS = (1.0, 2.0, 4.0)
 async def download_to_local(
     client: httpx.AsyncClient, url: str, key: str, source: str = ""
 ) -> bool:
-    """Download URL → local file. Skips if already present.
-
-    Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx → no retry.
-    """
+    # Download URL → local file. Skips if already present.
+    #
+    # Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx → no retry.
     path = local_path(key)
     if path.exists() and path.stat().st_size > 0:
         return True
@@ -134,9 +132,8 @@ def _content_type(key: str) -> str:
 
 
 def _r2_object_exists(client, key: str) -> bool:
-    """HeadObject — სწრაფი check (Class B operation, ~10x იაფი Class A
-    upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
-    """
+    # HeadObject — სწრაფი check (Class B operation, ~10x იაფი Class A
+    # upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
     from botocore.exceptions import ClientError
     try:
         client.head_object(Bucket=R2_BUCKET, Key=key)
@@ -188,15 +185,14 @@ async def fetch_and_store(
     upload_to_cloud: bool = True,
     keep_local: bool = True,
 ) -> str | None:
-    """Returns the storage key on success, None on failure.
-
-    upload_to_cloud-ის ჩართვისას R2 upload-ის ჩავარდება None-ს აბრუნებს — key
-    არ უნდა ჩაიწეროს, თუ R2-ში ფოტო ნამდვილად არ შევიდა (თორემ საიტზე გატეხილი
-    სურათი გამოჩნდება და მანქანა pending-ად ვეღარ აღიქმება).
-
-    keep_local=False — ლოკალურ ფაილს R2-ში წარმატებული upload-ის შემდეგ წაშლის
-    (disk-constrained backfill: GitHub runner — ფოტოები დისკზე არ გვირჩება).
-    """
+    # Returns the storage key on success, None on failure.
+    #
+    # upload_to_cloud-ის ჩართვისას R2 upload-ის ჩავარდება None-ს აბრუნებს — key
+    # არ უნდა ჩაიწეროს, თუ R2-ში ფოტო ნამდვილად არ შევიდა (თორემ საიტზე გატეხილი
+    # სურათი გამოჩნდება და მანქანა pending-ად ვეღარ აღიქმება).
+    #
+    # keep_local=False — ლოკალურ ფაილს R2-ში წარმატებული upload-ის შემდეგ წაშლის
+    # (disk-constrained backfill: GitHub runner — ფოტოები დისკზე არ გვირჩება).
     key = make_image_key(source, source_id, index, url)
 
     if not await download_to_local(client, url, key, source=source):
