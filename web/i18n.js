@@ -164,9 +164,9 @@ const TRANSLATIONS = {
         brand_sub: "Georgian car listings",
         stat_cars: "cars indexed",
         saved_title: "Saved",
-        export_data: "Download my data (backup)",
-        import_data: "Restore from a backup file",
-        export_done: "Data downloaded",
+        export_data: "Download a backup",
+        import_data: "Restore from a backup",
+        export_done: "Backup downloaded",
         import_done: "Data restored",
         import_error: "Couldn't read that file",
         load_more: "Show more",
@@ -185,10 +185,10 @@ const TRANSLATIONS = {
         saved_done: "Saved",
         saved_searches_h: "Saved searches",
 
-        hero_title: "Find a car's sales history.",
+        hero_title: "Look up a car's history.",
         hero_desc:
-            "A unified index of Georgian car listings — searchable by VIN, " +
-            "phone number, or a specific description.",
+            "Every Georgian car listing in one place. Search by VIN, phone " +
+            "number, or just describe the car.",
 
         ph_query: "VIN, phone, brand, model, year, city...",
 
@@ -206,7 +206,7 @@ const TRANSLATIONS = {
         filter_model:   "Model",
         brand_any:      "All brands",
         model_any:      "All models",
-        filter_body:    "Category",
+        filter_body:    "Body type",
         filter_fuel:    "Fuel",
         filter_gearbox: "Gearbox",
         filter_drive:   "Drive",
@@ -227,7 +227,7 @@ const TRANSLATIONS = {
         compare_clear:  "Clear",
         compare_max:    "Up to 4 cars",
         cmp_wins: "{n} wins",
-        cmp_leads_in: "wins {n}/{m}",
+        cmp_leads_in: "wins {n} of {m}",
         cmp_better_pick: "looks like the better pick",
         cmp_reason_newer: "newer",
         cmp_reason_mileage: "lower mileage",
@@ -257,10 +257,10 @@ const TRANSLATIONS = {
         empty_state: "Search results will appear here",
         results_count: "{n} results",
         results_remaining: "{n} searches left this hour",
-        page_of: "Page {p} / {n}",
+        page_of: "Page {p} of {n}",
         page_prev: "← Prev",
         page_next: "Next →",
-        no_results: "No cars found for your search",
+        no_results: "No cars matched your search",
 
 
         err_fetch: "Error: {msg}",
@@ -273,12 +273,12 @@ const TRANSLATIONS = {
             "(e.g. Toyota Camry 2020 Tbilisi).",
         err_query_empty: "Enter something to search, or use the filters.",
         err_phone_too_short: "Phone number must be at least 4 digits.",
-        err_car_invalid_key: "Invalid address.",
+        err_car_invalid_key: "That link doesn't look right.",
         err_car_not_found: "Car not found — it was probably removed from the source.",
         err_cooldown: "Wait {wait}s before searching again.",
         err_rate_limited:
-            "Hourly limit reached ({limit} searches). Try next hour, " +
-            "or message {contact} on Instagram for a higher limit.",
+            "You have hit the hourly limit ({limit} searches). Try again next " +
+            "hour, or message {contact} on Instagram for more.",
 
         spec_year: "Year",
         spec_mileage: "Mileage",
@@ -295,7 +295,7 @@ const TRANSLATIONS = {
 
         section_description: "Description",
         translate_btn: "Translate",
-        translating: "Translating",
+        translating: "Translating...",
         section_vin: "VIN",
         section_phone: "Phone",
         section_seller: "Seller",
@@ -303,20 +303,20 @@ const TRANSLATIONS = {
         see_less: "See less",
 
         posted_on: "Posted: {date}",
-        scraped_on_note: "Information retrieved on {date}.",
+        scraped_on_note: "Last checked on {date}.",
 
         photo_counter: "{i} / {n}",
-        no_photos: "no photo",
+        no_photos: "No photo",
 
         back_to_search:    "← Home",
         copy_link:         "Copy link",
         copy_vin:          "Copy VIN",
         detail_loading:    "Loading...",
-        detail_open_source:"Source",
+        detail_open_source:"Original listing",
         notfound_msg:      "Page not found.",
-        notfound_home:     "Go to home",
+        notfound_home:     "Back to home",
 
-        footer_about: "Listings archive.",
+        footer_about: "An archive of car listings.",
         footer_legal: "Terms & Privacy",
     },
     ru: {
