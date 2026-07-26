@@ -1,10 +1,10 @@
 # Local static server with SPA fallback.
-#
-# Plain http.server answers 404 for an unknown path. This is the equivalent of
-# Cloudflare Workers' not_found_handling = "single-page-application": an unknown
+
+# Plain http.server answers 404 for an unknown path.
+# This is the equivalent of cloudflare workers not_found_handling = "single-page-application": an unknown
 # path that isn't an asset falls back to index.html, so deep links like
 # /car/myauto-121951594 work locally too.
-#
+
 # run: python web/dev-server.py [PORT]
 
 from __future__ import annotations

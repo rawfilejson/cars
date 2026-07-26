@@ -1,4 +1,4 @@
-/* Styles for index.html. Kept in one file: no build step, no bundler. */
+/* Styles for index.html. Kept in one file*/
 
 html,
 body {
@@ -89,7 +89,7 @@ body.is-offline .offline-banner {
   }
 }
 
-/* first-load overlay - a car driving while the DB warms up (Render cold start) */
+/* first-load overlay - a car driving while the DB warms up*/
 .boot-overlay {
   position: fixed;
   inset: 0;
@@ -321,8 +321,8 @@ body.is-offline .offline-banner {
   display: block;
   animation: cddIn 0.14s ease both;
 }
-/* an open filter dropdown lifts the whole sidebar (a sticky stacking context that
-   otherwise lets result cards paint over the fixed panel) above the results/tray */
+/* an open filter dropdown lifts the whole sidebar
+   (a sticky stacking context that otherwise lets result cards paint over the fixed panel) above the results/tray */
 body.cdd-open .sidebar {
   z-index: 1250;
 }
@@ -1121,7 +1121,7 @@ body.mode-detail .shell {
     box-shadow: 0 0 0 12px rgba(239, 35, 60, 0);
   }
 }
-/* prominent VIN card - labeled, mono, with a slow shine to catch the eye */
+/* prominent VIN card // labeled, mono, with a slow shine to catch the eye */
 .dt-vin-card {
   display: flex;
   align-items: center;
@@ -2068,7 +2068,7 @@ body.saved-open .toast {
   transform: scale(0.96);
 }
 
-/* unified button motion - buttons that only changed colour now ease and react to press */
+/* unified button motion // buttons that only changed colour now ease and react to press */
 .cmp-bar-open,
 .cmp-save-btn,
 .cmp-x,
@@ -2344,7 +2344,7 @@ body.saved-open .toast {
 .spec-pill:hover .pill-ic {
   color: #ef233c;
 }
-/* each spec icon animates to life on hover - the car drives, the tacho sweeps, etc. */
+/* each spec icon animates to life on hover // the car drives, the tacho sweeps, etc */
 .spec-pill[data-ic="body"]:hover .pill-ic {
   animation: pillDrive 0.55s ease;
 }
@@ -2496,7 +2496,7 @@ body.saved-open .toast {
   .rcard-photo {
     width: 100%;
   }
-  /* stacked layout gives the photo no height to fill - restore the intrinsic ratio */
+  /* stacked layout gives the photo no height to fill // restore the intrinsic ratio */
   .rcard-photo .carousel {
     aspect-ratio: 4 / 3;
     height: auto;
