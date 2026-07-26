@@ -79,8 +79,15 @@ CREATE TABLE IF NOT EXISTS cars (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+    -- set when the source confirms the listing is gone. we keep the row, a sold car
+    -- is the most interesting thing a VIN lookup can return
+    gone_at         TIMESTAMPTZ,
+
     CONSTRAINT cars_source_id_unique UNIQUE (source, source_id)
 );
+
+-- for databases created before gone_at existed. adding a nullable column is instant
+ALTER TABLE cars ADD COLUMN IF NOT EXISTS gone_at TIMESTAMPTZ;
 
 DROP TRIGGER IF EXISTS cars_set_updated_at ON cars;
 CREATE TRIGGER cars_set_updated_at
@@ -94,6 +101,8 @@ CREATE INDEX IF NOT EXISTS cars_make_model_idx ON cars(manufacturer, model);
 CREATE INDEX IF NOT EXISTS cars_year_idx ON cars(year);
 CREATE INDEX IF NOT EXISTS cars_price_idx ON cars(price_amount);
 CREATE INDEX IF NOT EXISTS cars_updated_at_idx ON cars(updated_at DESC);
+-- browse and text search only look at live rows, so index those
+CREATE INDEX IF NOT EXISTS cars_live_idx ON cars(updated_at DESC) WHERE gone_at IS NULL;
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 

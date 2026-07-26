@@ -169,6 +169,11 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     return fragments, params
 
 
+# browse and text search only show live listings. a VIN or phone lookup deliberately
+# does not use this, finding a car that has since sold is the point of the archive
+_LIVE = "gone_at IS NULL"
+
+
 def _sort_clause(sort: str | None) -> str:
     # ORDER BY tail string. Default = newest.
     return _SORT_CLAUSES.get(sort or "newest", _SORT_CLAUSES["newest"])
@@ -243,7 +248,7 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
     patterns = [f"%{w.lower()}%" for w in words]
     filter_frags, filter_params = _filter_clauses(req)
     extra_where = (" AND " + " AND ".join(filter_frags)) if filter_frags else ""
-    where_sql = f"{word_clauses}{extra_where}"
+    where_sql = f"{word_clauses}{extra_where} AND {_LIVE}"
     where_params = (*patterns, *filter_params)
 
     if req.sort:
@@ -260,7 +265,7 @@ def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
             detail={"code": "query_empty"},
         )
     filter_frags, filter_params = _filter_clauses(req)
-    where = " AND ".join(filter_frags)
+    where = " AND ".join(filter_frags + [_LIVE])
     return _paginate(where, tuple(filter_params), _sort_clause(req.sort), (), req.page) + ("browse",)
 
 
@@ -338,6 +343,7 @@ def _row_to_public(row: dict) -> CarPublic:
         image_keys=image_keys,
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        gone_at=row.get("gone_at"),
     )
 
 
@@ -428,10 +434,10 @@ def _count_where(req: SearchRequest) -> tuple[str, tuple]:
         if words and len(text) >= 2:
             word_clauses = " AND ".join([f"{_SEARCH_BLOB} LIKE %s"] * len(words))
             patterns = [f"%{w.lower()}%" for w in words]
-            return word_clauses + filter_tail, (*patterns, *fparams)
+            return word_clauses + filter_tail + f" AND {_LIVE}", (*patterns, *fparams)
 
     # no usable text - filters only
-    return (" AND ".join(frags) if frags else ""), tuple(fparams)
+    return " AND ".join(frags + [_LIVE]), tuple(fparams)
 
 
 @router.post("/count", response_model=SearchCount)

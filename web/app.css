@@ -1122,6 +1122,35 @@ body.mode-detail .shell {
     box-shadow: 0 0 0 12px rgba(239, 35, 60, 0);
   }
 }
+/* a listing the source has removed. the row stays so a VIN lookup still finds it */
+.dt-gone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid #f4c7a1;
+  border-left: 3px solid #d97706;
+  border-radius: 10px;
+  background: #fffaf3;
+  color: #92600b;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.badge-gone {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff3e2;
+  color: #92600b;
+  border: 1px solid #f4c7a1;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* prominent VIN card // labeled, mono, with a slow shine to catch the eye */
 .dt-vin-card {
   display: flex;

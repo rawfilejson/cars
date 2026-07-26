@@ -91,6 +91,8 @@ class CarPublic(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+    # set once the source confirms the listing is gone, null while it is still up
+    gone_at: datetime | None = None
 
 
 class SearchResponse(BaseModel):

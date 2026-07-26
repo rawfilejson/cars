@@ -64,10 +64,22 @@ def test_count_where_vin_query():
     assert params == ("JT2BF22K1W0123456",)
 
 
-def test_count_where_empty_is_unfiltered():
+def test_count_where_empty_still_hides_gone_listings():
+    # with nothing to filter on the count is every live row, not every row
     where, params = _count_where(SearchRequest())
-    assert where == ""
+    assert where == "gone_at IS NULL"
     assert params == ()
+
+
+def test_count_where_vin_ignores_gone_at():
+    # a VIN lookup is the archive query, a sold car still has to come back
+    where, _ = _count_where(SearchRequest(query="JT2BF22K1W0123456"))
+    assert "gone_at" not in where
+
+
+def test_count_where_text_hides_gone_listings():
+    where, _ = _count_where(SearchRequest(query="camry"))
+    assert "gone_at IS NULL" in where
 
 
 @pytest.mark.parametrize(
@@ -262,3 +274,17 @@ def test_fx_rates_single_source_of_truth():
     assert _FX_TO_USD is FX_RATES_TO_USD
     for cur, rate in FX_RATES_TO_USD.items():
         assert f"WHEN '{cur}' THEN price_amount::float * {rate}" in _PRICE_USD_RAW
+
+
+def test_search_hides_gone_listings_but_vin_and_phone_do_not():
+    # browse and text search only show live rows
+    sql, _, _ = _build_query(SearchRequest(query="camry"))
+    assert "gone_at IS NULL" in sql
+    sql, _, _ = _build_query(SearchRequest(manufacturers=["Toyota"]))
+    assert "gone_at IS NULL" in sql
+
+    # a VIN or phone lookup is how you find a car that has already sold
+    sql, _, _ = _build_query(SearchRequest(query="JT2BF22K1W0123456"))
+    assert "gone_at" not in sql
+    sql, _, _ = _build_query(SearchRequest(query="595515141"))
+    assert "gone_at" not in sql

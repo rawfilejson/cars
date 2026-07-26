@@ -1,8 +1,10 @@
-# remove listings the source site has deleted
+# mark listings the source site has deleted
 # a row untouched for --days is only a candidate, the scrapers skip rows they already have
-# so every candidate is checked against the source and only confirmed deletions get removed
+# so every candidate is checked against the source and only confirmed deletions get marked
 # anything we cannot check is left alone
-# dry run by default, --apply deletes
+# the row stays, it just gets a gone_at date. browse and text search hide it, a VIN or
+# phone lookup still finds it, which is the whole point of keeping an archive
+# dry run by default, --apply writes
 
 from __future__ import annotations
 
@@ -127,15 +129,22 @@ def main() -> None:
         print(f"dead {len(dead)}, alive {len(alive)}, unverifiable {unknown} (skipped)")
 
         if not args.apply:
-            print("dry run, use --apply to delete")
+            print("dry run, use --apply to write")
             return
         with conn.cursor() as cur:
             if dead:
-                cur.execute("DELETE FROM cars WHERE id = ANY(%s)", (dead,))
-                print(f"deleted {len(dead)} rows")
+                cur.execute(
+                    "UPDATE cars SET gone_at = now() WHERE id = ANY(%s) AND gone_at IS NULL",
+                    (dead,),
+                )
+                print(f"marked {len(dead)} rows gone")
             if alive:
-                # bump so the next run moves on to other candidates
-                cur.execute("UPDATE cars SET updated_at = now() WHERE id = ANY(%s)", (alive,))
+                # bump so the next run moves on to other candidates, and un-mark anything
+                # that came back
+                cur.execute(
+                    "UPDATE cars SET updated_at = now(), gone_at = NULL WHERE id = ANY(%s)",
+                    (alive,),
+                )
 
 
 if __name__ == "__main__":

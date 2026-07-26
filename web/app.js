@@ -1992,7 +1992,7 @@ function renderResults(data) {
                 ${contactLine}
                 <div class="rcard-bot">
                   <div class="rcard-price${car.price_amount > 0 ? '' : ' negotiable'}">${car.price_amount > 0 ? '$' + car.price_amount.toLocaleString() : t('price_negotiable')}</div>
-                  <div class="rcard-badges">${customsBadge}${sourceBadgeHtml(car)}</div>
+                  <div class="rcard-badges">${car.gone_at ? `<span class="badge-gone">${escapeHtml(t('gone_notice', { date: formatDate(car.gone_at) }))}</span>` : ''}${customsBadge}${sourceBadgeHtml(car)}</div>
                 </div>
               </div>
             </article>`;
@@ -2238,6 +2238,9 @@ function renderDetail(car) {
     const saved = isCarSaved(carKey);
     // VIN gets its own prominent, shimmering card - sellers and buyers look for it first
     const detailVin = car.vin || vinFromText(car.description) || '';
+    const goneNotice = car.gone_at
+        ? `<div class="dt-gone">${escapeHtml(t('gone_notice', { date: formatDate(car.gone_at) }))}</div>`
+        : '';
     const vinCard = detailVin ?
         `<div class="dt-vin-card"><span class="dt-vin-badge">VIN</span><span class="dt-vin-code mono">${escapeHtml(detailVin)}</span><button class="dt-vin-copy" data-copy="${escapeHtml(detailVin)}" onclick="copyText(this)" title="${escapeHtml(t('copy_vin'))}" aria-label="${escapeHtml(t('copy_vin'))}">${ICON_COPY}</button></div>` :
         '';
@@ -2265,6 +2268,7 @@ function renderDetail(car) {
               ${sourceBadgeHtml(car)}
             </div>
             ${hlGrid}
+            ${goneNotice}
             <div class="dt-pricebox"><span class="dt-price${priceMissing ? ' negotiable' : ''}">${price}</span>${customs}</div>
             ${vinCard}
             ${specs.length ? `<div class="dt-specs">${specs.join('')}</div>` : ''}
