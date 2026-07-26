@@ -44,7 +44,7 @@ def test_base_model_drops_manufacturer_case_insensitive():
 
 
 def test_rare_submodel_folds_into_base_class():
-    # C 43 (2 ცალი) არ ქრება — კლასის "C" ჩანაწერს ემატება.
+    # C 43 (2 of them) is not lost, it folds into the "C" class entry
     from unittest.mock import MagicMock, patch
 
     from src.api import makes as makes_mod
@@ -62,26 +62,26 @@ def test_rare_submodel_folds_into_base_class():
     ctx.__enter__.return_value = conn
     with patch.object(makes_mod, "connection", return_value=ctx):
         out = makes_mod._load_makes().makes
-    # C 300 რჩება ცალკე; C 43 (იშვიათი) და C 4MATIC ერთად "C"-ში (2+2=4 ≥ 3)
+    # C 300 stays on its own; rare C 43 and C 4MATIC merge into "C" (2+2=4 >= 3)
     assert out["Mercedes-Benz"] == ["C 300", "C"]
 
 
 def test_order_makes_by_popularity():
-    # მწარმოებლები/მოდელები count-ის კლებადობით; იშვიათი მოდელები იჭრება.
+    # manufacturers and models by descending count, with rare models dropped
     agg = {
         "Toyota": {"camry": ("Camry", 50), "prius": ("Prius", 5), "rare": ("Rare", 2)},
         "BMW": {"320": ("320", 30), "x5": ("X5", 40)},
     }
     out = _order_makes(agg)
-    # მწარმოებლები ჯამური count-ით: BMW(70) > Toyota(55)
+    # manufacturers by total count: BMW(70) > Toyota(55)
     assert list(out.keys()) == ["BMW", "Toyota"]
-    # მოდელები count-ის კლებადობით; "Rare" (2 < 3) იჭრება
+    # models by descending count; "Rare" (2 < 3) is dropped
     assert out["BMW"] == ["X5", "320"]
     assert out["Toyota"] == ["Camry", "Prius"]
 
 
 def test_small_brand_with_single_listing_still_appears():
-    # ერთადერთი Bugatti-ც კი dropdown-ში უნდა მოხვდეს — ბრენდი არ იკარგება.
+    # even a lone Bugatti has to reach the dropdown; a brand is never lost
     agg = {
         "Toyota": {"camry": ("Camry", 50)},
         "Bugatti": {"chiron": ("Chiron", 1)},

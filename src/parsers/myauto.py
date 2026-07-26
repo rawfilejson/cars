@@ -1,17 +1,17 @@
-# myauto.ge-ის parser — HTML scrape Playwright-ით.
+# Parser for myauto.ge, scraping the HTML with Playwright.
 #
-# ძველი API-based ვერსია გადავიყვანეთ HTML-ზე რომ:
-#   * არ ვმოქმედებდეთ ფარულ API endpoint-ზე (myauto-მ შეცვალოს — ჩვენ ჩავარდებით)
-#   * ნამდვილი user-ის ნახულობას ვაჯერებდეთ — visible HTML იგივეა რასაც მომხმარებელი ხედავს
-#   * ერთიდაიგივე pattern გვქონდეს autopapa-სთან — სამომავლოდ ერთად მოვლა გვინდა
+# The old API-based version was moved to HTML so that:
+#   * we don't depend on a private endpoint that breaks the day myauto changes it
+#   * we read the same visible HTML a real visitor sees
+#   * both parsers follow one pattern and can be maintained together
 #
-# ნაკადი:
-#   1. listing pages → მანქანების URL-ების სია
-#   2. ყოველი URL → scrape_one() → Car
-#   3. batch upsert DB-ში + CSV append
+# The flow:
+#   1. listing pages -> a list of car URLs
+#   2. each URL -> scrape_one() -> Car
+#   3. batch upsert into the database, plus a CSV append
 #
-# ფონტ-obfuscation აღარ არსებობს (იყო თუ არა — დღეს არ ჩანს). სუფთა HTML ემთხვევა
-# რენდერდ ეკრანს.
+# The font obfuscation is gone; today the plain HTML matches what is rendered on
+# screen.
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ _ID_FROM_URL_RE = re.compile(r"/pr/(\d+)(?:/|$)")
 
 
 def extract_id(url: str) -> str:
-    # URL-დან car_id. `.../pr/120183626/sale` → `"120183626"`.
+    # car_id from the URL: .../pr/120183626/sale -> "120183626"
     match = _ID_FROM_URL_RE.search(url)
     return match.group(1) if match else ""
 
@@ -258,7 +258,7 @@ _BOOL_FIELDS = {"tech_inspection", "has_catalyst"}
 
 
 def _convert_spec_value(field: str, raw: str) -> object:
-    # Raw სტრინგი → Car-ის field-ის შესაბამისი ტიპი.
+    # raw string -> whatever type the Car field expects
     if field == "engine_volume_l":
         return clean_engine_volume(raw)
     if field == "doors":
@@ -321,7 +321,7 @@ _TITLE_RE = re.compile(r"^(\d{4})\s+(\S+)\s+(.*)$")
 
 
 async def extract_title(page: Page) -> tuple[int | None, str, str]:
-    # Title-ი ფორმატის "2014 Lexus ES 350 Base" → (year, manufacturer, model).
+    # a title like "2014 Lexus ES 350 Base" -> (year, manufacturer, model)
     el = await page.query_selector('p.leading-\\[100\\%\\]')
     if not el:
         el = await page.query_selector("h1")
@@ -340,7 +340,7 @@ async def extract_title(page: Page) -> tuple[int | None, str, str]:
 
 
 async def extract_description(page: Page) -> str:
-    # აღწერა — `p.text-raisin-80.whitespace-pre-wrap`.
+    # the description lives in p.text-raisin-80.whitespace-pre-wrap
     el = await page.query_selector('p[class*="text-raisin-80"][class*="whitespace-pre-wrap"]')
     if not el:
         return ""
@@ -348,7 +348,7 @@ async def extract_description(page: Page) -> str:
 
 
 async def extract_photos(page: Page) -> list[str]:
-    # ფოტოები — `/large/` ვერსიები. Thumbs-ი → large-ად გადავაქცევთ.
+    # photos: take the /large/ versions, rewriting thumbs into large
     photos: list[str] = []
     seen: set[str] = set()
     elements = await page.query_selector_all("img[src*='/photos/']")
@@ -369,10 +369,10 @@ _PHOTO_N_RE = re.compile(r"/large/(\d+)_(\d+)\.jpg")
 
 
 def _ensure_all_photos(photos: list[str], car_id: str, max_photos: int = 40) -> list[str]:
-    # თუ HTML-ში მხოლოდ thumbs ჩანდა (გვერდმა lazy load გვერდით), მაინც
-    # ვაშენებთ ყველა _1.jpg, _2.jpg, ... _N.jpg URL-ს რომელიც ხელმისაწვდომი იყო.
+    # If the page lazy-loaded and only thumbs were in the HTML, build every
+    # _1.jpg, _2.jpg ... _N.jpg URL anyway.
     #
-    # გავიგებთ პატერნს პირველი URL-დან, შემდეგ ვამატებთ მისი ვარიანტებს.
+    # Work the pattern out from the first URL, then add its variants.
     if not photos:
         return []
 
@@ -428,7 +428,7 @@ _PRICE_AND_CURRENCY_JS = """
 
 
 async def extract_price(page: Page) -> tuple[int | None, str]:
-    # ფასი + ვალუტა (active currency switcher ღილაკიდან).
+    # price and currency, read off the active currency switcher button
     result = await page.evaluate(_PRICE_AND_CURRENCY_JS)
     if not result:
         return None, ""
@@ -441,7 +441,7 @@ _NO_VIN_MARKER = "გამყიდველს არ აქვს VIN კო�
 
 
 async def extract_vin(page: Page, description: str) -> str:
-    # VIN ფილდიდან, თუ არსებობს. სხვაგვარად description-ში ვეძებთ.
+    # from the VIN field when present, otherwise look in the description
     body_text = await page.evaluate("() => document.body.innerText")
 
     if _NO_VIN_MARKER in body_text:
@@ -458,10 +458,10 @@ _MASK_CHARS = "*"
 
 
 async def extract_phone(page: Page) -> str:
-    # myauto-ს phone reveal — auth-ის გარეშე ფარულია, ვაბრუნებთ ცარიელს.
+    # myauto hides the phone behind a login, so this returns empty.
     #
-    # თუ რომელიმე გვერდმა მაინც გვერდს გვაჩვენოს სრული ნომერი (test, future feature, ან
-    # cached state), ვაბრუნებთ format_phone-ით. სხვა შემთხვევაში "".
+    # If some page does show a full number anyway (a test, a future feature, or a
+    # cached state) it comes back formatted; otherwise "".
     link = await page.query_selector('a[data-testid^="show-number-modal-phone"]')
     if not link:
         link = await page.query_selector('a[href^="tel:+995"]:not([href*="32 280"])')
@@ -476,7 +476,7 @@ async def extract_phone(page: Page) -> str:
 
 
 async def extract_seller_name(page: Page) -> str:
-    # პროდავცის სახელი — როცა ჩანს.
+    # the seller's name, when it is shown
     for selector in (
         '[data-testid="seller-name"]',
         'div[class*="seller-name"]',
@@ -503,7 +503,7 @@ GE_CITIES = (
 
 
 async def extract_location(page: Page, spec: dict) -> str:
-    # spec ცხრილში თუ არ არის, page title-დან ვცდით ქალაქის ამოღებას.
+    # if the spec table has no city, try to get it from the page title
     for key in ("ადგილმდებარეობა", "ლოკაცია", "მდებარეობა", "ქალაქი"):
         if key in spec:
             return spec[key]
@@ -520,9 +520,9 @@ async def scrape_one(
     url: str,
     semaphore: asyncio.Semaphore | None = None,
 ) -> Car | None:
-    # ერთი detail page-ი → Car. retry-ით.
+    # one detail page -> a Car, with retries
     #
-    # semaphore არასავალდებულოა — manual smoke test-ისთვის None გადააცი.
+    # the semaphore is optional; pass None for a manual smoke test
     if semaphore is None:
         semaphore = asyncio.Semaphore(1)
 
@@ -600,8 +600,8 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
         engine_type=str(spec_fields.get("engine_type") or ""),
         cylinders=spec_fields.get("cylinders"),
         power_hp=spec_fields.get("power_hp"),
-        # tri-state: features ნანახია → True/False; features ცარიელია → None (უცნობი).
-        # `or None` False-საც None-ად აქცევდა — tri-state იკარგებოდა.
+        # tri-state: if we saw the features list it is True/False, if it was empty None (unknown).
+        # `or None` would turn False into None too and lose that distinction.
         has_turbo=(any("ტურბო" in f.lower() for f in features) if features else None),
         gearbox=str(spec_fields.get("gearbox") or ""),
         drive_wheels=str(spec_fields.get("drive_wheels") or ""),
@@ -633,11 +633,11 @@ MYAUTO_UA = (
 
 
 async def _warmup(context: BrowserContext) -> None:
-    # myauto.ge-ს ვხსნით, Cloudflare cookies-ი მოვიდეს.
+    # open myauto.ge first so the Cloudflare cookies get set
     #
-    # SPA-ის სრულ ჰიდრატაციას არ ვუცდით — `commit` wait-ით ვაგროვებთ პასუხს,
-    # შემდეგ მცირე pause cookies-ის დასაყენებლად. domcontentloaded ხანდახან
-    # 25s-ში ვერ ხდება.
+    # Don't wait for the SPA to fully hydrate: take the response on `commit`, then
+    # pause briefly for the cookies. domcontentloaded sometimes does not arrive
+    # within 25s.
     page = await context.new_page()
     try:
         await page.route("**/*", block_heavy_resources)
@@ -680,7 +680,7 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
         data = await asyncio.wait_for(_fetch(), timeout=25.0)
         if data is None:
             return [], 0
-    except Exception as exc:  # incl. asyncio.TimeoutError — ერთნაირად ვამუშავებთ
+    except Exception as exc:  # including asyncio.TimeoutError, all handled the same way
         print(f"  API page {page_num} error: {type(exc).__name__}: {str(exc)[:80]}", flush=True)
         return [], 0
 
@@ -703,7 +703,7 @@ async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[
 async def collect_all_ids(
     context: BrowserContext, max_pages: int | None = None
 ) -> list[str]:
-    # ყველა გვერდი → car_id-ების სრული სია (dedup-ით).
+    # walk every page and collect all car_ids, deduplicated
     print("  Warming up (visiting myauto.ge for CF cookies)...")
     await _warmup(context)
 
@@ -933,7 +933,7 @@ async def _scrape_all(
 
 
 async def smoke_test(url: str) -> Car | None:
-    # ერთი URL-ის სრული გავლა — debug-ისთვის.
+    # run one URL end to end; handy for debugging
     #
     # Usage:
     #     uv run python -c "from src.common.runtime import run as r; \\

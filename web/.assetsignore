@@ -1,3 +1,3 @@
-# Cloudflare Workers static assets — ამ ფაილებს public-ად არ ვაქვეყნებთ.
-# dev-only helper — წყაროს გასაჯაროება არ გვინდა.
+# Not published as Cloudflare Workers static assets.
+# Dev-only helper; no reason to expose its source.
 dev-server.py

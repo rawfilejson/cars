@@ -64,11 +64,11 @@ def split_price(raw: str | None) -> tuple[int | None, str]:
 
 
 def format_phone(raw: str | None) -> str:
-    # ქართული ნომრის display ფორმატი: "+995 595 515 141".
+    # Georgian numbers are displayed as "+995 595 515 141".
     #
-    # ძიება არ უყურებს space-ებს — `regexp_replace(phone, '\\D', '', 'g')`
-    # გვაძლევს ციფრებს, შემდეგ LIKE. ანუ ჩვენ ვინახავთ ლამაზად, ვძებნით
-    # ციფრებით.
+    # Search ignores the spaces: regexp_replace(phone, '\\D', '', 'g') reduces it to
+    # digits and then LIKE matches on those. So we store it prettily and search on
+    # the digits.
     #
     # Examples:
     #   "tel:+995595515141" → "+995 595 515 141"
@@ -95,7 +95,7 @@ def format_phone(raw: str | None) -> str:
 
 
 def _format_ge(nine_digits: str) -> str:
-    # 9-ციფრიანი ქართული მობილური → "+995 595 515 141" (3-3-3).
+    # a 9-digit Georgian mobile becomes "+995 595 515 141" (3-3-3)
     return f"+995 {nine_digits[:3]} {nine_digits[3:6]} {nine_digits[6:]}"
 
 
@@ -103,8 +103,8 @@ _PHONE_IN_TEXT_RE = re.compile(r"(?:\+?\s?995[\s\-.]?)?5\d{2}(?:[\s\-.]?\d){6}")
 
 
 def phone_from_text(text: str | None) -> str:
-    # ქართული მობილურის (5XX XXX XXX) ამოღება თავისუფალი ტექსტიდან — როცა
-    # გამყიდველმა ნომერი აღწერაში ჩაწერა და არა ცალკე ველში. ფორმატებული ნომერი ან "".
+    # pull a Georgian mobile (5XX XXX XXX) out of free text, for when the seller
+    # typed it into the description instead of the phone field. Returns "" if absent.
     if not text:
         return ""
     match = _PHONE_IN_TEXT_RE.search(str(text))

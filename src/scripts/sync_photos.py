@@ -1,15 +1,15 @@
-# ფოტოების სინქრონიზაცია — ბაზიდან წავიკითხავთ image_urls-ს, რომ ჯერ ვერ
-# ჩატვირთული ფოტოები ჩავტვირთოთ ლოკალურად + R2-ში.
+# Photo sync: read image_urls from the database and fetch anything not yet
+# downloaded, storing it locally and in R2.
 #
-# გაშვება:
-#     python -m src.scripts.sync_photos              # ყველა მანქანა
+# run:
+#     python -m src.scripts.sync_photos              # every car
 #     python -m src.scripts.sync_photos --source autopapa --limit 100
 #
-# რა ხდება:
-#   1. ბაზიდან ვირჩევთ მანქანებს რომელთა image_keys ჯერ ცარიელია.
-#   2. თითო მანქანის image_urls-ს ვტვირთავთ ლოკალურ photos/ ფოლდერში.
-#   3. თუ R2 კონფიგურირებულია — იქაც ვტვირთავთ.
-#   4. ბაზაში ვაახლებთ image_keys-ს (ლისტი key-ების).
+# What it does:
+#   1. pick the cars whose image_keys are still empty
+#   2. download each car's image_urls into the local photos/ folder
+#   3. upload them to R2 as well, when R2 is configured
+#   4. write the list of keys back into image_keys
 
 from __future__ import annotations
 
@@ -28,10 +28,10 @@ from src.common.storage import fetch_and_store
 def fetch_pending_sync(
     source: str | None, limit: int | None, shard: tuple[int, int] | None = None
 ) -> list[tuple[int, str, str, list[str]]]:
-    # ბაზიდან მანქანები რომელთა image_keys ცარიელია, მაგრამ image_urls გვაქვს.
+    # cars that still have no image_keys but do have image_urls
     #
-    # shard=(x, n) — მხოლოდ ის მანქანები სადაც id %% n == x. პარალელური blitz-ისთვის:
-    # n runner თითო თავის ნაწილს ამუშავებს, overlap-ის გარეშე.
+    # shard=(x, n) takes only the cars where id %% n == x. That is how the parallel
+    # blitz splits work across n runners without overlap.
     query = """
         SELECT id, source, source_id, image_urls
         FROM cars
@@ -78,7 +78,7 @@ async def _fetch_one(
     upload_to_cloud: bool,
     keep_local: bool,
 ) -> str | None:
-    # ერთი ფოტო — never raises. photo_sem ზღუდავს ერთდროულ I/O-ს.
+    # one photo; never raises. photo_sem caps how much I/O runs at once.
     async with photo_sem:
         try:
             return await fetch_and_store(
@@ -101,10 +101,10 @@ async def process_car(
     upload_to_cloud: bool,
     keep_local: bool = True,
 ) -> int:
-    # ერთი მანქანის ფოტოები პარალელურად — never raises, always returns int.
+    # one car's photos in parallel; never raises, always returns an int
     #
-    # gather თანმიმდევრობას ინახავს, ამიტომ key-ები ფოტოს index-ის რიგზე რჩება;
-    # ჩავარდნილი ფოტო None-ია და ისე იჭრება.
+    # gather preserves order, so the keys stay in photo order and a failed photo
+    # comes back as None and is dropped.
     results = await asyncio.gather(*(
         _fetch_one(
             http_client, photo_sem, source, source_id, index, url,
@@ -123,27 +123,27 @@ async def process_car(
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="ფოტოების სინქრონიზაცია")
-    parser.add_argument("--source", help="მხოლოდ ერთი წყაროდან (autopapa/myauto)")
-    parser.add_argument("--limit", type=int, help="რამდენი მანქანა მაქსიმუმ")
+    parser = argparse.ArgumentParser(description="sync photos to local disk and R2")
+    parser.add_argument("--source", help="only this source (autopapa/myauto)")
+    parser.add_argument("--limit", type=int, help="maximum number of cars")
     parser.add_argument(
         "--concurrent", type=int, default=8,
-        help="ერთდროული ფოტოს download/upload-ების რაოდენობა (I/O bound)",
+        help="how many photo downloads/uploads to run at once (I/O bound)",
     )
     parser.add_argument(
         "--local-only",
         action="store_true",
-        help="მხოლოდ ლოკალურად — R2-ში არ ატვირთო",
+        help="store locally only, do not upload to R2",
     )
     parser.add_argument(
         "--purge-local",
         action="store_true",
-        help="R2-ში წარმატებული upload-ის შემდეგ ლოკალური ფაილი წაიშლება "
-             "(disk-constrained backfill — runner-ს დისკი არ ევსება)",
+        help="delete the local file once R2 confirms the upload, so a "
+             "disk-constrained backfill does not fill up the runner",
     )
     parser.add_argument(
         "--shard",
-        help="X/N — მხოლოდ id %% N == X მანქანები (პარალელური blitz-ისთვის)",
+        help="X/N: only cars where id %% N == X, for the parallel blitz",
     )
     args = parser.parse_args()
 
@@ -152,21 +152,21 @@ async def main() -> None:
         x_str, _, n_str = args.shard.partition("/")
         shard = (int(x_str), int(n_str))
         if not 0 <= shard[0] < shard[1]:
-            raise SystemExit(f"--shard X/N: საჭიროა 0 <= X < N (მიღებული: {args.shard})")
+            raise SystemExit(f"--shard X/N needs 0 <= X < N (got {args.shard})")
 
     upload_to_cloud = (not args.local_only) and r2_is_configured()
     if not args.local_only and not r2_is_configured():
-        print("R2 არ არის კონფიგურირებული — მხოლოდ ლოკალურად ვინახავთ.")
+        print("R2 is not configured, storing photos locally only")
 
     if args.purge_local and not upload_to_cloud:
         raise SystemExit(
-            "--purge-local მოითხოვს R2 upload-ს. --local-only-სთან ან "
-            "R2-ის კონფიგურაციის გარეშე უარს ვამბობთ (backup-ის გარეშე წაშლა საშიშია)."
+            "--purge-local needs R2 uploads to be on. Refusing to run with "
+            "--local-only or without R2 configured, because deleting without a backup is dangerous."
         )
     keep_local = not args.purge_local
 
     pending = await fetch_pending(args.source, args.limit, shard)
-    print(f"დასამუშავებელი მანქანები: {len(pending)}")
+    print(f"cars to process: {len(pending)}")
 
     if not pending:
         return
@@ -208,7 +208,7 @@ async def main() -> None:
 
         await asyncio.gather(*(worker() for _ in range(args.concurrent)))
 
-    print(f"\nდასრულდა. ფოტოები: {total_photos}, დრო: {time.time() - start:.0f} წმ.")
+    print(f"\ndone, {total_photos} photos in {time.time() - start:.0f}s")
 
 
 if __name__ == "__main__":

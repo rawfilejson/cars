@@ -1,81 +1,96 @@
-# უსაფრთხოება
+# Security
 
-> "აბსოლუტურად დაცული" არ არსებობს. მიზანი — გონივრულად დაცული, მინიმალური attack surface.
+> Nothing is "completely secure". The goal here is sensibly secure, with a small
+> attack surface.
 
-საიტი **ანონიმური და უფასოა**: არ არის ავტორიზაცია, არ არის გადახდა, არ ვაგროვებთ
-პერსონალურ მონაცემებს. ეს თავისთავად ამცირებს რისკებს.
+The site is **anonymous and free**: no accounts, no payments, no personal data
+collected. That removes a lot of risk before any code is written.
 
-არქიტექტურა: Cloudflare Workers (static frontend) → Render (FastAPI backend)
-→ Supabase PostgreSQL + Cloudflare R2 (ფოტოები).
+Architecture: Cloudflare Workers (static frontend) -> Render (FastAPI backend)
+-> Supabase PostgreSQL + Cloudflare R2 for photos.
 
 ---
 
-## რა არის დაცული
+## What is covered
 
-### SQL Injection
-- ყველა query parametrized (`%s` + tuple). string-formatting-ით აწყობილი SQL არსად არის.
-- მომხმარებლის ინფუთი მხოლოდ Pydantic-ვალიდირებული ველებით შემოდის.
+### SQL injection
+- Every query is parameterised (`%s` plus a tuple). No SQL is assembled by string
+  formatting anywhere.
+- User input only reaches a query through Pydantic-validated fields.
 
 ### Secrets
-- `.env` .gitignore-შია; კოდში secret hard-coded არ არის — ყველაფერი env-ცვლადებიდან იკითხება.
-- Render-ისა და GitHub Actions-ის secrets ცალკეა და repo-ში არ ინახება.
+- `.env` is gitignored and nothing is hard-coded; every secret is read from the
+  environment.
+- Render and GitHub Actions hold their own secrets, none of which live in the repo.
 
-### მონაცემთა ბაზა
-- RLS (Row Level Security) ჩართულია `cars` და `searches` ცხრილებზე policy-ების გარეშე —
-  Supabase-ის auto-REST API-ის ანონიმური წვდომა default-deny-ით იხურება.
-- backend პირდაპირ უკავშირდება DB-ს owner role-ით (RLS bypass), ამიტომ მისი მუშაობა არ ფერხდება.
+### Database
+- Row Level Security is enabled on `cars` and `searches` with no policies, which
+  closes Supabase's automatic REST API to anonymous callers by default-deny.
+- The backend connects directly as the owner role, which bypasses RLS, so it is
+  unaffected.
 
-### Rate limiting (anti-abuse)
-- IP-ზე cooldown ცდებს შორის + საათობრივი ლიმიტი (`src/api/rate_limit.py`).
-- IP იკითხება `cf-connecting-ip` header-იდან (Cloudflare proxy წინაშეა), შემდეგ `x-forwarded-for`.
+### Rate limiting
+- A cooldown between searches plus an hourly limit, keyed on an anonymous browser
+  token with the IP as a backstop (`src/api/rate_limit.py`).
+- The client IP is read from `cf-connecting-ip`, which Cloudflare overwrites and a
+  client therefore cannot forge; without Cloudflare it falls back to
+  `x-forwarded-for`.
 
 ### CORS
-- დაშვებულია მხოლოდ ნამდვილი frontend origin + ლოკალური dev პორტები.
-  `allow_credentials=False`, მეთოდები მხოლოდ `GET`/`POST`.
+- Only the real frontend origin and the local dev ports are allowed, with
+  `allow_credentials=False` and only `GET`/`POST`.
 
 ### Input validation
-- Pydantic: query `max_length=200`, page `1..200`, year `1900..2030` და ა.შ. —
-  ზედმეტად გრძელი ან აბსურდული ინფუთი იჭრება ჯერ კიდევ endpoint-მდე.
+- Pydantic bounds everything: `query` is capped at 200 characters, `page` at
+  1..200, `year` at 1900..2030, and so on. Absurd or oversized input is rejected
+  before it reaches the endpoint.
 
 ### Error handling
-- API შეცდომები აბრუნებს მანქანურ კოდს (`{"code": ...}`), არა შიდა დეტალებს —
-  frontend თარგმნის მომხმარებლის ენაზე.
-- production-ში global exception handler 500-ზე stack trace-ს არ ამხელს (`IS_PRODUCTION`).
+- API errors return a machine code (`{"code": ...}`) rather than internal detail;
+  the frontend turns that into a message in the user's language.
+- In production the global exception handler never exposes a stack trace on a 500
+  (`IS_PRODUCTION`).
 
 ### SSRF
-- ფოტოებს ვტვირთავთ მხოლოდ ცნობილი წყაროების CDN-იდან (autopapa / myauto) და ვწერთ R2-ში.
-  თვითნებურ URL-ს მომხმარებელი backend-ს ვერ აწვდის.
+- Photos are only fetched from the known source CDNs (autopapa, myauto) and
+  written to R2. A user cannot get the backend to fetch an arbitrary URL.
 
 ---
 
-## დარჩენილი რისკები და გასაკეთებელი
+## Known risks and things still to do
 
-### 1. 🔴 ადრეული secrets გასაჟონა — როტაცია სავალდებულოა
-განვითარების ადრეულ ეტაპზე რამდენიმე secret გადაიცა chat/log-ში და მოხვდა git-ის ისტორიაში:
-- Supabase DB password
-- R2 API token (access key + secret)
+### 1. Rotate the credentials that were exposed early on
+During early development some secrets were pasted into chat and logs:
 
-**აუცილებელი მოქმედება (მხოლოდ შენ შეგიძლია):**
-1. Supabase → Project Settings → Database → **Reset database password**.
-2. Cloudflare → R2 → Manage R2 API Tokens → **ძველი token წაშალე, ახალი შექმენი**.
-3. ახალი მნიშვნელობები ჩასვი Render-ისა და GitHub Actions-ის secrets-ში (+ ლოკალურ `.env`-ში).
+- the Supabase database password
+- an R2 API token (access key and secret)
 
-ერთხელ გასაჟონილი secret სამუდამოდ "compromised"-ად ითვლება — როტაცია ერთადერთი გამოსავალია.
+**You have to do this yourself:**
 
-### 2. Secrets git-ის ისტორიაში
-ზემოთ ნახსენები secrets (და ძველი `auth.json`) ჯერ კიდევ git-ის ისტორიაშია. ისტორიის გადაწერა
-(`git filter-repo`) + force-push ცალკე ნაბიჯია; ის secret-ებს "უსაფრთხოს" არ ხდის — **როტაცია
-მაინც სავალდებულოა** (იხ. #1).
+1. Supabase -> Project Settings -> Database -> **Reset database password**
+2. Cloudflare -> R2 -> Manage R2 API Tokens -> **delete the old token, create a new one**
+3. Put the new values into Render, into GitHub Actions secrets, and into your local `.env`
 
-### 3. Logging / alerting
-სტრუქტურირებული ლოგინგი ჯერ არ გვაქვს. Render-ის ლოგები ხელმისაწვდომია, მაგრამ ცალკე alerting არ არის.
+A secret that has leaked once is compromised forever; rotation is the only fix.
+
+### 2. What is actually in the git history
+The history was rewritten and audited. It contains **no credentials** — every
+secret-shaped value in it is a placeholder such as `NEW_PASSWORD`, and `.env` was
+never committed. Two non-secret identifiers do appear in an old `DEPLOY.md`: the
+Cloudflare account ID and the Supabase database hostname. Neither is usable on its
+own, but since the repository is public that database endpoint is now known, which
+is another reason to do the rotation in step 1.
+
+### 3. Logging and alerting
+There is no structured logging yet. Render's logs are available, but nothing
+alerts on anything.
 
 ### 4. Backups
-Supabase free tier ავტომატურ backup-ს არ აძლევს. production-ისთვის რეკომენდებულია პერიოდული
-ხელით export ან Pro-ზე ატანა.
+The Supabase free tier has no automatic backups. For anything production-like,
+either export periodically or move to a paid plan.
 
 ---
 
-## პერიოდული შემოწმება
-- `searches` ცხრილის გადახედვა — საეჭვო IP / ცდის pattern-ები.
-- `uv lock`-ის განახლება — დამოკიდებულებების security patch-ები.
+## Worth checking now and then
+- Look through the `searches` table for suspicious IPs or request patterns.
+- Refresh `uv lock` to pick up dependency security patches.

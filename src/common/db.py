@@ -1,13 +1,13 @@
-# PostgreSQL-თან მუშაობა.
+# Talking to PostgreSQL.
 #
-# Windows-ის async ეკოსისტემაში პრობლემაა: Playwright-ი ითხოვს ProactorEventLoop-ს
-# (subprocess-ისთვის), psycopg-ის async ვერსია — SelectorEventLoop-ს. ერთად ვერ
-# მუშაობენ. ამიტომ აქ ვიყენებთ psycopg-ის sync ვერსიას + asyncio.to_thread-ით
-# ვაგზავნით ცალკე thread-ში. გარეთ API იგივე async ფუნქციებია.
+# There is a conflict on Windows: Playwright needs the ProactorEventLoop for
+# subprocesses, while async psycopg needs the SelectorEventLoop. They cannot run
+# together, so this uses sync psycopg and pushes each call onto its own thread
+# with asyncio.to_thread. From the outside the API is still async.
 #
-# მთავარი ფუნქციები:
-#   * `get_existing_ids(source)` — უკვე შენახული მანქანების id-ები (resume-სთვის)
-#   * `upsert_cars(cars)` — batch ჩაწერა (ბევრი ერთად)
+# The main entry points:
+#   * get_existing_ids(source) - ids we already stored, so a run can resume
+#   * upsert_cars(cars) - write a whole batch at once
 
 from __future__ import annotations
 
@@ -103,7 +103,7 @@ ON CONFLICT (source, source_id) DO UPDATE SET
     customs_cleared    = EXCLUDED.customs_cleared,
     has_catalyst       = EXCLUDED.has_catalyst,
     tech_inspection    = EXCLUDED.tech_inspection,
-    -- VIN-ს ვინარჩუნებთ თუ ახალი ცარიელია (ერთხელ ნახული VIN ღირებულია)
+    -- keep the existing VIN when the new one is empty; a VIN we have seen once is worth holding on to
     vin                = COALESCE(NULLIF(EXCLUDED.vin, ''), cars.vin),
     license_plate      = COALESCE(NULLIF(EXCLUDED.license_plate, ''), cars.license_plate),
     location           = EXCLUDED.location,
@@ -119,7 +119,7 @@ ON CONFLICT (source, source_id) DO UPDATE SET
 
 
 def _car_to_params(car: Car) -> dict:
-    # Pydantic მოდელი → dict შესაბამისი SQL placeholders-ისთვის.
+    # turn the model into a dict matching the SQL placeholders
     data = car.model_dump()
     data.setdefault("image_urls", [])
     data.setdefault("image_keys", [])
@@ -151,28 +151,28 @@ def _update_image_keys_sync(car_db_id: int, keys: list[str]) -> None:
 
 
 async def get_existing_ids(source: str) -> set[str]:
-    # უკვე შენახული მანქანების source_id-ები. resume-სთვის.
+    # source_ids we already have, so an interrupted run can pick up where it stopped
     #
-    # მაგ: თუ script-ი დასრულდა შუა გზაზე, შემდეგ run-ზე ვიცით რომ ეს
-    # მანქანები უკვე გვაქვს — ხელახლა არ შევეცეთ.
+    # If a script died halfway through, the next run knows these cars are already
+    # stored and skips them.
     return await asyncio.to_thread(_get_existing_ids_sync, source)
 
 
 async def count_cars(source: str | None = None) -> int:
-    # რამდენი მანქანა გვაქვს ბაზაში (ან კონკრეტული წყაროდან).
+    # how many cars we have in total, or from one source
     return await asyncio.to_thread(_count_cars_sync, source)
 
 
 async def upsert_cars(cars: Iterable[Car]) -> int:
-    # ბევრი მანქანის ჩასმა ერთ transaction-ში.
+    # insert many cars in a single transaction
     return await asyncio.to_thread(_upsert_cars_sync, list(cars))
 
 
 async def upsert_car(car: Car) -> None:
-    # ერთი მანქანის ჩასმა — convenience helper.
+    # insert a single car; convenience wrapper
     await asyncio.to_thread(_upsert_cars_sync, [car])
 
 
 async def update_image_keys(car_db_id: int, keys: list[str]) -> None:
-    # ფოტოების R2 key-ების შენახვა.
+    # store the R2 keys for a car's photos
     await asyncio.to_thread(_update_image_keys_sync, car_db_id, keys)

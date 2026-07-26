@@ -1,10 +1,10 @@
-# პარსერის სწრაფი ტესტი — მცირე რაოდენობის მანქანებზე.
+# A quick parser check against a handful of cars.
 #
-# გაშვება:
+# run:
 #     uv run python -m src.scripts.test_parser --limit 5
 #
-# ეს არ ცვლის სრულ parser-ს — უბრალოდ ვამოწმებთ პიპლაინი მუშაობს თუ არა
-# სრულად (links → scrape → DB).
+# This does not replace a full run; it just confirms the pipeline works end to
+# end (links -> scrape -> database).
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from src.parsers.autopapa import HOST, START_URL, scrape_one
 
 
 async def main(limit: int) -> None:
-    print(f"ტესტი {limit} მანქანაზე...")
+    print(f"testing on {limit} cars...")
     start = time.time()
 
     async with async_playwright() as playwright:
@@ -40,7 +40,7 @@ async def main(limit: int) -> None:
                     if len(test_links) >= limit:
                         break
             await page.close()
-            print(f"ლინკები პირველი გვერდიდან: {len(test_links)}")
+            print(f"links from the first page: {len(test_links)}")
 
             semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
             results = await asyncio.gather(
@@ -48,26 +48,26 @@ async def main(limit: int) -> None:
             )
 
             cars = [c for c in results if c is not None]
-            print(f"\nსცრაიფული: {len(cars)}/{len(test_links)}")
+            print(f"\nscraped: {len(cars)}/{len(test_links)}")
 
             for car in cars:
                 print(
                     f"  - {car.source_id} | {car.manufacturer} {car.model} | "
                     f"{car.year} | {car.price_amount} {car.price_currency} | "
                     f"VIN: {car.vin or '<empty>'} | "
-                    f"ფოტო: {len(car.image_urls)} | "
-                    f"ტელ: {car.phone or '<empty>'}"
+                    f"photos: {len(car.image_urls)} | "
+                    f"phone: {car.phone or '<empty>'}"
                 )
 
             if cars:
                 saved = await upsert_cars(cars)
-                print(f"\nDB-ში ჩაიწერა: {saved}")
+                print(f"\nwritten to the database: {saved}")
 
         finally:
             await context.close()
             await browser.close()
 
-    print(f"\nტესტი დასრულდა: {time.time() - start:.1f} წმ.")
+    print(f"\ntest finished in {time.time() - start:.1f}s")
 
 
 if __name__ == "__main__":

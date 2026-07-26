@@ -1,17 +1,17 @@
 # =====================================================================
-# Dead-listing prune — GitHub Actions
+# Dead-listing prune
 # =====================================================================
-# დღეში ერთხელ ვამოწმებთ ყველაზე დიდი ხნის უნახავ განცხადებებს წყაროსთან
-# და ვშლით მხოლოდ იმას, რასაც წყარო დაადასტურებს რომ აღარ არსებობს.
-# სკრიპტი dry-run-ით იწყება ლოგისთვის, მერე --apply.
+# Once a day, check the listings we haven't seen for the longest time against
+# the source, and delete only the ones the source confirms are gone.
+# The script logs a dry run first, then applies.
 # =====================================================================
 
 name: Prune Dead Listings
 
 on:
   schedule:
-    - cron: '30 9 * * *'        # ~13:30 თბილისი
-  workflow_dispatch:            # ხელითაც
+    - cron: '30 9 * * *'        # ~13:30 Tbilisi
+  workflow_dispatch:            # and by hand
 
 concurrency:
   group: prune

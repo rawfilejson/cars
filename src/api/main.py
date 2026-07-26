@@ -1,9 +1,9 @@
-# FastAPI მთავარი ფაილი — backend-ის entry point.
+# FastAPI app: the backend entry point
 #
-# გაშვება ლოკალურად:
+# run locally:
 #     uv run uvicorn src.api.main:app --reload --port 8765
 #
-# ვებსაიტი:
+# website:
 #     http://localhost:8765/docs    — Swagger UI (auto-generated API docs)
 #     http://localhost:8765/healthz — health check
 #     http://localhost:8765/stats   — total cars count
@@ -46,11 +46,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ქართული მანქანების ბაზა — backend API",
-    description="ანონიმური, უფასო ძიება ვინ კოდით / ნომრით / ტექსტით",
+    title="Georgian car listings, backend API",
+    description="Free, anonymous search by VIN, phone number or text",
     version="1.0.0",
     lifespan=lifespan,
-    # production-ში API schema/docs არ ვაქვეყნებთ — info disclosure
+    # no API schema or docs in production, it just hands an attacker a map
     docs_url=None if IS_PRODUCTION else "/docs",
     redoc_url=None if IS_PRODUCTION else "/redoc",
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
@@ -76,7 +76,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    # ყველა პასუხს ვამატებთ security header-ებს.
+    # add the security headers to every response
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -96,7 +96,7 @@ app.include_router(facets_router)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # ნებისმიერი unexpected exception → 500 + უარყოფა stack trace-ის.
+    # any unexpected exception becomes a plain 500, never a stack trace
     log.exception("Unhandled exception on %s %s", request.method, request.url.path)
 
     if IS_PRODUCTION:
@@ -112,7 +112,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/healthz", response_model=HealthCheck)
 def health_check() -> HealthCheck:
-    # Health check — DB და R2 ხელმისაწვდომია?
+    # health check: are the database and R2 reachable?
     from src.api.db_pool import connection
 
     db_ok = False
@@ -135,7 +135,7 @@ def health_check() -> HealthCheck:
 @app.get("/")
 def root() -> dict:
     return {
-        "service": "ქართული მანქანების ბაზა",
+        "service": "Georgian car listings",
         "docs": "/docs",
         "health": "/healthz",
         "stats": "/stats",

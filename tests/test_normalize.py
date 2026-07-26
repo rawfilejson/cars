@@ -1,4 +1,4 @@
-# normalize.py-ის ტესტები — phone, price, engine volume, customs.
+# Tests for normalize.py: phone, price, engine volume and customs.
 
 from __future__ import annotations
 
@@ -37,29 +37,29 @@ GE = "+995 595 515 141"
     "995595515141",
 ])
 def test_format_phone_ge_variants(raw):
-    # ნებისმიერი ცუდი ფორმატი ქართული მობილურისთვის → ერთიდაიგივე canonical.
+    # any badly formatted Georgian mobile ends up in the same canonical form
     assert format_phone(raw) == GE
 
 
 @pytest.mark.parametrize("raw", ["", None, "abc", "---", "()", " "])
 def test_format_phone_empty(raw):
-    # ცარიელი / არასწორი input → ცარიელი string.
+    # empty or invalid input gives an empty string
     assert format_phone(raw) == ""
 
 
 def test_format_phone_russian():
-    # რუსული 11-ციფრიანი ნომერი → +7 ფორმატით.
+    # an 11-digit Russian number comes back in +7 form
     assert format_phone("+79161234567") == "+7 916 123 45 67"
     assert format_phone("7 916 123 45 67") == "+7 916 123 45 67"
 
 
 def test_format_phone_landline_3():
-    # თბილისის ლანდლაინი — 9 ციფრი, 3-ით იწყება.
+    # a Tbilisi landline: 9 digits starting with 3
     assert format_phone("322 12 34 56") == "+995 322 123 456"
 
 
 def test_format_phone_unknown_keeps_digits():
-    # უცნობი ფორმატი — +-ით + ციფრებით (არასოდეს ვკარგავთ ციფრებს).
+    # unknown format keeps the + and the digits; we never drop digits
     assert format_phone("12345") == "+12345"
 
 
@@ -74,7 +74,7 @@ def test_format_phone_unknown_keeps_digits():
     (None, ""),
 ])
 def test_phone_from_text(text, expected):
-    # ნომრის ამოღება აღწერიდან — ქართული მობილური (5XX), თორემ ცარიელი.
+    # pull a number out of a description: a Georgian mobile (5XX), otherwise empty
     assert phone_from_text(text) == expected
 
 

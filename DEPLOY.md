@@ -1,33 +1,34 @@
-# Deployment — ნაბიჯ ნაბიჯ
+# Deployment, step by step
 
-როგორ გავიყვანოთ პროექტი ლოკალურიდან production-ში. საიტი ანონიმური და უფასოა —
-ავტორიზაცია/გადახდა არ არის.
+How to get the project from local to production. The site is anonymous and free,
+with no accounts and no payments.
 
 ---
 
-## სტრუქტურა
+## The pieces
 
 ```
-[ მომხმარებელი ]
-       ↓ HTTPS
-[ Cloudflare Workers — static frontend (web/) ]
-       ↓ HTTPS (fetch)
-[ Render — FastAPI backend ]
-       ↓
-[ Supabase PostgreSQL  +  Cloudflare R2 (ფოტოები) ]
+[ visitor ]
+       |  HTTPS
+[ Cloudflare Workers - static frontend (web/) ]
+       |  HTTPS (fetch)
+[ Render - FastAPI backend ]
+       |
+[ Supabase PostgreSQL  +  Cloudflare R2 (photos) ]
 
-[ GitHub Actions ] → cron 2x/day → Playwright scraping → Supabase + R2
+[ GitHub Actions ] -> cron 2x/day -> Playwright scraping -> Supabase + R2
 ```
 
-ფაილები: backend deploy — `render.yaml` + `Dockerfile`; frontend — `wrangler.toml`;
-scraping — `.github/workflows/parse.yml`; backfill — `.github/workflows/sync_backfill.yml`.
+Which file does what: the backend deploy is `render.yaml` plus `Dockerfile`, the
+frontend is `wrangler.toml`, scraping is `.github/workflows/parse.yml`, and the
+photo backfill is `.github/workflows/sync_backfill.yml`.
 
 ---
 
 ## Secrets
 
-repo-ში secret არ ინახება. ერთი და იგივე 6 მნიშვნელობა გვჭირდება ორ ადგილას
-(Render-ისა და GitHub Actions-ის dashboard-ებში):
+No secret is stored in the repo. The same six values are needed in two places,
+the Render dashboard and the GitHub Actions settings:
 
 ```
 DATABASE_URL           postgresql://...   (Supabase connection string)
@@ -38,30 +39,35 @@ R2_BUCKET              cars-photos
 R2_PUBLIC_URL          https://<your-bucket>.r2.dev
 ```
 
-> ⚠️ ნამდვილი მნიშვნელობები ამ ფაილში არ იწერება. თუ რომელიმე ოდესმე გასაჟონა,
-> აუცილებლად დაარესეტე (იხ. `SECURITY.md`).
+> Never write the real values into this file. If one ever leaks, rotate it —
+> see `SECURITY.md`.
 
 ---
 
-## A. Backend → Render
+## A. Backend on Render
 
-1. https://dashboard.render.com → **New** → **Web Service** → connect GitHub repo `cars`.
-2. Render წაიკითხავს `render.yaml`-ს ავტომატურად (docker runtime, frankfurt, `/healthz` health check).
-3. **Environment** → დაამატე ზემოთ ჩამოთვლილი 6 secret (`render.yaml`-ში `sync: false`-ით
-   მონიშნულები dashboard-ში ხელით იწერება).
-4. **Deploy**. პირველი build ~5 წუთი.
-5. ვერიფიკაცია: `https://<your-app>.onrender.com/healthz` → `{"status":"ok","db":true,...}`.
+1. Go to https://dashboard.render.com -> **New** -> **Web Service** and connect
+   the `cars` repo.
+2. Render picks up `render.yaml` automatically (docker runtime, Frankfurt,
+   `/healthz` as the health check).
+3. Under **Environment**, add the six secrets above. Anything marked
+   `sync: false` in `render.yaml` has to be typed into the dashboard by hand.
+4. Hit **Deploy**. The first build takes about five minutes.
+5. Check it worked: `https://<your-app>.onrender.com/healthz` should return
+   `{"status":"ok","db":true,...}`.
 
-> free plan-ზე სერვისი უმოქმედობის შემდეგ "იძინებს" — პირველი request ~30წმ-ს ელოდება (cold start).
-> ამის მოსაშორებლად: plan → `starter` ($7/თვე).
+> On the free plan the service sleeps when idle, so the first request after a
+> pause waits around 30 seconds for the cold start. The `starter` plan ($7/month)
+> removes that.
 
-ბექენდის URL ჩაწერე `web/config.js`-ში (production ფილიალში) თუ ის შეიცვალა.
+If the backend URL changed, update it in `web/config.js`.
 
 ---
 
-## B. Frontend → Cloudflare Workers
+## B. Frontend on Cloudflare Workers
 
-frontend არის სტატიკური `web/` ფოლდერი, Workers static-assets-ით (`wrangler.toml`).
+The frontend is just the static `web/` folder, served through Workers static
+assets (`wrangler.toml`).
 
 ```powershell
 npm install -g wrangler
@@ -69,38 +75,41 @@ wrangler login
 wrangler deploy
 ```
 
-`config.js` თავად ცნობს გარემოს: `localhost`-ზე ლოკალურ backend-ს იყენებს, სხვაგან —
-production Render URL-ს. ხელით რედაქტირება არ სჭირდება, თუ URL იგივეა.
+`config.js` works out its own environment: on `localhost` it talks to the local
+backend, anywhere else to the production Render URL. You only need to edit it if
+that URL changes.
 
-CORS: backend-ის `src/api/main.py`-ში `allow_origins` უნდა შეიცავდეს frontend-ის
-ნამდვილ origin-ს. domain-ის შეცვლისას განაახლე და ხელახლა deploy.
-
----
-
-## C. Scraping → GitHub Actions
-
-1. repo → **Settings** → **Secrets and variables** → **Actions** → დაამატე ზემოთ ჩამოთვლილი 6 secret.
-2. `parse.yml` cron-ით დღეში 2-ჯერ უშვებს parser-ს + `sync_photos`-ს (შემთხვევითი 0-60წთ delay-ით).
-3. ხელით ტესტი: **Actions** → აირჩიე workflow → **Run workflow**.
-4. ფოტოების backlog-ის ერთჯერადი ატვირთვა: **Actions** → **Photo Backfill** → **Run workflow**
-   (ან `gh workflow run sync_backfill.yml`).
+CORS: `allow_origins` in `src/api/main.py` has to include the frontend's real
+origin. If you change domain, update it there and redeploy the backend.
 
 ---
 
-## ხარჯები (free-tier რეალობა)
+## C. Scraping on GitHub Actions
 
-| სერვისი | Free | ფასიანი |
-|---------|------|---------|
-| Render | ✅ (cold start) | starter $7/თვე — cold start გარეშე |
-| Cloudflare Workers | ✅ | — |
-| Supabase | ✅ (auto-backup გარეშე) | Pro $25/თვე — auto-backup + მეტი ადგილი |
-| Cloudflare R2 | ✅ 10GB storage, free egress | ~$0.015/GB/თვე ზევით |
-| GitHub Actions | ✅ 2000 წთ/თვე | — |
+1. Repo -> **Settings** -> **Secrets and variables** -> **Actions**, and add the
+   same six secrets.
+2. `parse.yml` runs the parsers plus `sync_photos` twice a day on a cron, after a
+   random 0-60 minute delay.
+3. To test by hand: **Actions** -> pick the workflow -> **Run workflow**.
+4. To push a photo backlog through in one go: **Actions** -> **Photo Backfill** ->
+   **Run workflow**, or `gh workflow run sync_backfill.yml`.
 
 ---
 
-## პერიოდული მონიტორინგი
-- Render logs — backend შეცდომები.
-- Supabase Dashboard — DB ზომა / connection limits.
-- GitHub Actions history — parser/backfill failures.
-- Cloudflare Analytics — traffic / bot requests.
+## What it costs on free tiers
+
+| Service | Free | Paid |
+|---------|------|------|
+| Render | yes, with cold starts | starter $7/month, no cold start |
+| Cloudflare Workers | yes | — |
+| Supabase | yes, no automatic backups | Pro $25/month, backups and more space |
+| Cloudflare R2 | 10GB storage, free egress | ~$0.015/GB/month above that |
+| GitHub Actions | unlimited on a public repo | — |
+
+---
+
+## Worth watching
+- Render logs, for backend errors.
+- The Supabase dashboard, for database size and connection limits.
+- GitHub Actions history, for parser and backfill failures.
+- Cloudflare Analytics, for traffic and bot requests.

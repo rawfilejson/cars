@@ -1,5 +1,5 @@
-# Cloudflare Workers config — სტატიკურ frontend-ს (web/) ემსახურება worker.js-ით,
-# რომელიც cron trigger-ით Render backend-ს ცოცხალს ინახავს (იხ. worker.js).
+# Cloudflare Workers config. Serves the static frontend in web/ through worker.js,
+# which also uses a cron trigger to keep the Render backend awake (see worker.js).
 # Docs: https://developers.cloudflare.com/workers/static-assets/
 
 name = "cars"

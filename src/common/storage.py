@@ -81,9 +81,9 @@ async def download_to_local(
                 log.warning("download %s — HTTP %d (no retry)", url, resp.status_code)
                 return False
             resp.raise_for_status()
-            # ატომური ჩაწერა: ჯერ `.part`, შემდეგ rename. შეწყვეტილი/მოკლული
-            # ჩაწერა `path`-ზე ნახევარ ფაილს ვერ ტოვებს (st_size>0 check რომ
-            # კორუმპირებულ სურათს არ ჩათვალოს „ჩამოწერილად").
+            # Atomic write: download to .part, then rename. An interrupted or killed write
+            # can never leave half a file at the real path. The st_size > 0 check stops a
+            # corrupt image from counting as downloaded.
             tmp = path.with_name(path.name + ".part")
             tmp.write_bytes(resp.content)
             tmp.replace(path)
@@ -132,8 +132,8 @@ def _content_type(key: str) -> str:
 
 
 def _r2_object_exists(client, key: str) -> bool:
-    # HeadObject — სწრაფი check (Class B operation, ~10x იაფი Class A
-    # upload-ზე). თუ ობიექტი უკვე ფაილშია, არ ვუტვირთავთ თავიდან.
+    # HeadObject is a cheap check (a Class B operation, ~10x cheaper than a Class A
+    # upload), so if the object is already there we skip re-uploading it.
     from botocore.exceptions import ClientError
     try:
         client.head_object(Bucket=R2_BUCKET, Key=key)
@@ -187,12 +187,12 @@ async def fetch_and_store(
 ) -> str | None:
     # Returns the storage key on success, None on failure.
     #
-    # upload_to_cloud-ის ჩართვისას R2 upload-ის ჩავარდება None-ს აბრუნებს — key
-    # არ უნდა ჩაიწეროს, თუ R2-ში ფოტო ნამდვილად არ შევიდა (თორემ საიტზე გატეხილი
-    # სურათი გამოჩნდება და მანქანა pending-ად ვეღარ აღიქმება).
+    # With upload_to_cloud on, a failed R2 upload returns None so no key is stored.
+    # Writing a key for a photo that never landed would show a broken image on the
+    # site, and the car would no longer look pending so it would never be retried.
     #
-    # keep_local=False — ლოკალურ ფაილს R2-ში წარმატებული upload-ის შემდეგ წაშლის
-    # (disk-constrained backfill: GitHub runner — ფოტოები დისკზე არ გვირჩება).
+    # keep_local=False deletes the local copy once R2 confirms the upload, which is
+    # how the backfill survives a GitHub runner's small disk.
     key = make_image_key(source, source_id, index, url)
 
     if not await download_to_local(client, url, key, source=source):

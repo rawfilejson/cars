@@ -1,7 +1,7 @@
-# წყაროს robots.txt-ის პატივისცემა — fetch-ამდე ვამოწმებთ, დაშვებულია თუ არა.
+# Respect the source's robots.txt: check before fetching anything.
 #
-# robots.txt ჰოსტზე ერთხელ იკითხება და ქეშდება. წაკითხვის შეცდომა → allow
-# (robots.txt-ის არარსებობა აკრძალვას არ ნიშნავს).
+# It is read once per host and cached. If it cannot be read we allow the fetch,
+# since a missing robots.txt is not a prohibition.
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def _load_sync(origin: str) -> urllib.robotparser.RobotFileParser:
 
 
 async def can_fetch(url: str, user_agent: str = "*") -> bool:
-    # True თუ robots.txt არ კრძალავს მოცემულ URL-ს ამ user-agent-ისთვის.
+    # True when robots.txt does not forbid this URL for this user-agent
     parts = urlsplit(url)
     if not parts.scheme or not parts.netloc:
         return True

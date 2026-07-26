@@ -1,10 +1,10 @@
-# ბაზის ინიციალიზაცია — schema.sql-ის გაშვება ცარიელ PostgreSQL-ზე.
+# Initialise the database by running schema.sql against an empty PostgreSQL.
 #
-# გამოყენება:
+# usage:
 #     python -m src.scripts.init_db
 #
-# Supabase / Neon / cloud DB-ში schema უნდა გაუშვა ერთხელ. Docker-ის შემთხვევაში
-# schema.sql ავტომატურად იდგმება docker-compose-ის entrypoint-ით.
+# On Supabase, Neon or any cloud database run this once. With Docker the schema
+# is applied automatically by the docker-compose entrypoint.
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ SCHEMA_PATH = ROOT_DIR / "db" / "schema.sql"
 
 def main() -> None:
     if not SCHEMA_PATH.exists():
-        raise FileNotFoundError(f"schema.sql ვერ ვიპოვე: {SCHEMA_PATH}")
+        raise FileNotFoundError(f"schema.sql not found: {SCHEMA_PATH}")
 
     schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
 
@@ -29,7 +29,7 @@ def main() -> None:
             cur.execute(schema_sql)
         conn.commit()
 
-    print("ცხრილები შექმნილია.")
+    print("tables created")
 
 
 if __name__ == "__main__":

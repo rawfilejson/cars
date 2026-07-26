@@ -1,13 +1,13 @@
 # =====================================================================
-# Scheduled parser — GitHub Actions
+# Scheduled parser
 # =====================================================================
-# დღეში 2-ჯერ რანდომულ დროს ვუშვებთ პარსერს + ფოტოების sync-ს.
+# Runs both parsers twice a day, then syncs the photos.
 #
-# cron timing-ი ფიქსირებულია (GitHub-ის ლიმიტი), მაგრამ ჯერ ვაჩერებთ
-# რანდომულ წუთებზე (0-59 წთ.) რომ ბოტ-სიგნალი ნაკლები იყოს.
+# GitHub only allows a fixed cron time, so the job waits a random number of
+# minutes (0-59) before starting, to look less like a bot.
 #
-# Secrets რომ უნდა შექმნა GitHub repo-ში:
-#   Settings → Secrets and variables → Actions → New repository secret
+# Secrets to create on the repo:
+#   Settings > Secrets and variables > Actions > New repository secret
 #     DATABASE_URL
 #     R2_ACCOUNT_ID
 #     R2_ACCESS_KEY_ID
@@ -19,13 +19,13 @@
 name: Scheduled Parser
 
 on:
-  # დღეში 2-ჯერ; ქვემოთ random delay (0-60წთ) ზუსტ დროს არანდომებს.
+  # twice a day; the random delay below spreads out the exact start time
   schedule:
-    - cron: '0 3 * * *'        # ~07:00 თბილისი (+ random delay)
-    - cron: '0 15 * * *'       # ~19:00 თბილისი (+ random delay)
-  workflow_dispatch:           # ხელითაც
+    - cron: '0 3 * * *'        # ~07:00 Tbilisi, plus the random delay
+    - cron: '0 15 * * *'       # ~19:00 Tbilisi, plus the random delay
+  workflow_dispatch:           # and by hand
 
-# parallel-ად ერთდროულად ერთი job-ი მუშაობდეს
+# only one run at a time
 concurrency:
   group: parser
   cancel-in-progress: false
@@ -53,7 +53,7 @@ jobs:
       - name: Install Playwright browser
         run: uv run playwright install --with-deps chromium
 
-      - name: Random delay (0-60 min) — anti-pattern detection
+      - name: Random delay (0-60 min) so runs don't look automated
         if: ${{ github.event_name == 'schedule' }}
         run: |
           DELAY=$((RANDOM % 3600))
@@ -93,4 +93,4 @@ jobs:
         if: failure()
         run: |
           echo "Parser failed at $(date -u)" >&2
-          echo "::error::Parser run failed — check logs"
+          echo "::error::Parser run failed, check the logs"

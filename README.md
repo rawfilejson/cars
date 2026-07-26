@@ -216,6 +216,50 @@ listings that already look unchanged.
 
 ---
 
+## Reading guide: the whole codebase in order
+
+If you want to understand this project properly, read the files in this order.
+Each step builds on the one before, and the whole path is about 3,000 lines.
+
+**In a hurry?** Read just the three starred files below — `models.py`,
+`search.py` and `index.html` — and you will understand roughly 80% of it.
+
+| # | File | Why it comes here |
+|---|------|-------------------|
+| 1 | *(this README, "How it works")* | The mental model before any code. |
+| 2 | ⭐ `src/common/models.py` | The `Car` model — one shape every part of the system agrees on. Read this and you know what a listing *is*. |
+| 3 | `db/schema.sql` | The same thing as tables: the unique constraint that makes re-scraping idempotent, the generated `search_blob`, and every index (each one exists for a specific query). |
+| 4 | `src/common/config.py` | Which environment variables exist and what the tunables are. Short. |
+| 5 | `src/parsers/myauto.py` | The simpler source: a JSON API client. Read `scrape_one()` and follow one listing from raw JSON into a `Car`. |
+| 6 | `src/parsers/autopapa.py` | The harder source: Playwright driving a real browser, clicking "show VIN". Same output shape, completely different technique. |
+| 7 | `src/common/normalize.py` + `vin.py` | Where messy input becomes comparable data. This is *why* search works across two sites that agree on nothing. |
+| 8 | `src/common/db.py` | Persistence, and the Windows event-loop workaround that forces sync psycopg onto worker threads. |
+| 9 | `src/common/storage.py` + `src/scripts/sync_photos.py` | The photo pipeline: atomic writes, R2 upload, and why a failed upload must not record a key. |
+| 10 | `src/api/schemas.py` | The API contract — request and response shapes, and the validation limits. |
+| 11 | `src/api/main.py` | App wiring: middleware, security headers, error handling. Small. |
+| 12 | ⭐ `src/api/search.py` | **The heart of the backend.** `_smart_route()` decides VIN vs phone vs text; `_filter_clauses()` builds the SQL; the CTE pagination and the LRU cache are both there for one reason — a slow free-tier disk. |
+| 13 | `src/api/rate_limit.py` | How an anonymous site throttles fairly: browser token first, IP only as a backstop. |
+| 14 | `src/api/makes.py` + `facets.py` + `stats.py` | The supporting endpoints and their hourly caches. `makes.py` has the fiddliest logic: collapsing trim noise into real model names. |
+| 15 | ⭐ `web/index.html` | The entire frontend in one file. Search the file for `enhanceSelect` (the custom dropdown), `buildSearchPayload` (how filters become a request), and `renderCompareModal`. |
+| 16 | `web/i18n.js`, `web/config.js` | Translations for four languages, and the dev/prod API switch. |
+| 17 | `.github/workflows/` | How it runs itself: `parse.yml` twice a day, `prune.yml` daily, `sync_backfill.yml` for the photo backlog. |
+| 18 | `Dockerfile`, `render.yaml`, `wrangler.toml`, `worker.js` | Deployment, plus the Worker cron that stops the free-tier backend sleeping. |
+| 19 | `tests/` | 247 tests. `test_search.py` and `test_normalize.py` double as executable documentation of the trickiest logic. |
+
+A few decisions worth understanding, and where to find them:
+
+- **Why two totally different scrapers?** myauto exposes clean JSON; autopapa
+  needs a real browser to reveal the VIN. Same `Car` out of both — see step 5 vs 6.
+- **Why is search one endpoint instead of three?** So a user can paste anything
+  into one box. `_smart_route()` in `search.py`.
+- **Why a token instead of an IP for rate limiting?** Shared home wifi and mobile
+  CGNAT put many people on one address. `rate_limit.py`.
+- **Why a CTE for pagination?** `description` and photo arrays live in TOAST
+  storage; reading them for only the 25 rows on the page is dramatically faster.
+  `_paginate()` in `search.py`.
+- **Why no framework on the frontend?** It is one static file with no build step,
+  so it loads fast and hosting costs nothing.
+
 ### Layout
 
 ```

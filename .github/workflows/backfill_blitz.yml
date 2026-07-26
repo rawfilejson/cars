@@ -1,11 +1,11 @@
-# Photo Backfill Blitz — backlog-ის ერთჯერადი პარალელური დასუფთავება.
-# 3 runner ერთდროულად, თითო id %% 3 == shard ნაწილს (overlap-ის გარეშე).
-# ხელით: Actions → Photo Backfill Blitz → Run workflow.
+# Photo Backfill Blitz: a one-off parallel clear-out of the backlog.
+# Three runners at once, each taking the ids where id %% 3 == shard, so no overlap.
+# Start it by hand: Actions > Photo Backfill Blitz > Run workflow.
 #
-# ⚠️ ბევრ free-tier Actions წუთს ხარჯავს (≈3×timeout). ერთჯერადი backlog clear-ისთვის.
-# მუდმივი/ნაზი backfill-ისთვის sync_backfill.yml (auto-chain) გამოიყენე.
+# Warning: this burns a lot of Actions minutes (roughly 3x the timeout). Use it to
+# clear a backlog once; for steady, gentler backfill use sync_backfill.yml instead.
 #
-# საჭირო Secrets: DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+# Required secrets: DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
 # R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
 
 name: Photo Backfill Blitz
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       concurrent:
-        description: 'ერთდროული ფოტო-I/O თითო shard-ზე'
+        description: 'concurrent photo I/O per shard'
         required: false
         default: '16'
 

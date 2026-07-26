@@ -1,4 +1,4 @@
-# ძიების ლოგიკის ტესტები — smart route + legacy + phone normalization.
+# Tests for the search logic: smart routing, the legacy fields, phone normalisation.
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _build_filter_only(**kwargs):
     ("5555",             "5555"),
 ])
 def test_normalize_phone_query(raw, expected):
-    # ნებისმიერი user input → ბოლო 9 ციფრი (ან ნაკლები).
+    # any user input reduces to the last 9 digits, or fewer
     assert _normalize_phone_query(raw) == expected
 
 

@@ -1,4 +1,4 @@
-# API-ის request/response მოდელები. Pydantic-ით ვალიდირდება ავტომატურად.
+# request and response models. Pydantic validates them automatically.
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ _FilterValue = Annotated[str, StringConstraints(max_length=60)]
 
 
 class SearchRequest(BaseModel):
-    # ძიების მოთხოვნა.
+    # a search request
 
     query: str | None = Field(None, min_length=1, max_length=200)
 
@@ -53,7 +53,7 @@ class SearchRequest(BaseModel):
 
 
 class CarPublic(BaseModel):
-    # ერთი მანქანის public ფორმა — რას ვაჩვენებთ მომხმარებელს.
+    # the public shape of one car, i.e. what visitors actually get to see
 
     id: int
     source: str
@@ -94,7 +94,7 @@ class CarPublic(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    # ძიების შედეგი.
+    # a search result
 
     query_type: str
     results: list[CarPublic]
@@ -106,13 +106,13 @@ class SearchResponse(BaseModel):
 
 
 class SearchCount(BaseModel):
-    # მხოლოდ რაოდენობა — ცოცხალი counter ძიების ღილაკზე.
+    # just the count, for the live counter on the search button
 
     total_count: int
 
 
 class HealthCheck(BaseModel):
-    # რა მუშაობს და რა არა.
+    # what is up and what is not
 
     status: str
     db: bool

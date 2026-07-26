@@ -15,8 +15,8 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
 
-# მხარდაჭერილი წყაროები — ერთი წყარო permalink-ის/ვალიდაციის ლოგიკისთვის,
-# რომ ახალი parser-ის დამატებისას ენუმერაცია ერთ ადგილას შეიცვალოს.
+# the supported sources, listed once so permalink and validation logic share it
+# and adding a new parser means changing this one place
 SOURCES: tuple[str, ...] = ("autopapa", "myauto")
 
 
@@ -54,15 +54,15 @@ RETRY_PER_CAR: int = int(os.getenv("RETRY_PER_CAR", "2"))
 PAGE_TIMEOUT_MS: int = int(os.getenv("PAGE_TIMEOUT_MS", "25000"))
 
 
-# SEARCH_LIMIT_PER_HOUR <= 0 → საათობრივი ლიმიტი გამორთულია (მხოლოდ cooldown მოქმედებს)
+# SEARCH_LIMIT_PER_HOUR <= 0 turns the hourly limit off, leaving only the cooldown
 SEARCH_LIMIT_PER_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_HOUR", "0"))
 SEARCH_COOLDOWN_SECONDS: int = int(os.getenv("SEARCH_COOLDOWN_SECONDS", "10"))
 SEARCH_LIMIT_PER_IP_HOUR: int = int(os.getenv("SEARCH_LIMIT_PER_IP_HOUR", "3000"))
 
 
-# ვალუტის კურსები USD-ში — ფასების შედარების/სორტირების ერთადერთი წყარო.
-# ბაზაში ფასი source-ის ვალუტაშია; აქედან ვაკონვერტებთ შესადარებლად. კურსები
-# დროთა განმავლობაში იცვლება, ამიტომ env-იდანაც გადაიწერება (კოდის შეცვლის გარეშე).
+# exchange rates into USD, the single source of truth for comparing and sorting prices
+# prices are stored in the source's own currency and converted from here. Rates
+# drift over time, so they can be overridden from the environment without a code change.
 FX_RATES_TO_USD: dict[str, float] = {
     "USD": 1.0,
     "EUR": float(os.getenv("FX_EUR_USD", "1.08")),

@@ -1,24 +1,24 @@
-# ძველი CSV ფაილების მიგრაცია → PostgreSQL.
+# Migrate the old CSV dumps into PostgreSQL.
 #
-# ვადარდებთ ორ ფორმატს:
+# Two formats are supported:
 #
-#   ფორმატი A (ძველი AutoPapa.csv):
+#   format A (the old AutoPapa.csv):
 #     ID, Manufacturer, Model, Engine_Volume, Mileage, Price, Year,
 #     Engine_Type, Steering, Phone, Customs, VIN, Description, URL, Media
 #
-#   ფორმატი B (ახალი MyAuto.csv):
+#   format B (the newer MyAuto.csv):
 #     ID, Source, Manufacturer, Model, Year, Body_Type, Price, Currency,
 #     Price_With_Customs, ... Image_1..Image_20
 #
-# ვცნობთ ფორმატს header-ით.
+# The format is detected from the header.
 #
-# გაშვება:
+# run:
 #     python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
 #     python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
 #
-# შენიშვნა: ძველი AutoPapa.csv-ში ნომრები გადაკეთებულია scientific notation-ად
-# (მაგ: 9.96E+11). ვერ აღვადგენთ — phone-ი ცარიელად დარჩება. შემდეგი
-# პარსერის გაშვება მათ ხელახლა შეავსებს.
+# Note: in the old AutoPapa.csv the phone numbers were mangled into scientific
+# notation (e.g. 9.96E+11) and cannot be recovered, so phone stays empty. The
+# next parser run fills them back in.
 
 from __future__ import annotations
 
@@ -44,16 +44,16 @@ csv.field_size_limit(10 * 1024 * 1024)
 
 
 def _detect_format(header: list[str]) -> str:
-    # ფორმატის ამოცნობა header-ის ველებიდან.
+    # work out the format from the header fields
     #
-    # 'B'-ში Image_1, Image_2... ცალკე ველებში წერია;
-    # 'A'-ში ფოტოები Media-ში comma-separated string-ად არის.
+    # format B puts photos in separate Image_1, Image_2... columns,
+    # while format A has them comma-separated in a single Media column.
     columns = {h.strip().lower() for h in header}
     if "image_1" in columns:
         return "B"
     if "media" in columns:
         return "A"
-    raise ValueError(f"უცნობი CSV ფორმატი — ვერ ვცანი. ველები: {header}")
+    raise ValueError(f"unrecognised CSV format, fields were: {header}")
 
 
 def _row_to_car_format_a(row: dict[str, str], source: str) -> Car | None:
@@ -164,15 +164,15 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
 
 
 def _iter_cars(path: str, source: str) -> Iterable[Car]:
-    # ერთი ფაილიდან Car ობიექტების iterator.
+    # iterate Car objects out of one file
     with open(path, "r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         if reader.fieldnames is None:
-            raise ValueError("ცარიელი CSV ფაილი")
+            raise ValueError("empty CSV file")
 
         fmt = _detect_format(list(reader.fieldnames))
         convert = _row_to_car_format_a if fmt == "A" else _row_to_car_format_b
-        print(f"  ფორმატი: {fmt}")
+        print(f"  format: {fmt}")
 
         for row in reader:
             try:
@@ -185,17 +185,17 @@ def _iter_cars(path: str, source: str) -> Iterable[Car]:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="CSV → PostgreSQL მიგრაცია")
-    parser.add_argument("--file", required=True, help="CSV ფაილის გზა")
+    parser = argparse.ArgumentParser(description="migrate a CSV dump into PostgreSQL")
+    parser.add_argument("--file", required=True, help="path to the CSV file")
     parser.add_argument(
-        "--source", required=True, help="წყაროს სახელი (autopapa/myauto)"
+        "--source", required=True, help="source name (autopapa/myauto)"
     )
     parser.add_argument(
-        "--batch", type=int, default=500, help="ბაზაში ერთჯერადი batch-ის ზომა"
+        "--batch", type=int, default=500, help="how many rows to write per batch"
     )
     args = parser.parse_args()
 
-    print(f"მიგრაცია: {args.file} → DB (source = {args.source})")
+    print(f"migrating {args.file} -> database (source = {args.source})")
 
     buffer: list[Car] = []
     total = saved = 0
@@ -207,12 +207,12 @@ async def main() -> None:
         if len(buffer) >= args.batch:
             saved += await upsert_cars(buffer)
             buffer.clear()
-            print(f"  {saved}/{total} ჩაიწერა...")
+            print(f"  {saved}/{total} written...")
 
     if buffer:
         saved += await upsert_cars(buffer)
 
-    print(f"\nდასრულდა. ჩაიწერა {saved}/{total} მანქანა.")
+    print(f"\ndone, wrote {saved}/{total} cars")
 
 
 if __name__ == "__main__":

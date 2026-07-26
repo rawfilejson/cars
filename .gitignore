@@ -1,4 +1,4 @@
-# ლოკალური dev-ინსტრუმენტების/რედაქტორის ფაილები — repo-ში არ შედის
+# local editor and tooling state, not part of the repo
 .*/
 !.github/
 
@@ -10,16 +10,16 @@ __pycache__/
 venv/
 *.egg-info/
 
-# გარემოს ცვლადები — არასოდეს არ უნდა შევიდეს repo-ში
+# environment variables, must never be committed
 .env
 .env.local
 .env.*.local
 
-# Playwright session-ი (შეიცავს cookies-ს / authtokens-ს)
+# Playwright session data, holds cookies and auth tokens
 auth.json
 chrome_profile/
 
-# გენერირებული ფაილები
+# generated files
 photos/
 exports/
 *.csv

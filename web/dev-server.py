@@ -1,12 +1,11 @@
-"""ლოკალური SPA-fallback სტატიკური სერვერი.
-
-Python-ის ჩვეული `http.server` 404-ს აბრუნებს უცნობ path-ზე. Cloudflare
-Workers-ის `not_found_handling = "single-page-application"`-ის ექვივალენტი —
-უცნობი path-ი (და არა-asset) → index.html. ეს ლოკალურად აყენებს deeplink-ებს
-როგორც /car/myauto-121951594.
-
-გაშვება: python web/dev-server.py [PORT]
-"""
+# Local static server with SPA fallback.
+#
+# Plain http.server answers 404 for an unknown path. This is the equivalent of
+# Cloudflare Workers' not_found_handling = "single-page-application": an unknown
+# path that isn't an asset falls back to index.html, so deep links like
+# /car/myauto-121951594 work locally too.
+#
+# run: python web/dev-server.py [PORT]
 
 from __future__ import annotations
 

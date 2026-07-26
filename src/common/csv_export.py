@@ -1,12 +1,12 @@
-# CSV export — DB-ის გვერდით სუფთა archive-ი exports/ ფოლდერში.
+# CSV export: a plain archive in exports/, kept alongside the database
 #
-# ფაილის სქემა: `exports/{source}-{YYYY-MM-DD}.csv`. ერთი ფაილი per source per
-# დღე. ერთიდაიგივე დღეს მეორე ჯერ run-ი — append-ი, header არ იწერება ხელახლა.
+# File layout is exports/{source}-{YYYY-MM-DD}.csv, one file per source per
+# day. A second run on the same day appends and does not repeat the header.
 #
-# Headers — Car.model_fields-დან, ანუ ერთიდაიგივე სქემა autopapa/myauto-სთვის.
+# Headers come from Car.model_fields, so autopapa and myauto share one schema.
 #
-# list ფილდები (image_urls, image_keys) → `";"` separator-ით (ერთი ცელი).
-# bool-ები → "true"/"false"/"". None → ცარიელი string (არა "None").
+# List fields (image_urls, image_keys) are joined with ";" into a single cell.
+# Booleans become "true"/"false"/"", and None becomes an empty string, not "None".
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ _FIELDS: tuple[str, ...] = tuple(Car.model_fields.keys())
 
 
 def csv_path(source: str, day: date | None = None) -> Path:
-    # ფაილის ბილიკი — `exports/{source}-{YYYY-MM-DD}.csv`.
+    # path to the file: exports/{source}-{YYYY-MM-DD}.csv
     day = day or date.today()
     return EXPORTS_DIR / f"{source}-{day.isoformat()}.csv"
 
@@ -45,7 +45,7 @@ def _car_to_row(car: Car) -> dict[str, str]:
 
 
 def append_cars_to_csv(cars: list[Car], source: str, day: date | None = None) -> int:
-    # Append batch-ი ფაილში. ფაილი არ არსებობს → headers-ი იწერება ჯერ.
+    # append a batch; if the file is new, write the header first
     #
     # Returns the number of rows written.
     if not cars:

@@ -1,9 +1,9 @@
-# ძიების endpoint — ერთიანი smart search + legacy ცალკეული ფილდები.
+# The search endpoint: one smart search, plus the legacy per-field form.
 #
-# ახალი ფრონტი: `query` ერთად, backend ცნობს რა ტიპისაა (VIN/phone/ტექსტი).
-# ძველი ფრონტი (Carba): vin/phone/free_text ცალკე ფილდები. deprecated.
+# The current frontend sends a single `query` and the backend works out whether
+# it is a VIN, a phone number or free text. The old frontend sent vin/phone/
 #
-# სრულიად უფასო, ანონიმური — მხოლოდ IP-ით ლიმიტი.
+# free_text separately; that form is deprecated but still accepted.
 
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ car_router = APIRouter(prefix="/car", tags=["car"])
 
 PAGE_SIZE = 25
 
-# წყაროების ენუმერაცია config.SOURCES-დან — ახალი parser ავტომატურად მუშაობს
-# permalink-ში. re.escape — დაცვა მომავალი metachar-იანი სახელისგან.
+# Sources come from config.SOURCES, so adding a parser makes permalinks work
+# with no change here. re.escape guards against a future name with metacharacters.
 _CAR_KEY_RE = re.compile(r"^(" + "|".join(re.escape(s) for s in SOURCES) + r")-(\d+)$")
 
 
@@ -44,14 +44,14 @@ _TITLE_BLOB = (
 
 _VIN_RE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
-# არასწორ ფასებს (0, უარყოფითი — myauto-ს "შეთანხმებით" sentinel) NULL-ად ვთვლით,
-# რომ price-sort/filter-ში არ მოხვდნენ (NULLS LAST). ~42k ასეთი ჩანაწერია ბაზაში.
+# Bad prices (0 or negative, myauto's "negotiable" sentinel) are treated as NULL
+# so they stay out of price sorting and filtering. About 42k rows look like this.
 _MIN_PRICE_USD = 100
 
 
-# ვალუტა→USD კონვერსიის SQL CASE — config.FX_RATES_TO_USD-დან აიგება, რომ SQL-ისა
-# და Python-ის (_clean_price) კურსები ვერასდროს აიცდინონ ერთმანეთს. მნიშვნელობები
-# სანდო კონსტანტებია (არა user input), ამიტომ f-string-ით ჩაკერვა უსაფრთხოა.
+# The currency-to-USD CASE is built from config.FX_RATES_TO_USD so the SQL and
+# Python (_clean_price) can never drift apart. The values are trusted constants,
+# not user input, so interpolating them into the query is safe.
 def _build_price_usd_sql() -> str:
     whens = " ".join(
         f"WHEN '{cur}' THEN price_amount::float * {rate}"
@@ -61,7 +61,7 @@ def _build_price_usd_sql() -> str:
 
 
 _PRICE_USD_RAW = _build_price_usd_sql()
-# junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → NULL, რომ price-sort/filter არ აირიოს
+# junk or sentinel prices (under ~$100) become NULL so they can't skew sorting
 _PRICE_IN_USD = (
     f"(CASE WHEN price_amount > 0 AND {_PRICE_USD_RAW} >= {_MIN_PRICE_USD} "
     f"THEN {_PRICE_USD_RAW} END)"
@@ -70,7 +70,7 @@ _FX_TO_USD = FX_RATES_TO_USD
 
 
 def _clean_price(amount: int | None, currency: str | None) -> int | None:
-    # junk/sentinel ფასი ($100 ეკვ.-ზე ნაკლები) → None (sort-ის იგივე ლოგიკა).
+    # junk or sentinel prices (under ~$100) become None, matching the sort logic
     if not amount or amount <= 0:
         return None
     usd = _FX_TO_USD.get(currency or "", 1.0) * amount
@@ -88,7 +88,7 @@ _SORT_CLAUSES = {
 
 
 def _normalize_phone_query(raw: str) -> str:
-    # ნომრის გასუფთავება — მხოლოდ ციფრები, ბოლო 9 (ქართული მობილური).
+    # clean a phone query down to digits, keeping the last 9 (a Georgian mobile)
     digits = re.sub(r"\D", "", raw)
     return digits[-9:] if len(digits) > 9 else digits
 
@@ -193,7 +193,7 @@ _PHONE_CHARS_RE = re.compile(r"[\d\s+()\-.]+")
 
 
 def _looks_like_phone(text: str) -> bool:
-    # 7+ ციფრი + ფონის სიმბოლოები (digits, spaces, +, -, parens, dots).
+    # 7 or more digits plus the usual punctuation (spaces, +, -, parens, dots)
     digits = re.sub(r"\D", "", text)
     if len(digits) < 7:
         return False
@@ -204,9 +204,9 @@ def _looks_like_phone(text: str) -> bool:
 
 def _paginate(where_sql: str, where_params: tuple, order_by: str,
               order_params: tuple, page: int) -> tuple[str, tuple]:
-    # შედეგების გვერდი CTE-ით: id + total პატარა სვეტებზე ვიღებთ, შემდეგ სრულ
-    # row-ებს (description/ფოტოები TOAST-შია) მხოლოდ ამ 25-სთვის ვკითხულობთ —
-    # Supabase free-tier-ის ნელ დისკზე ბევრ-შედეგიან ძიებას მკვეთრად აჩქარებს.
+    # Paginate with a CTE: first get ids and the total from the narrow columns, then
+    # read the full rows (description and photos live in TOAST) for just those 25.
+    # On the slow free-tier disk this makes big result sets dramatically faster.
     offset = (page - 1) * PAGE_SIZE
     sql = (
         f"WITH ids AS (SELECT id, COUNT(*) OVER () AS _total FROM cars "
@@ -299,7 +299,7 @@ def _build_query(req: SearchRequest) -> tuple[str, tuple, str]:
 
 
 def _row_to_public(row: dict) -> CarPublic:
-    # DB row → CarPublic. ფოტოები R2 public URL-ად.
+    # database row -> CarPublic, with photos turned into public R2 URLs
     image_keys = row.get("image_keys") or []
     image_urls_public = [
         f"{R2_PUBLIC_URL.rstrip('/')}/{key}" if R2_PUBLIC_URL else key
@@ -343,20 +343,20 @@ def _row_to_public(row: dict) -> CarPublic:
     )
 
 
-# ერთიდაიგივე ძიების შედეგს ვაქეშებთ — Supabase free-tier-ის ნელი დისკი ერთხელ
-# იკითხება, შემდეგ პოპულარული ძიება (BMW, Mercedes…) მყისიერია. TTL 10 წთ.
+# Identical searches are cached, so the slow free-tier disk is read once and a
+# popular query (BMW, Mercedes...) is instant afterwards. TTL is 10 minutes.
 _RESULT_CACHE: "OrderedDict[str, tuple[float, list]]" = OrderedDict()
 _RESULT_TTL = 600.0
 _RESULT_CACHE_MAX = 600
-# sync endpoint-ები threadpool-ში გადიან — ცვლა lock-ქვეშ, რომ eviction loop
-# პარალელურ წვდომას არ გადაეჯაჭვოს.
+# Sync endpoints run in a threadpool, so writes take the lock to keep the
+# eviction loop from tripping over a concurrent reader.
 _RESULT_CACHE_LOCK = threading.Lock()
 
 
 def _cache_put(key: str, rows: list, now: float) -> None:
-    # ქეშში ჩაწერა + capacity-ის შენარჩუნება. ზედმეტ ჩანაწერებს უძველესიდან
-    # ვაცლით (clear()-ის ნაცვლად), რომ პოპულარული ძიების ქეში ცივ-სტარტში
-    # ერთიანად არ დაიკარგოს.
+    # Store an entry and keep the cache within capacity. Overflow is evicted oldest
+    # first rather than calling clear(), so a cold start doesn't throw away every
+    # popular query at once.
     with _RESULT_CACHE_LOCK:
         _RESULT_CACHE[key] = (now, rows)
         _RESULT_CACHE.move_to_end(key)
@@ -367,8 +367,8 @@ def _cache_put(key: str, rows: list, now: float) -> None:
 def _query_rows(sql: str, params: tuple) -> list:
     key = sql + "\x00" + repr(params)
     now = time.monotonic()
-    # read lock-ქვეშ — eviction-ი (move_to_end/popitem) რომ პარალელურ get-ს
-    # არ გადაეჯაჭვოს. DB query lock-ის გარეთ რჩება (ძიება ხშირია, არ ვასერიალებთ).
+    # Reads take the lock too, because eviction (move_to_end/popitem) would
+    # otherwise race a concurrent get. The DB query stays outside the lock, since
     with _RESULT_CACHE_LOCK:
         hit = _RESULT_CACHE.get(key)
         if hit is not None and now - hit[0] < _RESULT_TTL:
@@ -383,7 +383,7 @@ def _query_rows(sql: str, params: tuple) -> list:
 
 @router.post("", response_model=SearchResponse)
 def search(req: SearchRequest, request: Request, background_tasks: BackgroundTasks) -> SearchResponse:
-    # ძიება — VIN, ნომერი, ან თავისუფალი ტექსტი. სრულიად უფასო.
+    # search by VIN, phone number or free text
 
     remaining = check_rate_limit(request, is_pagination=req.page > 1)
 
@@ -449,8 +449,8 @@ def search_count(req: SearchRequest) -> SearchCount:
 
 @car_router.get("/{key}", response_model=CarPublic)
 def get_car(key: str, response: Response) -> CarPublic:
-    # ერთი მანქანის ფეთჩი permalink-ისთვის. {key} = {source}-{source_id},
-    # მაგ. /car/myauto-121951594. Rate limit-ი არ ვცემთ — ეს არ არის ძიება.
+    # Fetch one car for its permalink. {key} is {source}-{source_id}, e.g.
+    # /car/myauto-121951594. No rate limit here, because this is not a search.
     m = _CAR_KEY_RE.match(key)
     if not m:
         raise HTTPException(

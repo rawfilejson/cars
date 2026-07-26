@@ -1,4 +1,4 @@
-# მწარმოებელი → მოდელების სია — ძიების dropdown მენიუსთვის.
+# manufacturer -> list of models, for the search dropdowns
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ _MIN_COUNT = 3
 _cache: tuple[float, "MakesResponse"] | None = None
 _cache_lock = threading.Lock()
 
-# trim/ძარა/გადაცემათა-კოლოფის სიტყვები, რაც მოდელის სახელის ნაწილი არ არის
+# trim, body and gearbox words that are not really part of the model name
 _JUNK = {
     "sedan", "suv", "coupe", "hatchback", "wagon", "van", "minivan", "pickup",
     "truck", "convertible", "crossover", "cross", "automatic", "manual", "cvt",
@@ -32,18 +32,18 @@ _JUNK = {
 }
 _TWO_WORD = {"land", "grand", "range", "santa", "alfa", "aston", "mini", "model", "great", "gran"}
 _TRIM_NUM_RE = re.compile(r"(\d{2,3})[a-z]{1,2}")
-# კლასის ნომერი (C 300, GLE 350, E 220d) — ეს submodel-ია და არა trim-ნაგავი
+# a class number (C 300, GLE 350, E 220d) is a real submodel, not trim noise
 _SERIES_NUM_RE = re.compile(r"\d{2,3}[a-z]{0,2}", re.IGNORECASE)
 
 
 def _canon_token(tok: str) -> str:
-    # რიცხვით trim-ს ბაზურ ნომრამდე ამცირებს (320i/320d → 320).
+    # strip the trim letter off a numeric model (320i/320d -> 320)
     m = _TRIM_NUM_RE.fullmatch(tok)
     return m.group(1) if m else tok
 
 
 def _base_model(manufacturer: str, model: str) -> str:
-    # სრული trim-სტრიქონიდან ბაზური მოდელის სახელს გამოყოფს.
+    # pull the base model name out of a full trim string
     model = re.sub(r"[×](?=\d)", "x", model)
     toks = [t for t in re.split(r"[\s/]+", model.strip())
             if t and t.lower() != manufacturer.lower()]
@@ -57,13 +57,13 @@ def _base_model(manufacturer: str, model: str) -> str:
             if nxt.isascii() and nxt.isalpha() and len(nxt) >= 4 and nxt.lower() not in _JUNK:
                 take = 2
         elif len(toks[0]) <= 3 and toks[0].isalpha() and _SERIES_NUM_RE.fullmatch(nxt):
-            # ასოებიანი სერია + ნომერი (C 300) — ნომერი submodel-ს განასხვავებს
+            # letter series plus number (C 300) - the number is what tells submodels apart
             take = 2
     return " ".join(_canon_token(t) for t in toks[:take])
 
 
 class MakesResponse(BaseModel):
-    # {მწარმოებელი: [მოდელები]} — პოპულარობის რიგზე (ყველაზე ბევრი → ნაკლები).
+    # {manufacturer: [models]}, most listings first
 
     makes: dict[str, list[str]]
 
@@ -71,11 +71,11 @@ class MakesResponse(BaseModel):
 def _order_makes(
     agg: dict[str, dict[str, tuple[str, int]]],
 ) -> dict[str, list[str]]:
-    # აგრეგირებული count-ები → {მწარმოებელი: [მოდელები]} პოპულარობის რიგზე.
+    # aggregated counts -> {manufacturer: [models]}, most listings first
     #
-    # მწარმოებლები — ყველაზე ბევრი განცხადება პირველი; თითოეულში მოდელებიც
-    # count-ის კლებადობით (ტოლობისას ანბანურად). იშვიათი მოდელები ეთიშება,
-    # მაგრამ ბრენდი განცხადებით ყოველთვის ჩანს — თუნდაც ერთი მანქანა იყოს.
+    # manufacturers with the most listings first, and inside each one the models
+    # by count too (alphabetically when tied). Rare models are dropped,
+    # but a brand with any listing always shows up, even if it has just one car.
     ranked: list[tuple[str, int, list[str]]] = []
     for manu, bucket in agg.items():
         kept = [(disp, cnt) for disp, cnt in bucket.values() if cnt >= _MIN_COUNT]
@@ -103,7 +103,7 @@ def _load_makes() -> MakesResponse:
             )
             rows = cur.fetchall()
 
-    # ბაზურ მოდელამდე ვამცირებთ, duplicate-ებს ვაერთიანებთ და რაოდენობას ვაჯამებთ
+    # reduce to the base model, merge duplicates and add their counts together
     agg: dict[str, dict[str, tuple[str, int]]] = {}
     for row in rows:
         manu = row["manufacturer"]
@@ -115,8 +115,8 @@ def _load_makes() -> MakesResponse:
         disp, cnt = bucket.get(key, (base, 0))
         bucket[key] = (disp, cnt + row["c"])
 
-    # იშვიათი ნომრიანი submodel-ი (cnt < _MIN_COUNT) კლასის ბაზურ ჩანაწერში ბრუნდება,
-    # რომ ეს მანქანები კლასის ფილტრით მაინც იძებნებოდეს
+    # a rare numbered submodel (cnt < _MIN_COUNT) folds back into its class entry
+    # so those cars are still findable by filtering on the class
     for bucket in agg.values():
         rare = [k for k, (disp, cnt) in bucket.items()
                 if cnt < _MIN_COUNT and " " in disp and disp.split()[1].isdigit()]
@@ -132,12 +132,12 @@ def _load_makes() -> MakesResponse:
 
 @router.get("", response_model=MakesResponse)
 def get_makes(response: Response) -> MakesResponse:
-    # მწარმოებელი → მოდელები. საათში ერთხელ ქეშდება (იშვიათად იცვლება).
+    # manufacturer -> models, cached for an hour since it rarely changes
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()
-    # double-checked locking — ერთდროული cold-cache request-ები ერთ DB load-ს
-    # აკეთებენ (stampede-ის ნაცვლად). load იშვიათია (საათობრივი TTL).
+    # double-checked locking, so simultaneous cold-cache requests cause one DB load
+    # rather than a stampede. Loads are rare anyway with an hourly TTL.
     with _cache_lock:
         if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
             return _cache[1]

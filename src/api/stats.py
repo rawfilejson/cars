@@ -1,4 +1,4 @@
-# სტატისტიკის endpoint — total cars count, sources breakdown.
+# stats endpoint: total number of cars and a breakdown by source
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ _cache_lock = threading.Lock()
 
 
 class Stats(BaseModel):
-    # საერთო რაოდენობები — ვებსაიტის header-ისთვის.
+    # the totals shown in the site header
 
     total_cars: int
     by_source: dict[str, int]
@@ -28,7 +28,7 @@ class Stats(BaseModel):
 
 
 def _get_stats_sync() -> Stats:
-    # ერთი query — ყველაფერი.
+    # one query for all of it
     with connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -59,12 +59,12 @@ def _get_stats_sync() -> Stats:
 
 @router.get("", response_model=Stats)
 def get_stats(response: Response) -> Stats:
-    # საერთო სტატისტიკა — TTL-ქეშით, რომ ყოველ page load-ზე COUNT არ გავუშვათ.
+    # overall stats, cached so we don't run a COUNT on every page load
     global _cache
     response.headers["Cache-Control"] = "public, max-age=60"
     now = time.monotonic()
-    # double-checked locking — ერთდროული cold-cache request-ები ერთ COUNT-ს
-    # აკეთებენ (stampede-ის ნაცვლად). load იშვიათია (60წმ TTL).
+    # double-checked locking, so simultaneous cold-cache requests cause one COUNT
+    # rather than a stampede. Loads are rare anyway with a 60s TTL.
     with _cache_lock:
         if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
             return _cache[1]

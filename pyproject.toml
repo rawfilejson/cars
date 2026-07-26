@@ -1,7 +1,7 @@
 [project]
 name = "cars"
 version = "0.2.0"
-description = "ქართული მანქანების მონაცემთა ბაზა — autopapa.ge / myauto.ge პარსერი"
+description = "Georgian car listings database, parsing autopapa.ge and myauto.ge"
 requires-python = ">=3.12"
 dependencies = [
     "playwright>=1.59.0",

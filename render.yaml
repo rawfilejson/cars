@@ -12,8 +12,8 @@ services:
     envVars:
       - key: PRODUCTION
         value: "1"
-      # rate limit — მხოლოდ 10წმ cooldown; საათობრივი ლიმიტი გამორთულია (0);
-      # IP backstop მაღალია მხოლოდ scraping-ის წინააღმდეგ. იხ. rate_limit.py
+      # rate limit: a 10s cooldown only, hourly limit off (0), and a high IP
+      # ceiling aimed purely at scrapers. See rate_limit.py
       - key: SEARCH_COOLDOWN_SECONDS
         value: "10"
       - key: SEARCH_LIMIT_PER_HOUR

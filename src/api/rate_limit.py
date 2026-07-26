@@ -1,18 +1,18 @@
-# Rate limiting — ბრაუზერის ანონიმური token-ი (მთავარი) + IP (backstop).
+# Rate limiting on an anonymous browser token first, with the IP as a backstop.
 #
-# ანონიმური საიტი, ავტორიზაცია არ გვაქვს. ერთ public IP-ს ხშირად ბევრი კაცი
-# იზიარებს (სახლის WiFi, ოპერატორის CGNAT), ამიტომ მთავარ იდენტობად ბრაუზერის
-# token-ს ვიღებთ (X-Client-Id, localStorage-დან): ერთ ქსელში ორი ადამიანი
-# ერთმანეთს ლიმიტს აღარ უჭამს. IP მხოლოდ abuse-ის ჭერია (token-ის როტაცია).
+# There are no accounts here. A single public IP is often shared by many people
+# (home wifi, mobile CGNAT), so the main identity is a token the browser keeps
+# in localStorage and sends as X-Client-Id. Two people on one network no longer
+# eat each other's quota. The IP only exists to stop someone rotating tokens.
 #
-#   * Cooldown: ცდებს შორის მინ. N წამი — token-ზე
-#   * საათობრივი ლიმიტი: token-ზე
-#   * საათობრივი ჭერი: IP-ზე (backstop)
+#   * cooldown: a minimum gap between searches, per token
+#   * hourly limit: per token
+#   * hourly ceiling: per IP, as the backstop
 #
-# დრო DB-ის NOW()-ით იზომება — კლიენტის საათს არ ვენდობით.
-# IP-ს CF-Connecting-IP-დან ვიღებთ: origin Cloudflare-ის უკან დგას, ამ header-ს
-# Cloudflare ავსებს რეალური კლიენტით და ცრუ მნიშვნელობას ჩამოაცილებს, ე.ი. მისი
-# გაყალბება არ ხერხდება. fallback (Cloudflare-ის გარეშე): XFF-ის ბოლო public IP.
+# All timing comes from the database NOW(); the client's clock is not trusted.
+# The IP comes from CF-Connecting-IP. The origin is only reachable through
+# Cloudflare, which overwrites that header with the real client, so it cannot be
+# forged. Without Cloudflare the fallback is the last public IP in XFF.
 
 from __future__ import annotations
 
@@ -49,11 +49,11 @@ def _is_ip(value: str) -> bool:
 
 
 def client_ip(request: Request) -> str | None:
-    # რეალური კლიენტის IP, ან None თუ ვერ დავადგინეთ.
+    # the real client IP, or None if we cannot work it out
     #
-    # Cloudflare-ის CF-Connecting-IP-ს ვენდობით: origin მხოლოდ Cloudflare-ის edge-ით
-    # მიიწვდომება, ე.ი. კლიენტს ამ header-ის მიწოდება/გაყალბება არ შეუძლია. თუ
-    # Cloudflare-ის გარეშე გაეშვა, fallback — XFF-ის ბოლო public IP, მერე peer host.
+    # CF-Connecting-IP is trustworthy because the origin is only reachable through
+    # Cloudflare's edge, so a client cannot supply or fake it. Running without
+    # Cloudflare, fall back to the last public IP in XFF, then the peer host.
     cf = request.headers.get("cf-connecting-ip", "").strip()
     if _is_public_ip(cf):
         return cf
@@ -69,7 +69,7 @@ def client_ip(request: Request) -> str | None:
 
 
 def client_token(request: Request) -> str | None:
-    # ბრაუზერის ანონიმური id (X-Client-Id header). ფორმატით ვამოწმებთ.
+    # the browser's anonymous id from X-Client-Id, checked for shape
     tok = request.headers.get("x-client-id", "").strip()
     return tok if _CLIENT_ID_RE.match(tok) else None
 
@@ -91,13 +91,13 @@ def _limit_error(limit: int) -> HTTPException:
 
 
 def check_rate_limit(request: Request, is_pagination: bool = False) -> int | None:
-    # ცდის ჩატარებამდე rate-limit-ის შემოწმება. აბრუნებს დარჩენილ ცდებს.
+    # check the rate limit before running a search; returns how many tries are left
     #
-    # is_pagination=True (page>1) — cooldown-ს არ ვამოწმებთ: არსებული შედეგის
-    # გვერდებზე გადასვლა ახალი ძიება არ არის (IP-ის საათობრივი ჭერი მაინც მოქმედებს).
+    # is_pagination=True (page > 1) skips the cooldown, because paging through
+    # results you already have is not a new search. The hourly IP ceiling still applies.
     #
     # Raises:
-    #     HTTPException 429 — cooldown, token-ის საათობრივი, ან IP-ის ჭერი.
+    #     HTTPException 429 for the cooldown, the token's hourly limit, or the IP ceiling
     ip = client_ip(request)
     token = client_token(request)
 
@@ -143,12 +143,12 @@ def check_rate_limit(request: Request, is_pagination: bool = False) -> int | Non
     if not is_pagination and sec_since_last is not None and sec_since_last < SEARCH_COOLDOWN_SECONDS:
         raise _cooldown_error(sec_since_last)
 
-    # SEARCH_LIMIT_PER_HOUR <= 0 ნიშნავს „საათობრივი ლიმიტი გამორთულია" — მხოლოდ cooldown მოქმედებს
+    # SEARCH_LIMIT_PER_HOUR <= 0 turns the hourly limit off, leaving only the cooldown
     hourly_on = SEARCH_LIMIT_PER_HOUR > 0
     if hourly_on and count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_HOUR)
 
-    # IP backstop რჩება scraping-ის წინააღმდეგ (ჩვეულებრივ მომხმარებელს არ ეხება)
+    # the IP backstop stays, aimed at scrapers rather than ordinary visitors
     if ip and SEARCH_LIMIT_PER_IP_HOUR > 0 and ip_count >= SEARCH_LIMIT_PER_IP_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_IP_HOUR)
 
@@ -161,7 +161,7 @@ def log_search(
     query_type: str,
     results_count: int,
 ) -> None:
-    # საძიებო event-ის DB-ში ჩაწერა.
+    # record the search in the database
     ip = client_ip(request)
     token = client_token(request)
     user_agent = request.headers.get("user-agent", "")[:500]

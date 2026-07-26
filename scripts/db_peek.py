@@ -1,4 +1,4 @@
-# ბაზის სწრაფი გადახედვა — count-ი, sample row-ები, phone ფორმატები.
+# quick look at the database: row counts, a few sample rows, phone formats
 from __future__ import annotations
 
 import sys
