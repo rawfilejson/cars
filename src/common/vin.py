@@ -3,7 +3,7 @@
 # A VIN is exactly 17 characters: digits and uppercase letters,
 # excluding I, O and Q (so they don't get confused with 1 and 0).
 #
-# We don't verify the checksum — real-world listings often have invalid
+# We don't verify the checksum - real-world listings often have invalid
 # checksums and we'd rather show them than drop them.
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ def is_valid_vin(text: str) -> bool:
 def find_vin(text: str) -> str:
     # Return the first VIN found in `text`, uppercased.
     #
-    # Masked VINs like "KMHL34*****" are skipped — we wipe out any token
+    # Masked VINs like "KMHL34*****" are skipped - we wipe out any token
     # containing `*` before searching.
     if not text:
         return ""

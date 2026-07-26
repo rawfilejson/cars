@@ -44,7 +44,7 @@ def connection() -> Iterator[psycopg.Connection]:
 
 
 def close_pool() -> None:
-    # Close the pool — called on FastAPI shutdown.
+    # Close the pool - called on FastAPI shutdown.
     global _pool
     if _pool is not None:
         _pool.close()

@@ -22,7 +22,7 @@ def _load_sync(origin: str) -> urllib.robotparser.RobotFileParser:
     try:
         rp.read()
     except Exception as exc:
-        log.warning("robots.txt read failed for %s (%s) — defaulting to allow", origin, exc)
+        log.warning("robots.txt read failed for %s (%s) - defaulting to allow", origin, exc)
         rp.parse([])
     return rp
 

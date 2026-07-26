@@ -94,7 +94,7 @@ def _normalize_phone_query(raw: str) -> str:
 
 
 def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
-    # Merge a legacy single value + the new multi-select list — de-duped, non-empty.
+    # Merge a legacy single value + the new multi-select list - de-duped, non-empty.
     out: list[str] = []
     if singular:
         out.append(singular)
@@ -126,7 +126,7 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
         fragments.append("mileage_km <= %s")
         params.append(req.mileage_to)
 
-    # facet filters — legacy single value + new multi-select list, each value
+    # facet filters - legacy single value + new multi-select list, each value
     # expanded to its canonical variants, all unioned into one IN per column.
     for singular, plural, col in (
         (req.body_type, req.body_types, "body_type"),
@@ -144,21 +144,21 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
             fragments.append(f"{col} IN ({placeholders})")
             params.extend(variants)
 
-    # manufacturers — exact, case-insensitive multi-select
+    # manufacturers - exact, case-insensitive multi-select
     manufacturers = _multi_values(None, req.manufacturers)
     if manufacturers:
         placeholders = ", ".join(["%s"] * len(manufacturers))
         fragments.append(f"lower(manufacturer) IN ({placeholders})")
         params.extend(m.lower() for m in manufacturers)
 
-    # models — substring match (base-model names live inside the full trim string)
+    # models - substring match (base-model names live inside the full trim string)
     models = _multi_values(None, req.models)
     if models:
         ors = " OR ".join(["model ILIKE %s"] * len(models))
         fragments.append(f"({ors})")
         params.extend(f"%{m}%" for m in models)
 
-    # locations — exact multi-select
+    # locations - exact multi-select
     locations = _multi_values(None, req.locations)
     if locations:
         placeholders = ", ".join(["%s"] * len(locations))
@@ -218,7 +218,7 @@ def _paginate(where_sql: str, where_params: tuple, order_by: str,
 
 def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
     # Auto-detect VIN / phone / freeform text. Filters + sort apply to
-    # freeform/browse (VIN/phone are exact lookups — filters don't make sense).
+    # freeform/browse (VIN/phone are exact lookups - filters don't make sense).
     text = text.strip()
     if not text:
         return _browse_query(req)
@@ -255,7 +255,7 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
 
 
 def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
-    # No text — just filters + sort. e.g. all 2018-2022 cars under $20k.
+    # No text - just filters + sort. e.g. all 2018-2022 cars under $20k.
     if not _has_any_filter(req):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -410,7 +410,7 @@ def search(req: SearchRequest, request: Request, background_tasks: BackgroundTas
 
 
 def _count_where(req: SearchRequest) -> tuple[str, tuple]:
-    # WHERE clause + params for the live count — mirrors the real search routing
+    # WHERE clause + params for the live count - mirrors the real search routing
     # (VIN / phone / freeform text, each combined with the active filters) so the
     # count always matches what a search would return.
     text = (req.query or req.free_text or "").strip()
@@ -433,13 +433,13 @@ def _count_where(req: SearchRequest) -> tuple[str, tuple]:
             patterns = [f"%{w.lower()}%" for w in words]
             return word_clauses + filter_tail, (*patterns, *fparams)
 
-    # no usable text — filters only
+    # no usable text - filters only
     return (" AND ".join(frags) if frags else ""), tuple(fparams)
 
 
 @router.post("/count", response_model=SearchCount)
 def search_count(req: SearchRequest) -> SearchCount:
-    # Match count for the current query + filters — drives the live count on the
+    # Match count for the current query + filters - drives the live count on the
     # search button. No rows, no rate limit; cached like searches.
     where, params = _count_where(req)
     sql = "SELECT COUNT(*) AS n FROM cars" + (f" WHERE {where}" if where else "")

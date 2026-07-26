@@ -1,3 +1,4 @@
-# Not published as Cloudflare Workers static assets.
-# Dev-only helper; no reason to expose its source.
+# not published as cloudflare workers static assets
+# dev-only helper.
+# no reason to expose its source
 dev-server.py

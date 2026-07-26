@@ -38,8 +38,7 @@ R2_BUCKET              cars-photos
 R2_PUBLIC_URL          https://<your-bucket>.r2.dev
 ```
 
-> Never write the real values into this file. If one ever leaks, rotate it —
-> see `SECURITY.md`.
+> Never write the real values into this file. If one ever leaks, rotate it - see `SECURITY.md`
 
 ---
 

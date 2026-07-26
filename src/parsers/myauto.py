@@ -213,7 +213,7 @@ def item_to_car(item: dict) -> Car | None:
         license_plate=(item.get("license_number") or "").strip(),
         location=LOCATION_MAP.get(item.get("location_id"), ""),
         seller_name=(item.get("client_name") or "").strip(),
-        # masked in the listing API — fall back to a number written in the description
+        # masked in the listing API - fall back to a number written in the description
         phone=_build_phone_from_api(item) or phone_from_text(item.get("car_desc") or ""),
         posted_date=(item.get("order_date") or "").strip(),
         views=_to_int(item.get("views")),
@@ -694,7 +694,7 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
 
 
 async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[str], int]:
-    # Returns (car_ids, last_page). Legacy — kept for the HTML scrape path.
+    # Returns (car_ids, last_page). Legacy - kept for the HTML scrape path.
     items, last_page = await _fetch_page_raw(context, page_num)
     ids = [str(item["car_id"]) for item in items if item.get("car_id")]
     return ids, last_page
@@ -710,7 +710,7 @@ async def collect_all_ids(
     print("  Fetching page 1 for total count...")
     first_ids, last_page = await _fetch_ids_page(context, 1)
     if not last_page:
-        print("  Failed to reach API — got 0 pages")
+        print("  Failed to reach API - got 0 pages")
         return []
 
     if max_pages:
@@ -759,7 +759,7 @@ async def run(max_pages: int | None = None) -> None:
     # Single pass: fetch → parse → upsert. No per-car Playwright detail scrape.
     #
     # Speed: ~5-10 min for full ~50k cars. Tradeoffs:
-    #   - Phones are masked in the listing endpoint (we store '') — same as HTML
+    #   - Phones are masked in the listing endpoint (we store '') - same as HTML
     #   - Photo URLs are built from item.photo / item.pic_number (deterministic)
     #   - Description = car_desc + feature flags
     #

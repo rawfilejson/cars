@@ -4,9 +4,9 @@
 #     uv run uvicorn src.api.main:app --reload --port 8765
 #
 # website:
-#     http://localhost:8765/docs    — Swagger UI (auto-generated API docs)
-#     http://localhost:8765/healthz — health check
-#     http://localhost:8765/stats   — total cars count
+#     http://localhost:8765/docs - Swagger UI (auto-generated API docs)
+#     http://localhost:8765/healthz - health check
+#     http://localhost:8765/stats - total cars count
 
 from __future__ import annotations
 

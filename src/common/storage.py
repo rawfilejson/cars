@@ -1,4 +1,4 @@
-# Photo storage — download from source CDN to local + Cloudflare R2.
+# Photo storage - download from source CDN to local + Cloudflare R2.
 #
 # R2 is S3-compatible, so boto3 works. We just point it at R2's endpoint.
 #
@@ -78,7 +78,7 @@ async def download_to_local(
         try:
             resp = await client.get(url, timeout=30.0, headers=headers)
             if 400 <= resp.status_code < 500:
-                log.warning("download %s — HTTP %d (no retry)", url, resp.status_code)
+                log.warning("download %s - HTTP %d (no retry)", url, resp.status_code)
                 return False
             resp.raise_for_status()
             # Atomic write: download to .part, then rename. An interrupted or killed write
@@ -93,7 +93,7 @@ async def download_to_local(
             if attempt < len(_RETRY_DELAYS):
                 await asyncio.sleep(delay)
 
-    log.warning("download failed %s after %d tries — %s", url, len(_RETRY_DELAYS), last_exc)
+    log.warning("download failed %s after %d tries - %s", url, len(_RETRY_DELAYS), last_exc)
     return False
 
 
@@ -162,7 +162,7 @@ def upload_to_r2_sync(local_file: Path, key: str) -> bool:
         )
         return True
     except Exception as exc:
-        log.warning("R2 upload failed %s — %s", key, exc)
+        log.warning("R2 upload failed %s - %s", key, exc)
         return False
 
 

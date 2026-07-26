@@ -4,9 +4,9 @@ html, body { background: #EDF2F4; color: #2B2D42; }
 html { -webkit-text-size-adjust: 100%; }
 body { font-family: 'Inter Tight', 'Noto Sans Georgian', system-ui, sans-serif; }
 
-/* clip (not hidden) — hidden turns body into a scroll container and breaks the sticky sidebar */
+/* clip (not hidden) - hidden turns body into a scroll container and breaks the sticky sidebar */
 body { overflow-x: clip; }
-/* no double-tap-to-zoom on touch devices — taps stay taps */
+/* no double-tap-to-zoom on touch devices - taps stay taps */
 html { touch-action: manipulation; }
 @media (max-width: 640px) {
     /* 16px keeps iOS from auto-zooming when a dropdown search box gets focus */
@@ -14,8 +14,7 @@ html { touch-action: manipulation; }
 }
 
 /* top rule doubles as a loading bar: idle = full red line, during a search it
-   dips to zero and climbs left→right to show progress. Absolute, not fixed —
-   it belongs to the page top and must not follow the scroll */
+   dips to zero and climbs left→right to show progress. Absolute, not fixed - it belongs to the page top and must not follow the scroll */
 .top-rule { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #FADBDF; z-index: 200; overflow: hidden; }
 .top-rule-fill { height: 100%; width: 100%; background: #EF233C; transform-origin: left center; transform: scaleX(1); }
 body { padding-top: 3px; }
@@ -26,7 +25,7 @@ body.is-offline .offline-banner { transform: translateY(0); }
 .offline-dot { width: 8px; height: 8px; border-radius: 50%; background: #FF8A95; flex-shrink: 0; animation: offlinePulse 1.4s ease-in-out infinite; }
 @keyframes offlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-/* first-load overlay — a car driving while the DB warms up (Render cold start) */
+/* first-load overlay - a car driving while the DB warms up (Render cold start) */
 .boot-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center;
     background: rgba(237,242,244,.72); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
     transition: opacity .45s ease, visibility 0s .45s; }
@@ -226,7 +225,7 @@ body.mode-detail .shell { grid-template-columns: 1fr; }
 .dt-call:hover { background: #D90429; }
 .dt-call::after { content: ''; position: absolute; inset: 0; border-radius: 999px; pointer-events: none; animation: callPulse 2.4s ease-out infinite; }
 @keyframes callPulse { 0% { box-shadow: 0 0 0 0 rgba(239,35,60,.45); } 70%, 100% { box-shadow: 0 0 0 12px rgba(239,35,60,0); } }
-/* prominent VIN card — labeled, mono, with a slow shine to catch the eye */
+/* prominent VIN card - labeled, mono, with a slow shine to catch the eye */
 .dt-vin-card { display: flex; align-items: center; gap: 10px; margin: 14px 0; padding: 11px 13px;
     background: linear-gradient(120deg, #F5F8FA, #EEF3F6); border: 1px solid #DCE3EA; border-radius: 14px; position: relative; overflow: hidden; }
 .dt-vin-card::before { content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -506,7 +505,7 @@ body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toas
 .btn-search:active, .apply-btn:active, .dt-call:active, .dt-source:active, .chip:active,
 .pager-btn:active, .detail-btn:active, .saved-trigger:active, .cdd-btn:active { transform: scale(.96); }
 
-/* unified button motion — buttons that only changed colour now ease and react to press */
+/* unified button motion - buttons that only changed colour now ease and react to press */
 .cmp-bar-open, .cmp-save-btn, .cmp-x, .cmp-bar-clear, .lang-trigger, .filter-clear,
 .filter-reset, .drawer-clear, .recent-clear, .chip-expand, .chip-save, .chip-del,
 .see-more, .tr-pop-x, .cmp-thumb-x, .lang-opt {
@@ -577,7 +576,7 @@ body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toas
 .spec-pill { display: inline-flex; align-items: center; gap: 6px; background: #F3F6F8; border: 1px solid #E7ECF1; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #2B2D42; transition: transform .12s ease, background .12s, border-color .12s; }
 .pill-ic { width: 17px; height: 17px; color: #5B6475; flex-shrink: 0; }
 .spec-pill:hover .pill-ic { color: #EF233C; }
-/* each spec icon animates to life on hover — the car drives, the tacho sweeps, etc. */
+/* each spec icon animates to life on hover - the car drives, the tacho sweeps, etc. */
 .spec-pill[data-ic="body"]:hover .pill-ic { animation: pillDrive .55s ease; }
 @keyframes pillDrive { 0% { transform: translateX(0); } 30% { transform: translateX(3px); } 62% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
 .spec-pill[data-ic="mileage"] .mg-needle { transform-box: view-box; transform-origin: 12px 15.5px; }
@@ -601,7 +600,7 @@ body.saved-open .filters-toggle, body.saved-open .cmp-bar, body.saved-open .toas
 @media (max-width: 560px) {
     .rcard { flex-direction: column; }
     .rcard-photo { width: 100%; }
-    /* stacked layout gives the photo no height to fill — restore the intrinsic ratio */
+    /* stacked layout gives the photo no height to fill - restore the intrinsic ratio */
     .rcard-photo .carousel { aspect-ratio: 4 / 3; height: auto; min-height: 0; }
 }
 
@@ -729,7 +728,7 @@ body.has-cmpbar footer { margin-bottom: 92px; }
 
 .cmp-modal { position: fixed; inset: 0; background: rgba(43,45,66,.5); z-index: 1300; display: none; align-items: flex-start; justify-content: center; padding: 28px 16px; overflow: auto; }
 .cmp-modal.show { display: flex; }
-/* min-width: 0 — as a flex item the sheet would otherwise grow to the table's
+/* min-width: 0 - as a flex item the sheet would otherwise grow to the table's
    min-content width and force the whole modal to pan sideways on phones */
 .cmp-sheet { background: #fff; border-radius: 16px; width: 100%; max-width: 920px; min-width: 0; overflow: hidden; box-shadow: 0 24px 70px rgba(43,45,66,.3); animation: cmpSheetIn .22s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes cmpSheetIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }

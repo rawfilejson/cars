@@ -109,7 +109,7 @@ def main() -> None:
     if apply:
         print(f"  rows updated:       {updated}")
     else:
-        print("dry run — re-run with --apply to write")
+        print("dry run - re-run with --apply to write")
 
 
 if __name__ == "__main__":

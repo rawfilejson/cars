@@ -1,4 +1,4 @@
-# Security regression tests — lock in the protections verified during the
+# Security regression tests - lock in the protections verified during the
 # penetration assessment (SQLi, sort whitelist, key/VIN/token validation,
 # price flooring, IP classification).
 #
@@ -67,7 +67,7 @@ def test_car_key_regex_rejects_injection(key, ok):
 
 
 def test_car_key_regex_accepts_every_known_source():
-    # The permalink regex is built from config.SOURCES — every supported
+    # The permalink regex is built from config.SOURCES - every supported
     # source must round-trip, so adding a parser can't silently break /car/.
     from src.common.config import SOURCES
 

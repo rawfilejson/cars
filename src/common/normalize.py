@@ -1,7 +1,8 @@
 # Cleanup helpers for messy data from car listing sites.
 #
-# Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი",
-# "2.5 ლ". We turn that into numbers we can sort and search by.
+# Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი"
+# (kilometres / miles) or "2.5 ლ" (litres). We turn that into numbers we can
+# sort and search by.
 
 from __future__ import annotations
 
@@ -163,7 +164,7 @@ def clean_text(text: str | None) -> str:
 def clean_engine_volume(text: str | None) -> float | None:
     # Engine volume in liters. Handles common bad-data cases:
     #
-    # "2.5 ლ"    → 2.5
+    # "2.5 ლ" (litres) -> 2.5
     # "1499"     → 1.499 (was entered in CC instead of L)
     # "460"      → None (impossible, treat as garbage)
     value = clean_decimal(text)

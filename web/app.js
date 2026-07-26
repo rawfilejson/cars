@@ -132,7 +132,7 @@ function buildSearchPayload() {
         if (!sel) continue;
         const selOpts = Array.from(sel.selectedOptions).filter(o => o.value);
         const total = Array.from(sel.options).filter(o => o.value && !o.disabled).length;
-        // none OR all selected both mean "no constraint" — skip the redundant, oversized list
+        // none OR all selected both mean "no constraint" - skip the redundant, oversized list
         if (total && selOpts.length >= total) continue;
         const vals = selOpts.flatMap(o => o.value.split(_LOC_SEP)).filter(Boolean);
         if (vals.length) payload[key] = vals;
@@ -317,7 +317,7 @@ async function loadMakes() {
     if (rest.length) html += '<option disabled></option>';   // separator line
     html += rest.map(opt).join('');
     const brand = document.getElementById('f-brand');
-    // rebuild, carrying any existing pick across — a second call must not wipe it
+    // rebuild, carrying any existing pick across - a second call must not wipe it
     const placeholder = brand.querySelector('option[value=""]');
     const keep = new Set(Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean));
     brand.innerHTML = '';
@@ -498,7 +498,7 @@ function onBrandChange() {
     const MODEL_MAX_BRANDS = 5;
     const narrowed = brands.length > 0 && brands.length < totalBrands && brands.length <= MODEL_MAX_BRANDS;
     const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
-    // a newly-added brand starts with all its models included — adding a brand should
+    // a newly-added brand starts with all its models included - adding a brand should
     // widen results, never silently exclude it through an unselected model subset
     const prevBrands = model._brands || [];
     for (const b of brands) if (!prevBrands.includes(b)) for (const m of (_makes[b] || [])) keep.add(m);
@@ -506,7 +506,7 @@ function onBrandChange() {
     model._brands = narrowed ? brands.slice() : [];
     model.disabled = !narrowed;
     // default: all models of the picked brand(s) are selected (none matched a prior
-    // pick, e.g. a fresh brand choice) — the user narrows down from there
+    // pick, e.g. a fresh brand choice) - the user narrows down from there
     const opts = Array.from(model.options).filter(o => o.value);
     if (opts.length && !opts.some(o => o.selected)) opts.forEach(o => o.selected = true);
     if (model._cdd) model._cdd.render();
@@ -610,10 +610,10 @@ function _syncUrl(payload) {
     if (location.pathname + location.search !== url) history.replaceState(history.state, '', url);
 }
 
-// one search at a time — a second Enter/click while a request is in flight would
+// one search at a time - a second Enter/click while a request is in flight would
 // fire a duplicate POST whose cooldown-429 error wipes the results the first just drew
 let _searchInFlight = false;
-let _lastPayload = null;   // last payload actually searched — used to restore the URL
+let _lastPayload = null;   // last payload actually searched - used to restore the URL
 
 async function doSearch(opts = {}) {
     if (_searchInFlight) return;
@@ -966,13 +966,13 @@ function _bodyIcon(v) {
         return _PIC('<path d="M3 15h18"/><path d="M4 15v-1.3l3.2-3.3c2.3-1.8 8.2-1.6 11.3.6l.9.7a1.3 1.3 0 0 1 .6 1V15"/><path d="M7.3 10.4c3-1.4 7.6-1.4 10.6.6" stroke-width="1.2" opacity=".65"/><circle cx="7.5" cy="15.5" r="1.6"/><circle cx="16.5" cy="15.5" r="1.6"/>');
     if (/სპორტ|sport/.test(s))   // low wide wedge
         return _PIC('<path d="M1.5 15.6h21"/><path d="M2.6 15.6l.8-2 4.2-.6 2.2-2.1c1.8-.5 4.8-.4 6.4.7l2.8 1.8 2.3.4.5 1.8"/><circle cx="7.2" cy="15.9" r="1.5"/><circle cx="16.8" cy="15.9" r="1.5"/>');
-    if (/კაბრ|convert|როდსტ|cabrio/.test(s))   // open top — windshield only
+    if (/კაბრ|convert|როდსტ|cabrio/.test(s))   // open top - windshield only
         return _PIC('<path d="M3 15h18"/><path d="M4.3 15l1.3-3.4A2 2 0 0 1 7.5 10.3h9a2 2 0 0 1 1.9 1.3L19.7 15"/><path d="M8 10.3l2-2.6" stroke-width="1.3"/><circle cx="7.5" cy="15.5" r="1.6"/><circle cx="16.5" cy="15.5" r="1.6"/>');
     if (/ჰეტ|ჰეჩ|hatch|ლიფტ/.test(s))   // sloped rear hatch
         return _PIC('<path d="M3 15h18"/><path d="M4.5 15v-2.6l1.7-3A2 2 0 0 1 8 8.4h4.4l4.8 4h1.3a1.3 1.3 0 0 1 1.3 1.3V15"/><path d="M12.4 8.4V12.4H4.5"/><circle cx="7.5" cy="15.5" r="1.6"/><circle cx="16.5" cy="15.5" r="1.6"/>');
     if (/ჯიპ|jeep/.test(s))   // boxy upright SUV
         return _PIC('<path d="M3 16h18"/><path d="M4.5 16V9.6A1.3 1.3 0 0 1 5.8 8.3h8.4a1.3 1.3 0 0 1 1 .5l2.3 2.9h.9a1.2 1.2 0 0 1 1.1 1.2V16"/><path d="M4.5 12h14.5M9.5 8.3V12M13.8 8.3V12"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
-    if (/ყველგ|off.?road/.test(s))   // rugged — roof rack + rear spare
+    if (/ყველგ|off.?road/.test(s))   // rugged - roof rack + rear spare
         return _PIC('<path d="M2.5 16h16.3"/><path d="M4 16V10A1.3 1.3 0 0 1 5.3 8.7h7.9a1.3 1.3 0 0 1 1 .5l2 2.6h1a1.2 1.2 0 0 1 1.2 1.2V16"/><path d="M4.7 8.1h8.5M4.5 12h13"/><circle cx="7.3" cy="16.5" r="1.8"/><circle cx="15.4" cy="16.5" r="1.8"/><path d="M19 13.2v3.3" stroke-width="1.5"/>');
     if (/კროსოვ|cross|\bsuv\b/.test(s))   // rounded crossover
         return _PIC('<path d="M3 16h18"/><path d="M4.3 16v-3.6l1.9-3A2 2 0 0 1 7.9 8.5h6.4a2 2 0 0 1 1.6.8l2.3 3.1h.5a1.3 1.3 0 0 1 1 1.3V16"/><path d="M4.5 12.2h14.5M11.5 8.5V12.2"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
@@ -986,7 +986,7 @@ function _bodyIcon(v) {
         return _PIC('<path d="M2.5 16h19"/><path d="M4 16v-4h6.2l1.4-3h3.2l1.4 3H20v4"/><path d="M4.3 12h6.2V9.2"/><circle cx="7.5" cy="16.5" r="1.7"/><circle cx="16.5" cy="16.5" r="1.7"/>');
     if (/სატვირთ|truck/.test(s))   // cargo box truck
         return _PIC('<path d="M2 16h20"/><path d="M2.6 16V9h8v7M10.6 11h4l3 3v2h-2"/><path d="M2.6 12.5h8"/><circle cx="6" cy="16.8" r="1.6"/><circle cx="16.5" cy="16.8" r="1.6"/>');
-    if (/კვადრო|atv|quad|ბაგ/.test(s))   // ATV — fat tyres + handlebar
+    if (/კვადრო|atv|quad|ბაგ/.test(s))   // ATV - fat tyres + handlebar
         return _PIC('<circle cx="5.6" cy="16" r="2.9"/><circle cx="18.4" cy="16" r="2.9"/><path d="M5.6 16l1.9-4.2h5.6l2.7 3.4"/><path d="M13.1 11.8l-1.4-2.6M10.4 9.2h3.4M7.5 11.8l1.4-2"/>');
     if (/სპეცტ|special|ექსკავ|ტექნიკ|ამწე/.test(s))   // construction loader
         return _PIC('<path d="M3 17v-4h7v4"/><path d="M10 14l4-1 5 3v1h-2"/><path d="M10 13L7 9h2"/><circle cx="6" cy="17.5" r="1.6"/><circle cx="16" cy="17.5" r="1.6"/>');
@@ -1006,7 +1006,7 @@ function _fuelIcon(v) {
         return _PIC('<rect x="3" y="9" width="14.5" height="6.5" rx="3.25"/><path d="M17.5 11h2.5M17.5 13.5h2.5M6.5 9V7.2h4V9"/>');
     if (/ბუნებრივ|cng|მეთან|methane/.test(s))   // vertical CNG bottle
         return _PIC('<path d="M8.5 21V10a3.5 3.5 0 0 1 7 0v11z"/><path d="M8.5 21h7M10 6.5h4M11 4.5h2v2h-2z"/>');
-    if (/გაზ|gas/.test(s))   // ბენზინი/გაზი — droplet + flame
+    if (/გაზ|gas/.test(s))   // ბენზინი/გაზი - droplet + flame
         return _PIC('<path d="M7.5 5c1.9 2.2 3 3.6 3 5.1a3 3 0 0 1-6 0c0-1.5 1.1-2.9 3-5.1z"/><path d="M17 5.5c2 2.3 2.8 3.9 2.8 5.5a2.8 2.8 0 0 1-5.6 0c0-1.1.5-2.2 1.4-3.3.2 1 .8 1.5 1.7 1.5 0-1.2-.4-2.4-.3-3.7z"/>');
     return _PIC('<path d="M6 21V5.5A2.5 2.5 0 0 1 8.5 3h3A2.5 2.5 0 0 1 14 5.5V21"/><path d="M4 21h12M8 8h4"/><path d="M14 9l2.4 2.4c.4.4.6.9.6 1.4V17a1.5 1.5 0 0 0 3 0V9.5L17 6.5"/>');
 }
@@ -1298,7 +1298,7 @@ function _compareSummary(list, scores) {
     if (uniqMax(c => c.power || null)) reasons.push(t('cmp_reason_power'));
     if (_driveScore(w.drive) === 2 && list.some(c => _driveScore(c.drive) === 1)) reasons.push(t('cmp_reason_awd'));
     if (w.customs === true && list.some(c => c.customs === false)) reasons.push(t('cmp_reason_customs'));
-    const tail = reasons.length ? ' — ' + reasons.join(', ') : '';
+    const tail = reasons.length ? ' - ' + reasons.join(', ') : '';
     const price = w.price > 0 ? ` · $${w.price.toLocaleString()}` : '';
     return `<strong>${escapeHtml(w.title)}${price}</strong> ${t('cmp_better_pick')}${tail}`;
 }
@@ -1307,7 +1307,7 @@ function renderCompareModal() {
     const modal = document.getElementById('cmp-modal');
     if (!modal || !list.length) return;
     const en = getLang() === 'en';
-    const dash = '—';
+    const dash = '-';
     const multi = list.length > 1;
     const rows = [
         { label: t('filter_year'),    disp: c => c.year || dash,                                                      val: c => c.year || null,                        better: 'high' },
@@ -1686,7 +1686,7 @@ function renderDetail(car) {
     _carData[carKey] = { key: carKey, title, price: car.price_amount, currency: car.price_currency, thumb: (car.image_urls && car.image_urls[0]) || '' };
     _carFull[carKey] = car;
     const saved = isCarSaved(carKey);
-    // VIN gets its own prominent, shimmering card — sellers and buyers look for it first
+    // VIN gets its own prominent, shimmering card - sellers and buyers look for it first
     const detailVin = car.vin || vinFromText(car.description) || '';
     const vinCard = detailVin
         ? `<div class="dt-vin-card"><span class="dt-vin-badge">VIN</span><span class="dt-vin-code mono">${escapeHtml(detailVin)}</span><button class="dt-vin-copy" data-copy="${escapeHtml(detailVin)}" onclick="copyText(this)" title="${escapeHtml(t('copy_vin'))}" aria-label="${escapeHtml(t('copy_vin'))}">${ICON_COPY}</button></div>`
@@ -1871,9 +1871,9 @@ function describeSearch(p) {
     if (p.query) parts.push(p.query);
     if (p.manufacturers && p.manufacturers.length) parts.push(p.manufacturers.join(', '));
     if (p.models && p.models.length) parts.push(p.models.join(', '));
-    if (p.year_from || p.year_to) parts.push((p.year_from || '…') + '–' + (p.year_to || '…'));
-    if (p.price_from || p.price_to) parts.push('$' + (p.price_from || '0') + '–' + (p.price_to || '∞'));
-    if (p.mileage_from || p.mileage_to) parts.push((p.mileage_from || '0') + '–' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ'));
+    if (p.year_from || p.year_to) parts.push((p.year_from || '…') + '-' + (p.year_to || '…'));
+    if (p.price_from || p.price_to) parts.push('$' + (p.price_from || '0') + '-' + (p.price_to || '∞'));
+    if (p.mileage_from || p.mileage_to) parts.push((p.mileage_from || '0') + '-' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ'));
     (p.body_types || []).forEach(v => parts.push(tval(v)));
     (p.fuels || []).forEach(v => parts.push(tval(v)));
     (p.gearboxes || []).forEach(v => parts.push(tval(v)));
@@ -1891,9 +1891,9 @@ function _searchParts(p) {
     if (p.query) out.push({ label: t('q_label'), value: p.query });
     if (p.manufacturers && p.manufacturers.length) out.push({ label: t('filter_brand'), value: p.manufacturers.join(', ') });
     if (p.models && p.models.length) out.push({ label: t('filter_model'), value: p.models.join(', ') });
-    if (p.year_from || p.year_to) out.push({ label: t('filter_year'), value: (p.year_from || '…') + '–' + (p.year_to || '…') });
-    if (p.price_from || p.price_to) out.push({ label: t('filter_price'), value: '$' + (p.price_from || '0') + '–' + (p.price_to || '∞') });
-    if (p.mileage_from || p.mileage_to) out.push({ label: t('spec_mileage'), value: (p.mileage_from || '0') + '–' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ') });
+    if (p.year_from || p.year_to) out.push({ label: t('filter_year'), value: (p.year_from || '…') + '-' + (p.year_to || '…') });
+    if (p.price_from || p.price_to) out.push({ label: t('filter_price'), value: '$' + (p.price_from || '0') + '-' + (p.price_to || '∞') });
+    if (p.mileage_from || p.mileage_to) out.push({ label: t('spec_mileage'), value: (p.mileage_from || '0') + '-' + (p.mileage_to || '∞') + (en ? ' km' : ' კმ') });
     if (p.body_types && p.body_types.length) out.push({ label: t('filter_body'), value: p.body_types.map(tval).join(', ') });
     if (p.fuels && p.fuels.length) out.push({ label: t('filter_fuel'), value: p.fuels.map(tval).join(', ') });
     if (p.gearboxes && p.gearboxes.length) out.push({ label: t('filter_gearbox'), value: p.gearboxes.map(tval).join(', ') });
@@ -2170,7 +2170,7 @@ function renderSaved() {
 
     h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_SEARCH_SM}${t('saved_searches_h')} · ${searches.length}</span>${searches.length ? `<button class="drawer-clear" onclick="clearSavedSearches()">${t('clear_all')}</button>` : ''}</div>`;
     const searchLimit = _drawerShown.searches || _DRAWER_PAGE;
-    h += searches.length ? searches.slice(0, searchLimit).map((s, i) => _searchChip({ runKind: 'search', delKind: 'search', i, item: s, uid: 'sdd-s-' + i, saved: true })).join('') + _loadMore('searches', searches.length, searchLimit) : `<div class="drawer-empty">—</div>`;
+    h += searches.length ? searches.slice(0, searchLimit).map((s, i) => _searchChip({ runKind: 'search', delKind: 'search', i, item: s, uid: 'sdd-s-' + i, saved: true })).join('') + _loadMore('searches', searches.length, searchLimit) : `<div class="drawer-empty">-</div>`;
 
     const compSaves = getCompSaves();
     h += `<div class="drawer-sec"><span class="drawer-sec-h">${ICON_COMPARE}${t('saved_comparisons_h')} · ${compSaves.length}</span></div>`;
@@ -2181,11 +2181,11 @@ function renderSaved() {
             <div class="saved-row-title">${t('cmp_cars_n', { n: s.cars.length })}</div>
           </div>
           <button class="row-x" data-act="delcmp" data-i="${i}" aria-label="${escapeHtml(t('remove'))}">✕</button>
-        </div>`).join('') : `<div class="drawer-empty">—</div>`;
+        </div>`).join('') : `<div class="drawer-empty">-</div>`;
 
     h += `<div class="drawer-sec"><span class="drawer-sec-h">${IC_CLOCK}${t('recent_h')}</span>${hist.length ? `<button class="drawer-clear" onclick="clearHistory()">${t('clear_all')}</button>` : ''}</div>`;
     const histLimit = _drawerShown.hist || _DRAWER_PAGE;
-    h += hist.length ? hist.slice(0, histLimit).map((q, i) => _searchChip({ runKind: 'hist', delKind: 'hist', i, item: q, uid: 'sdd-h-' + i, saved: false })).join('') + _loadMore('hist', hist.length, histLimit) : `<div class="drawer-empty">—</div>`;
+    h += hist.length ? hist.slice(0, histLimit).map((q, i) => _searchChip({ runKind: 'hist', delKind: 'hist', i, item: q, uid: 'sdd-h-' + i, saved: false })).join('') + _loadMore('hist', hist.length, histLimit) : `<div class="drawer-empty">-</div>`;
 
     const viewed = lsGet(LS_VIEWED);
     const viewedLimit = _drawerShown.viewed || _DRAWER_PAGE;
@@ -2196,7 +2196,7 @@ function renderSaved() {
             <img src="${escapeHtml(c.thumb || '')}" alt="" onerror="this.style.visibility='hidden'">
             <div class="min-w-0"><div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>${c.price ? `<div class="saved-row-price">${Number(c.price).toLocaleString()} ${escapeHtml(c.currency || '')}</div>` : ''}</div>
           </div>
-        </div>`).join('') + _loadMore('viewed', viewed.length, viewedLimit) : `<div class="drawer-empty">—</div>`;
+        </div>`).join('') + _loadMore('viewed', viewed.length, viewedLimit) : `<div class="drawer-empty">-</div>`;
 
     const hiddenList = getHiddenList();
     const hiddenLimit = _drawerShown.hidden || _DRAWER_PAGE;
@@ -2208,7 +2208,7 @@ function renderSaved() {
             <div class="saved-row-title">${escapeHtml(c.title || c.key)}</div>
           </div>
           <button class="row-x" data-act="unhide" data-key="${escapeHtml(c.key)}" title="${escapeHtml(t('act_undo'))}" aria-label="${escapeHtml(t('act_undo'))}">↩</button>
-        </div>`).join('') + _loadMore('hidden', hiddenList.length, hiddenLimit) : `<div class="drawer-empty">—</div>`;
+        </div>`).join('') + _loadMore('hidden', hiddenList.length, hiddenLimit) : `<div class="drawer-empty">-</div>`;
 
     const body = document.getElementById('saved-body');
     body.innerHTML = h;
@@ -2363,7 +2363,7 @@ function enhanceSelect(sel) {
         if (multi) {
             const s = realSel();
             const totalOpts = Array.from(sel.options).filter(o => o.value).length;
-            // none OR all selected both read as "all" — show the placeholder, not a wall of chips
+            // none OR all selected both read as "all" - show the placeholder, not a wall of chips
             if (!s.length || (totalOpts && s.length === totalOpts)) {
                 btn.innerHTML = `<span class="cdd-label is-empty">${escapeHtml(anyLabel())}</span><span class="cdd-chev">▾</span>`; return;
             }
@@ -2454,7 +2454,7 @@ function enhanceSelect(sel) {
         if (multi && searchable) {
             const si = panel.querySelector('.cdd-search');
             si.addEventListener('click', (e) => e.stopPropagation());
-            // short debounce — matching transliterates every option, too heavy per keystroke
+            // short debounce - matching transliterates every option, too heavy per keystroke
             si.addEventListener('input', () => {
                 clearTimeout(si._deb);
                 si._deb = setTimeout(() => {
@@ -2473,7 +2473,7 @@ function enhanceSelect(sel) {
     });
     const _clearAny = () => { const any = Array.from(sel.options).find(x => !x.value); if (any) any.selected = false; };
     panel.addEventListener('click', (e) => {
-        // group header's select-all checkbox — toggle every model in the class
+        // group header's select-all checkbox - toggle every model in the class
         const gcheck = e.target.closest('[data-groupcheck]');
         if (gcheck) {
             e.stopPropagation();

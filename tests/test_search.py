@@ -98,7 +98,7 @@ def test_smart_route_phone():
 
 
 def test_smart_route_short_text_ok():
-    # Single-word brand search is fine — Ctrl-F semantics.
+    # Single-word brand search is fine - Ctrl-F semantics.
     sql, params, qtype = _build_query(SearchRequest(query="Toyota"))
     assert qtype == "search"
     assert "search_blob LIKE" in sql
@@ -178,7 +178,7 @@ def test_empty_request_rejected():
 
 def test_result_cache_evicts_oldest_not_all():
     # Over capacity the cache drops the OLDEST entries (FIFO/LRU), not the
-    # whole thing — a full wipe would stampede Supabase on the next burst.
+    # whole thing - a full wipe would stampede Supabase on the next burst.
     from src.api import search as s
 
     s._RESULT_CACHE.clear()
@@ -242,7 +242,7 @@ def test_browse_by_manufacturer_only_routes_to_browse():
 
 def test_fx_rates_single_source_of_truth():
     # The SQL price-conversion CASE and the Python _clean_price helper must use
-    # the same FX rates — both derive from config.FX_RATES_TO_USD, never drift.
+    # the same FX rates - both derive from config.FX_RATES_TO_USD, never drift.
     from src.common.config import FX_RATES_TO_USD
     from src.api.search import _PRICE_USD_RAW, _FX_TO_USD
 

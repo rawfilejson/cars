@@ -1,4 +1,4 @@
-// ka/en ლექსიკონი — ნაგულისხმევი ka; არჩევანი localStorage-ში ნახულობს.
+// Translation dictionary. Georgian is the default; the choice is kept in localStorage.
 
 const TRANSLATIONS = {
     ka: {
@@ -28,7 +28,7 @@ const TRANSLATIONS = {
 
         hero_title: "იპოვე მანქანის გაყიდვის ისტორია.",
         hero_desc:
-            "ქართული მანქანების სრული ბაზა — ეძებე VIN-ით, ნომრით " +
+            "ქართული მანქანების სრული ბაზა - ეძებე VIN-ით, ნომრით " +
             "ან კონკრეტული აღწერით.",
 
         ph_query: "VIN, ნომერი, ბრენდი, მოდელი, წელი, ქალაქი...",
@@ -77,7 +77,7 @@ const TRANSLATIONS = {
         cmp_reason_awd: "სრული წამყვანი",
         cmp_reason_customs: "განბაჟებული",
         cmp_best_overall: "საუკეთესო",
-        cmp_close_call: "მანქანები ერთმანეთს ახლოსაა — აშკარა ფავორიტი არ ჩანს.",
+        cmp_close_call: "მანქანები ერთმანეთს ახლოსაა - აშკარა ფავორიტი არ ჩანს.",
         save_comparison: "შედარების შენახვა",
         saved_comparisons_h: "შენახული შედარებები",
         cmp_cars_n: "{n} მანქანა",
@@ -107,15 +107,15 @@ const TRANSLATIONS = {
         err_fetch: "შეცდომა: {msg}",
         offline_msg: "ინტერნეტთან კავშირი გაწყდა",
         boot_loading: "მონაცემები იტვირთება",
-        boot_sub: "ბაზა იღვიძებს — დაელოდე წამით…",
+        boot_sub: "ბაზა იღვიძებს - დაელოდე წამით…",
         err_unknown: "დაფიქსირდა შეცდომა, სცადეთ მოგვიანებით.",
         err_query_too_vague:
-            "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის — დაამატე წელი, " +
+            "გთხოვთ დააკონკრეტოთ ინფორმაცია უკეთესი ძიებისთვის - დაამატე წელი, " +
             "ქალაქი ან მოდელის ვერსია (მაგ. Toyota Camry 2020 თბილისი).",
         err_query_empty: "გთხოვთ შეიყვანოთ რაიმე ძიებისთვის ან გამოიყენე ფილტრები.",
         err_phone_too_short: "ნომერი მინიმუმ 4 ციფრი უნდა იყოს.",
         err_car_invalid_key: "არასწორი მისამართი.",
-        err_car_not_found: "მანქანა ვერ მოიძებნა — ალბათ წაიშალა წყაროდან.",
+        err_car_not_found: "მანქანა ვერ მოიძებნა - ალბათ წაიშალა წყაროდან.",
         err_cooldown: "მოიცადე {wait} წამი შემდეგი ცდისთვის.",
         err_rate_limited:
             "საათობრივი ლიმიტი ({limit} ცდა) ამოწურეთ. შემდეგ საათში სცადეთ " +
@@ -236,7 +236,7 @@ const TRANSLATIONS = {
         cmp_reason_awd: "all-wheel drive",
         cmp_reason_customs: "customs cleared",
         cmp_best_overall: "Best overall",
-        cmp_close_call: "These cars are very close — no clear winner.",
+        cmp_close_call: "These cars are very close - no clear winner.",
         save_comparison: "Save comparison",
         saved_comparisons_h: "Saved comparisons",
         cmp_cars_n: "{n} cars",
@@ -264,17 +264,17 @@ const TRANSLATIONS = {
 
 
         err_fetch: "Error: {msg}",
-        offline_msg: "You're offline — check your connection",
+        offline_msg: "You're offline - check your connection",
         boot_loading: "Loading data",
-        boot_sub: "The database is waking up — one moment…",
+        boot_sub: "The database is waking up - one moment…",
         err_unknown: "Something went wrong, please try again later.",
         err_query_too_vague:
-            "Please be more specific — add the year, city, or trim " +
+            "Please be more specific - add the year, city, or trim " +
             "(e.g. Toyota Camry 2020 Tbilisi).",
         err_query_empty: "Enter something to search, or use the filters.",
         err_phone_too_short: "Phone number must be at least 4 digits.",
         err_car_invalid_key: "That link doesn't look right.",
-        err_car_not_found: "Car not found — it was probably removed from the source.",
+        err_car_not_found: "Car not found - it was probably removed from the source.",
         err_cooldown: "Wait {wait}s before searching again.",
         err_rate_limited:
             "You have hit the hourly limit ({limit} searches). Try again next " +
@@ -344,7 +344,7 @@ const TRANSLATIONS = {
         saved_done: "Сохранено",
         saved_searches_h: "Сохранённые запросы",
         hero_title: "Узнайте историю продажи автомобиля.",
-        hero_desc: "Единый каталог объявлений об автомобилях из Грузии — поиск по VIN, номеру телефона или конкретному описанию.",
+        hero_desc: "Единый каталог объявлений об автомобилях из Грузии - поиск по VIN, номеру телефона или конкретному описанию.",
         ph_query: "VIN, телефон, марка, модель, год, город...",
         filters_toggle: "Фильтры",
         filter_year: "Год",
@@ -390,7 +390,7 @@ const TRANSLATIONS = {
         cmp_reason_awd: "полный привод",
         cmp_reason_customs: "растаможен",
         cmp_best_overall: "Лучший выбор",
-        cmp_close_call: "Машины очень близки — явного лидера нет.",
+        cmp_close_call: "Машины очень близки - явного лидера нет.",
         save_comparison: "Сохранить сравнение",
         saved_comparisons_h: "Сохранённые сравнения",
         cmp_cars_n: "{n} авто",
@@ -416,13 +416,13 @@ const TRANSLATIONS = {
         err_fetch: "Ошибка: {msg}",
         offline_msg: "Нет подключения к интернету",
         boot_loading: "Загрузка данных",
-        boot_sub: "База просыпается — секундочку…",
+        boot_sub: "База просыпается - секундочку…",
         err_unknown: "Что-то пошло не так, попробуйте позже.",
-        err_query_too_vague: "Пожалуйста, уточните запрос — добавьте год, город или комплектацию (например, Toyota Camry 2020 Тбилиси).",
+        err_query_too_vague: "Пожалуйста, уточните запрос - добавьте год, город или комплектацию (например, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Введите запрос для поиска или используйте фильтры.",
         err_phone_too_short: "Номер телефона должен содержать минимум 4 цифры.",
         err_car_invalid_key: "Неверный адрес.",
-        err_car_not_found: "Автомобиль не найден — вероятно, объявление удалено из источника.",
+        err_car_not_found: "Автомобиль не найден - вероятно, объявление удалено из источника.",
         err_cooldown: "Подождите {wait} с перед следующим поиском.",
         err_rate_limited: "Достигнут часовой лимит ({limit} попыток). Попробуйте в следующем часе или напишите {contact} в Instagram для увеличения лимита.",
         spec_year: "Год",
@@ -483,7 +483,7 @@ const TRANSLATIONS = {
         saved_done: "Сақталды",
         saved_searches_h: "Сақталған іздеулер",
         hero_title: "Көліктің сату тарихын табыңыз.",
-        hero_desc: "Грузин көліктерінің біріккен тізімдемесі — VIN, телефон нөмірі немесе нақты сипаттама бойынша іздеуге болады.",
+        hero_desc: "Грузин көліктерінің біріккен тізімдемесі - VIN, телефон нөмірі немесе нақты сипаттама бойынша іздеуге болады.",
         ph_query: "VIN, телефон, бренд, үлгі, жыл, қала...",
         filters_toggle: "Сүзгілер",
         filter_year: "Жыл",
@@ -529,7 +529,7 @@ const TRANSLATIONS = {
         cmp_reason_awd: "толық жетек",
         cmp_reason_customs: "кедендік рәсімделген",
         cmp_best_overall: "Үздік таңдау",
-        cmp_close_call: "Көліктер өте жақын — айқын жеңімпаз жоқ.",
+        cmp_close_call: "Көліктер өте жақын - айқын жеңімпаз жоқ.",
         save_comparison: "Салыстыруды сақтау",
         saved_comparisons_h: "Сақталған салыстырулар",
         cmp_cars_n: "{n} көлік",
@@ -555,13 +555,13 @@ const TRANSLATIONS = {
         err_fetch: "Қате: {msg}",
         offline_msg: "Интернет байланысы жоқ",
         boot_loading: "Деректер жүктелуде",
-        boot_sub: "Дерекқор оянып жатыр — бір сәт…",
+        boot_sub: "Дерекқор оянып жатыр - бір сәт…",
         err_unknown: "Бірдеңе дұрыс болмады, кейінірек қайталап көріңіз.",
-        err_query_too_vague: "Нақтырақ көрсетіңіз — жылын, қаласын немесе жинақталымын қосыңыз (мысалы, Toyota Camry 2020 Тбилиси).",
+        err_query_too_vague: "Нақтырақ көрсетіңіз - жылын, қаласын немесе жинақталымын қосыңыз (мысалы, Toyota Camry 2020 Тбилиси).",
         err_query_empty: "Іздеу үшін бірдеңе енгізіңіз немесе сүзгілерді пайдаланыңыз.",
         err_phone_too_short: "Телефон нөмірі кемінде 4 саннан тұруы керек.",
         err_car_invalid_key: "Жарамсыз мекенжай.",
-        err_car_not_found: "Көлік табылмады — бәлкім дереккөзден жойылған.",
+        err_car_not_found: "Көлік табылмады - бәлкім дереккөзден жойылған.",
         err_cooldown: "Қайта іздеу алдында {wait} с күтіңіз.",
         err_rate_limited: "Сағаттық шектеуге жеттіңіз ({limit} әрекет). Келесі сағатта көріңіз немесе шектеуді арттыру үшін Instagram арқылы {contact} хабарласыңыз.",
         spec_year: "Жыл",
@@ -658,7 +658,7 @@ function applyTranslations() {
 
 document.addEventListener("DOMContentLoaded", applyTranslations);
 
-// მონაცემთა მნიშვნელობების ka→en რუკა (ენუმ-ველები + ქალაქები)
+// Maps data values from Georgian to English (enum fields and city names)
 const VALUE_MAP_EN = {
     "ბენზინი": "Petrol", "დიზელი": "Diesel", "ჰიბრიდი": "Hybrid",
     "დატენვადი ჰიბრიდი": "Plug-in hybrid", "ელექტრო": "Electric",
@@ -748,7 +748,7 @@ const VALUE_MAP_KK = {
 
 const VALUE_MAPS = { en: VALUE_MAP_EN, ru: VALUE_MAP_RU, kk: VALUE_MAP_KK };
 
-// ენუმ/ქალაქის მნიშვნელობას აქტიური ენისკენ თარგმნის (ka — უცვლელად)
+// Translates an enum or city value into the active language. Georgian is left as is.
 function tval(value) {
     const lang = getLang();
     if (!value || lang === "ka") return value;

@@ -51,7 +51,7 @@ def extract_id(url: str) -> str:
 
 
 def first_int(text: str | None) -> int | None:
-    # First integer in `text`. "4/5" → 4, "26 000 კმ" → 26000.
+    # First integer in `text`. "4/5" -> 4, "26 000 კმ" (km) -> 26000.
     if not text:
         return None
     s = str(text)
@@ -64,7 +64,7 @@ def first_int(text: str | None) -> int | None:
 
 
 def parse_features(text: str | None) -> dict[str, str]:
-    # `.comment-all` reads "feature1, key: value, feature2, ..." — pull the key:value pairs.
+    # `.comment-all` reads "feature1, key: value, feature2, ..." - pull the key:value pairs.
     #
     # Plain features (ABS, ESP) are skipped here; they show up in the description text instead.
     if not text:
@@ -260,7 +260,7 @@ async def scrape_one(
                 return await _build_car_from_page(context, page, url)
             except Exception as exc:
                 if attempt == RETRY_PER_CAR - 1:
-                    print(f"[FAIL] {url} — {exc}")
+                    print(f"[FAIL] {url} - {exc}")
                     return None
                 await asyncio.sleep(1)
             finally:
@@ -358,7 +358,7 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
     print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES}, max_pages={max_pages})")
 
     if not await robots.can_fetch(START_URL):
-        print(f"  robots.txt disallows {START_URL} — skipping")
+        print(f"  robots.txt disallows {START_URL} - skipping")
         return
 
     already_saved = await get_existing_ids(SOURCE) if not refresh_all else set()
@@ -384,7 +384,7 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
                         title = await page.title()
                     except Exception:
                         pass
-                    print(f"  listing load failed ({attempt}/3): {type(exc).__name__} — title {title[:60]!r}")
+                    print(f"  listing load failed ({attempt}/3): {type(exc).__name__} - title {title[:60]!r}")
                 finally:
                     await page.close()
                 await asyncio.sleep(3)

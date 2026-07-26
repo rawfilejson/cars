@@ -1,4 +1,4 @@
-# client identity resolution — CF-Connecting-IP first, XFF/peer fallback, token format.
+# client identity resolution - CF-Connecting-IP first, XFF/peer fallback, token format.
 #
 # These helpers don't touch the DB, so a fake request (headers + client) is enough.
 
@@ -13,7 +13,7 @@ from src.api.rate_limit import client_ip, client_token
 
 
 def _req(headers: dict | None = None, client_host: str | None = None):
-    # real Starlette Request.headers is case-insensitive — model that faithfully
+    # real Starlette Request.headers is case-insensitive - model that faithfully
     # so the mock can't pass for the wrong reason.
     client = SimpleNamespace(host=client_host) if client_host is not None else None
     return SimpleNamespace(headers=Headers(headers or {}), client=client)
@@ -29,7 +29,7 @@ def test_cf_connecting_ip_is_trusted():
 
 
 def test_cf_connecting_ip_private_is_ignored():
-    # A private CF-Connecting-IP is meaningless — fall through to the XFF scan.
+    # A private CF-Connecting-IP is meaningless - fall through to the XFF scan.
     req = _req({"cf-connecting-ip": "10.0.0.5", "x-forwarded-for": "8.8.4.4"})
     assert client_ip(req) == "8.8.4.4"
 
@@ -76,5 +76,5 @@ def test_client_token_missing_header():
 
 
 def test_client_token_case_insensitive_header():
-    # Starlette headers are case-insensitive — an uppercase name still resolves.
+    # Starlette headers are case-insensitive - an uppercase name still resolves.
     assert client_token(_req({"X-Client-Id": "a1b2c3d4e5"})) == "a1b2c3d4e5"

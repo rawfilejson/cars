@@ -178,7 +178,7 @@ def _iter_cars(path: str, source: str) -> Iterable[Car]:
             try:
                 car = convert(row, source)
             except Exception as exc:
-                print(f"  [SKIP] {row.get('ID')} — {exc}")
+                print(f"  [SKIP] {row.get('ID')} - {exc}")
                 continue
             if car is not None:
                 yield car

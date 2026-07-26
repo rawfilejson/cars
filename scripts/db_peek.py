@@ -53,7 +53,7 @@ def main():
                 print(f"  photos:       {row['photo_count'] or 0}")
 
             print("\n" + "=" * 70)
-            print("PHONE FORMATS — sample of distinct patterns")
+            print("PHONE FORMATS - sample of distinct patterns")
             print("=" * 70)
             cur.execute("""
                 SELECT phone, COUNT(*) AS n
@@ -67,7 +67,7 @@ def main():
                 print(f"  {row['phone']:25s}  ×{row['n']}")
 
             print("\n" + "=" * 70)
-            print("PHONE FORMAT STATS — joined vs spaced")
+            print("PHONE FORMAT STATS - joined vs spaced")
             print("=" * 70)
             cur.execute("""
                 SELECT

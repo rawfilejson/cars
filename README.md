@@ -1,4 +1,4 @@
-# car
+# Car·DB
 
 Aggregated search for car listings from **autopapa.ge** and **myauto.ge** -
 search by VIN, phone number, or free text.
@@ -9,7 +9,7 @@ Live: <https://cars.demee-metreveli.workers.dev>
 
 ## English
 
-### What this is
+### What is this?
 
 Two of the biggest car listing sites in Georgia (autopapa.ge and myauto.ge)
 don't share data. If a car is up for sale on both, you can't easily search
@@ -19,10 +19,10 @@ means hunting through both sites manually.
 This project scrapes both sites twice a day, normalizes everything into one
 Postgres table, and serves a single search endpoint that accepts:
 
-- **VIN** — full 17 characters or a prefix
-- **Phone** — any format (`+995555555555`, `995555555555`, `555555555`)
-- **Free text** — fuzzy search across make, model, description and location
-- **Filters only** — browse mode (e.g. all 2018–2022 cars under $20k)
+- **VIN** - full 17 characters or a prefix
+- **Phone** - any format (`+995555555555`, `995555555555`, `555555555`)
+- **Free text** - fuzzy search across make, model, description and location
+- **Filters only** - browse mode (e.g. all 2018-2022 cars under $20k)
 
 ---
 
@@ -63,7 +63,7 @@ completely different approaches:
 
 - **`myauto.py`** talks to `api2.myauto.ge/ka/products` directly and reads
   JSON. The public HTML site obfuscates prices and phone numbers with a
-  custom font, so parsing the rendered page would give you garbage digits —
+  custom font, so parsing the rendered page would give you garbage digits -
   the JSON API returns clean values. Product IDs are cached in
   `exports/myauto-ids.json` so repeat runs can skip work.
 
@@ -178,13 +178,13 @@ and Cloudflare overwrites any forged value.
 
 ### 7. Frontend
 
-Plain files, no framework and no build step — the browser loads them as they are:
+Plain files, no framework and no build step - the browser loads them as they are:
 
-- `web/index.html` — the markup.
-- `web/app.css` — every style.
-- `web/app.js` — all the behaviour: search, filters, compare, the detail page.
-- `web/i18n.js` — all UI strings in Georgian, English, Russian and Kazakh.
-- `web/config.js` — picks the API base URL (localhost in dev, Render in prod).
+- `web/index.html` - the markup.
+- `web/app.css` - every style.
+- `web/app.js` - all the behaviour: search, filters, compare, the detail page.
+- `web/i18n.js` - all UI strings in Georgian, English, Russian and Kazakh.
+- `web/config.js` - picks the API base URL (localhost in dev, Render in prod).
 
 Every `<select>` is wrapped by a small custom dropdown component that renders
 checkboxes, group headers and brand logos while keeping the native element as
@@ -220,8 +220,8 @@ listings that already look unchanged.
 If you want to understand this project properly, read the files in this order.
 Each step builds on the one before, and the whole path is about 3,000 lines.
 
-**In a hurry?** Read just the three starred files below — `models.py`,
-`search.py` and `index.html` — and you will understand roughly 80% of it.
+**In a hurry?** Read just the three starred files below - `models.py`,
+`search.py` and `index.html` - and you will understand roughly 80% of it.
 
 | # | File | Why it comes here |
 |---|------|-------------------|
@@ -247,17 +247,17 @@ Each step builds on the one before, and the whole path is about 3,000 lines.
 
 A few decisions worth understanding, and where to find them:
 
-- **Why two totally different scrapers?** myauto exposes clean JSON; autopapa
-  needs a real browser to reveal the VIN. Same `Car` out of both - see step 5 vs 6.
+- **Why two totally different scrapers?** myauto exposes clean JSON. autopapa
+  needs a real browser to reveal the VIN. Same `Car` out of both - see step 5 vs 6
 - **Why is search one endpoint instead of three?** So a user can paste anything
-  into one box. `_smart_route()` in `search.py`.
+  into one box. `_smart_route()` in `search.py`
 - **Why a token instead of an IP for rate limiting?** Shared home wifi and mobile
-  CGNAT put many people on one address. `rate_limit.py`.
+  CGNAT put many people on one address. `rate_limit.py`
 - **Why a CTE for pagination?** `description` and photo arrays live in TOAST
-  storage; reading them for only the 25 rows on the page is dramatically faster.
-  `_paginate()` in `search.py`.
+  storage. reading them for only the 25 rows on the page is dramatically faster
+  `_paginate()` in `search.py`
 - **Why no framework on the frontend?** Plain HTML, CSS and JS with no build
-  step, so it loads fast and hosting costs nothing.
+  step, so it loads fast and hosting costs nothing
 
 ### Layout
 
@@ -311,7 +311,7 @@ Postgres instance (or use Docker: `docker compose up -d postgres`).
 uv sync
 uv run playwright install chromium
 
-# Config — copy and fill in real values
+# Config - copy and fill in real values
 cp .env.example .env
 
 # Initialize the database schema
@@ -355,8 +355,7 @@ anonymous REST access is disabled.
 
 ### Contributing
 
-Issues and PRs welcome. The code style is intentionally plain — terse
-comments, no over-engineering.
+Issues and PRs welcome.
 
 Contact: [@deme.brn](https://instagram.com/deme.brn)
 

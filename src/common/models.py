@@ -1,4 +1,4 @@
-# The `Car` model — one row in our database, one listing on the source site.
+# The `Car` model - one row in our database, one listing on the source site.
 
 from __future__ import annotations
 

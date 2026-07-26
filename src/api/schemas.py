@@ -8,7 +8,7 @@ from typing import Annotated
 from pydantic import BaseModel, Field, StringConstraints
 
 
-# multi-select item — bounded length so a request body can't carry huge strings
+# multi-select item - bounded length so a request body can't carry huge strings
 _FilterValue = Annotated[str, StringConstraints(max_length=60)]
 
 
@@ -33,7 +33,7 @@ class SearchRequest(BaseModel):
     # multi-select filters (new filter UI). The singular fields above are kept
     # for backward compatibility; the server merges both into one IN per column.
     # every option is checked by default, so "all but a few" can send nearly the
-    # whole list — the caps hold the entire catalogue with headroom to grow.
+    # whole list - the caps hold the entire catalogue with headroom to grow.
     manufacturers: list[_FilterValue] | None = Field(None, max_length=300)
     # models can be picked individually per class; a few brands add up quickly
     models:        list[_FilterValue] | None = Field(None, max_length=1000)

@@ -2,9 +2,9 @@
 #
 # A listing is a *candidate* when nothing has touched it in --days. Note
 # the scrapers skip listings that are already saved, so an old updated_at
-# does NOT mean the listing is gone — every candidate is verified against
+# does NOT mean the listing is gone - every candidate is verified against
 # the source, and only listings the source confirms are gone get deleted.
-# Anything unverifiable (blocked, timeout, odd status) is skipped — we
+# Anything unverifiable (blocked, timeout, odd status) is skipped - we
 # never delete on doubt. Verified-alive rows get their updated_at bumped
 # (with --apply) so successive runs move on to new candidates.
 #
@@ -138,7 +138,7 @@ def main() -> None:
         print(f"  unverifiable:   {unknown} (skipped)")
 
         if not args.apply:
-            print("dry run — re-run with --apply to delete the confirmed-dead rows")
+            print("dry run - re-run with --apply to delete the confirmed-dead rows")
             return
         with conn.cursor() as cur:
             if dead:

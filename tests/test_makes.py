@@ -1,4 +1,4 @@
-# make/model base-name extraction — strip trims, keep two-word model names.
+# make/model base-name extraction - strip trims, keep two-word model names.
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def test_canon_token(tok, expected):
     ("Mercedes-Benz", "C 4MATIC", "C"),                  # no series number → base class
     # word models keep dropping trailing numbers/trims
     ("Toyota", "Camry 70", "Camry"),
-    ("Audi", "RS 6", "RS"),                              # single digit — not a series number
+    ("Audi", "RS 6", "RS"),                              # single digit - not a series number
 ])
 def test_base_model(manufacturer, model, expected):
     assert _base_model(manufacturer, model) == expected

@@ -1,6 +1,6 @@
 # Sanity checks on a scraped Car before we trust it.
 #
-# These don't block the insert — they just return a list of issues we can log.
+# These don't block the insert - they just return a list of issues we can log.
 # The point is visibility: if 30% of cars come back with `year 1850`, we know
 # the parser's broken before we ship.
 
