@@ -1,6 +1,6 @@
-# Cloudflare Workers config. Serves the static frontend in web/ through worker.js,
-# which also uses a cron trigger to keep the Render backend awake (see worker.js).
-# Docs: https://developers.cloudflare.com/workers/static-assets/
+# cloudflare workers config. serves the static frontend in web/ through worker.js,
+# which also uses a cron trigger to keep the render backend awake (see worker.js).
+# docs: https://developers.cloudflare.com/workers/static-assets/
 
 name = "cars"
 main = "worker.js"

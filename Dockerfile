@@ -1,5 +1,5 @@
-# Backend production image — works on Render / Fly.io / Railway / Docker Compose.
-# Parser runs in GitHub Actions separately, this image is backend-only.
+# backend production image - works on Render / Fly.io / Railway / Docker Compose
+# parser runs in GitHub Actions separately, this image is backend-only
 FROM python:3.12-slim AS base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -7,17 +7,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# uv — fast Python package manager
+# uv - fast Python package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
-# Deps first — Docker layer caching
+# deps first - Docker layer caching
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-# App code
+# app code
 COPY src/ ./src/
 COPY db/ ./db/
 

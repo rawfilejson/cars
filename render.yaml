@@ -1,11 +1,11 @@
-# Render.com deploy config
-# When you connect this repo to Render, it reads this file automatically.
+# render.com deploy config
+# connect your repo to render, it reads this file automatically.
 
 services:
   - type: web
     name: cars-api
     runtime: docker
-    plan: free                  # change to "starter" ($7/mo) to remove cold starts
+    plan: free                  # change to "starter" to remove cold starts
     region: frankfurt           # closest to Georgia
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
@@ -13,14 +13,14 @@ services:
       - key: PRODUCTION
         value: "1"
       # rate limit: a 10s cooldown only, hourly limit off (0), and a high IP
-      # ceiling aimed purely at scrapers. See rate_limit.py
+      # ceiling aimed purely at scrapers.
       - key: SEARCH_COOLDOWN_SECONDS
         value: "10"
       - key: SEARCH_LIMIT_PER_HOUR
         value: "0"
       - key: SEARCH_LIMIT_PER_IP_HOUR
         value: "3000"
-      # secrets — set these manually in Render dashboard:
+      # secrets - set these manually
       - key: DATABASE_URL
         sync: false
       - key: R2_ACCOUNT_ID

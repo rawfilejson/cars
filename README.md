@@ -1,9 +1,7 @@
 # car
 
-Aggregated search for car listings from **autopapa.ge** and **myauto.ge** —
-search by VIN, phone number, or free text. Free, no signup.
-
-🇬🇪 [ქართული](#ქართულად) · 🇬🇧 [English](#english)
+Aggregated search for car listings from **autopapa.ge** and **myauto.ge** -
+search by VIN, phone number, or free text.
 
 Live: <https://cars.demee-metreveli.workers.dev>
 
@@ -80,13 +78,13 @@ Both parsers are async and scrape several pages concurrently
 
 ### 2. Normalizing
 
-Raw scraped values are messy, so everything is funnelled through one shape —
-the `Car` model in `src/common/models.py` — before it goes near the database:
+Raw scraped values are messy, so everything is funnelled through one shape -
+the `Car` model in `src/common/models.py` - before it goes near the database:
 
-- `src/common/normalize.py` — phone numbers into a canonical form, prices
+- `src/common/normalize.py` - phone numbers into a canonical form, prices
   into an integer plus a currency, mileage into kilometres, and free-text
   fields into consistent casing.
-- `src/common/vin.py` — pulls a VIN out of the description when the
+- `src/common/vin.py` - pulls a VIN out of the description when the
   structured field is empty, and validates it (17 characters, no `I`/`O`/`Q`).
 
 This is why searching works across sources: a phone number written five
@@ -128,7 +126,7 @@ and re-uploads it to Cloudflare R2 under a stable key:
 
 The keys land in `image_keys`, and the API hands the frontend absolute URLs
 built from `R2_PUBLIC_URL`. The job only picks rows that still have no
-`image_keys`, so it is resumable — it can be stopped and restarted freely.
+`image_keys`, so it is resumable - it can be stopped and restarted freely.
 With `--purge-local` it streams straight to R2 without keeping a local copy,
 which is how it runs in CI.
 
@@ -138,16 +136,16 @@ There is one main endpoint, `POST /search`, and it works out what you meant
 rather than making you choose. `_smart_route()` in `src/api/search.py` checks
 the query in this order:
 
-1. **VIN** — 17 valid VIN characters → exact match on the indexed `vin`
+1. **VIN** - 17 valid VIN characters → exact match on the indexed `vin`
    column.
-2. **Phone** — mostly digits → matches on digits only:
+2. **Phone** - mostly digits → matches on digits only:
    `regexp_replace(phone, '\D', '', 'g') LIKE '%suffix'`. A leading wildcard
    normally forces a full table scan, so there is a trigram GIN index on
    exactly that expression to keep it fast.
-3. **Free text** — every word must appear in `search_blob`, then results are
+3. **Free text** - every word must appear in `search_blob`, then results are
    ordered by trigram `similarity()` against the make/model/year blob, so the
    closest titles come first.
-4. **Filters only** — no text at all → browse mode, ordered by your chosen
+4. **Filters only** - no text at all → browse mode, ordered by your chosen
    sort.
 
 Filters (year, price, mileage, manufacturer, model, body, fuel, gearbox,
@@ -163,7 +161,7 @@ hourly because they change rarely and are expensive to compute.
 ### 6. Rate limiting
 
 The site is anonymous, so there is no account to limit. Limiting purely by IP
-punishes shared connections — home Wi-Fi and mobile CGNAT put many people
+punishes shared connections - home Wi-Fi and mobile CGNAT put many people
 behind one address. So `src/api/rate_limit.py` uses two identities:
 
 - **Primary:** an anonymous token the browser generates and keeps in
@@ -180,17 +178,18 @@ and Cloudflare overwrites any forged value.
 
 ### 7. Frontend
 
-`web/index.html` is the entire app — one file, no framework, no build step,
-with the CSS and JS inline. It's served as a static asset, so it loads fast
-and costs nothing to host.
+Plain files, no framework and no build step — the browser loads them as they are:
 
+- `web/index.html` — the markup.
+- `web/app.css` — every style.
+- `web/app.js` — all the behaviour: search, filters, compare, the detail page.
 - `web/i18n.js` — all UI strings in Georgian, English, Russian and Kazakh.
 - `web/config.js` — picks the API base URL (localhost in dev, Render in prod).
 
 Every `<select>` is wrapped by a small custom dropdown component that renders
 checkboxes, group headers and brand logos while keeping the native element as
 the source of truth. All multi-selects start with **everything checked**,
-which means "no filter" — you narrow by unchecking, or clear all and pick a
+which means "no filter" - you narrow by unchecking, or clear all and pick a
 few. None-selected and all-selected both collapse to sending nothing.
 
 Saved cars, saved searches, recent history and the comparison tray all live
@@ -210,7 +209,7 @@ Everything runs on GitHub Actions (`.github/workflows/`):
 
 The prune job is deliberately careful: a listing is only a *candidate* when
 nothing has touched it for `--days`, and every candidate is then re-checked
-against the source. Only listings the source confirms are gone get deleted —
+against the source. Only listings the source confirms are gone get deleted -
 an old `updated_at` alone never deletes anything, because the scrapers skip
 listings that already look unchanged.
 
@@ -227,7 +226,7 @@ Each step builds on the one before, and the whole path is about 3,000 lines.
 | # | File | Why it comes here |
 |---|------|-------------------|
 | 1 | *(this README, "How it works")* | The mental model before any code. |
-| 2 | ⭐ `src/common/models.py` | The `Car` model — one shape every part of the system agrees on. Read this and you know what a listing *is*. |
+| 2 | ⭐ `src/common/models.py` | The `Car` model - one shape every part of the system agrees on. Read this and you know what a listing *is*. |
 | 3 | `db/schema.sql` | The same thing as tables: the unique constraint that makes re-scraping idempotent, the generated `search_blob`, and every index (each one exists for a specific query). |
 | 4 | `src/common/config.py` | Which environment variables exist and what the tunables are. Short. |
 | 5 | `src/parsers/myauto.py` | The simpler source: a JSON API client. Read `scrape_one()` and follow one listing from raw JSON into a `Car`. |
@@ -235,12 +234,12 @@ Each step builds on the one before, and the whole path is about 3,000 lines.
 | 7 | `src/common/normalize.py` + `vin.py` | Where messy input becomes comparable data. This is *why* search works across two sites that agree on nothing. |
 | 8 | `src/common/db.py` | Persistence, and the Windows event-loop workaround that forces sync psycopg onto worker threads. |
 | 9 | `src/common/storage.py` + `src/scripts/sync_photos.py` | The photo pipeline: atomic writes, R2 upload, and why a failed upload must not record a key. |
-| 10 | `src/api/schemas.py` | The API contract — request and response shapes, and the validation limits. |
+| 10 | `src/api/schemas.py` | The API contract - request and response shapes, and the validation limits. |
 | 11 | `src/api/main.py` | App wiring: middleware, security headers, error handling. Small. |
-| 12 | ⭐ `src/api/search.py` | **The heart of the backend.** `_smart_route()` decides VIN vs phone vs text; `_filter_clauses()` builds the SQL; the CTE pagination and the LRU cache are both there for one reason — a slow free-tier disk. |
+| 12 | ⭐ `src/api/search.py` | **The heart of the backend.** `_smart_route()` decides VIN vs phone vs text; `_filter_clauses()` builds the SQL; the CTE pagination and the LRU cache are both there for one reason - a slow free-tier disk. |
 | 13 | `src/api/rate_limit.py` | How an anonymous site throttles fairly: browser token first, IP only as a backstop. |
 | 14 | `src/api/makes.py` + `facets.py` + `stats.py` | The supporting endpoints and their hourly caches. `makes.py` has the fiddliest logic: collapsing trim noise into real model names. |
-| 15 | ⭐ `web/index.html` | The entire frontend in one file. Search the file for `enhanceSelect` (the custom dropdown), `buildSearchPayload` (how filters become a request), and `renderCompareModal`. |
+| 15 | ⭐ `web/app.js` | All the frontend behaviour. Read `enhanceSelect` (the custom dropdown), `buildSearchPayload` (how filters become a request), and `renderCompareModal`. `web/index.html` is just the markup it drives. |
 | 16 | `web/i18n.js`, `web/config.js` | Translations for four languages, and the dev/prod API switch. |
 | 17 | `.github/workflows/` | How it runs itself: `parse.yml` twice a day, `prune.yml` daily, `sync_backfill.yml` for the photo backlog. |
 | 18 | `Dockerfile`, `render.yaml`, `wrangler.toml`, `worker.js` | Deployment, plus the Worker cron that stops the free-tier backend sleeping. |
@@ -249,7 +248,7 @@ Each step builds on the one before, and the whole path is about 3,000 lines.
 A few decisions worth understanding, and where to find them:
 
 - **Why two totally different scrapers?** myauto exposes clean JSON; autopapa
-  needs a real browser to reveal the VIN. Same `Car` out of both — see step 5 vs 6.
+  needs a real browser to reveal the VIN. Same `Car` out of both - see step 5 vs 6.
 - **Why is search one endpoint instead of three?** So a user can paste anything
   into one box. `_smart_route()` in `search.py`.
 - **Why a token instead of an IP for rate limiting?** Shared home wifi and mobile
@@ -257,8 +256,8 @@ A few decisions worth understanding, and where to find them:
 - **Why a CTE for pagination?** `description` and photo arrays live in TOAST
   storage; reading them for only the 25 rows on the page is dramatically faster.
   `_paginate()` in `search.py`.
-- **Why no framework on the frontend?** It is one static file with no build step,
-  so it loads fast and hosting costs nothing.
+- **Why no framework on the frontend?** Plain HTML, CSS and JS with no build
+  step, so it loads fast and hosting costs nothing.
 
 ### Layout
 
@@ -295,7 +294,9 @@ db/schema.sql              Tables, indexes, triggers
 scripts/prune_dead.py      Verify and remove dead listings
 
 web/
-├── index.html             Frontend (no framework)
+├── index.html             Markup
+├── app.css                Styles
+├── app.js                 Search, filters, compare, detail page
 ├── config.js              API base URL
 └── i18n.js                Translations (ka/en/ru/kk)
 ```
@@ -364,96 +365,3 @@ Contact: [@deme.brn](https://instagram.com/deme.brn)
 MIT.
 
 ---
-
-## ქართულად
-
-### რა არის ეს
-
-autopapa.ge და myauto.ge საქართველოში მანქანების ორი ყველაზე დიდი საიტია,
-მაგრამ მონაცემები ერთმანეთთან არ აქვთ გაზიარებული. თუ ერთი მანქანა ორივეზე
-დევს, ვერ ეძებ ერთდროულად. თუ ვინმე გირეკავს მანქანის შესათავაზებლად, მისი
-ისტორიის ნახვა ნიშნავს ორ საიტზე ცალცალკე ძიებას.
-
-ეს პროექტი ორივე საიტს დღეში ორჯერ აპარსავს, მონაცემებს ნორმალიზებას უკეთებს
-ერთ Postgres ცხრილში და ხსნის ერთიან ძიების ენდპოინტს:
-
-- **VIN** — სრული 17 სიმბოლო ან თავსართი
-- **ნომერი** — ნებისმიერი ფორმატი (`+995555555555`, `995555555555`, `555555555`)
-- **თავისუფალი ტექსტი** — მწარმოებელი, მოდელი, აღწერა, ლოკაცია
-- **მხოლოდ ფილტრები** — დათვალიერება (მაგ. 2018–2022, $20k-მდე)
-
-### როგორ მუშაობს — ნაბიჯ-ნაბიჯ
-
-1. **პარსინგი.** თითო წყაროს თავისი პარსერი აქვს `src/parsers/`-ში.
-   MyAuto-სთვის პირდაპირ JSON API (`api2.myauto.ge`) — HTML-ზე ფასები და
-   ნომრები შრიფტითაა დაფარული, JSON კი სუფთა მნიშვნელობებს აბრუნებს.
-   AutoPapa-ს API არ აქვს, ამიტომ Playwright-ით headless Chromium დადის
-   გვერდებზე და VIN-ის ღილაკს ხსნის.
-
-2. **ნორმალიზაცია.** `normalize.py` ასწორებს ნომერს, ფასს და გარბენს,
-   `vin.py` აღწერიდან VIN-ს იღებს და ამოწმებს. ყველაფერი ერთ `Car` მოდელში
-   ჯდება — ამიტომ მუშაობს ძიება ორივე წყაროზე ერთდროულად.
-
-3. **შენახვა.** `(source, source_id)` unique constraint-ის წყალობით ხელახალი
-   პარსინგი დუბლიკატს არ ქმნის, არამედ განაახლებს. `search_blob` გენერირებული
-   სვეტია, რომელზეც trigram ინდექსი დგას.
-
-4. **ფოტოები.** `sync_photos.py` წყაროს ფოტოებს ჩამოტვირთავს და Cloudflare
-   R2-ში დებს `{source}/{source_id}/{index}.jpg` გასაღებით. resumable-ია —
-   მხოლოდ იმ ჩანაწერებს ირჩევს, რომლებსაც ჯერ არ აქვს `image_keys`.
-
-5. **ძიება.** `POST /search` თვითონ ცნობს რა ჩაწერე: VIN (ზუსტი დამთხვევა) →
-   ნომერი (მხოლოდ ციფრებზე, trigram ინდექსით) → თავისუფალი ტექსტი
-   (`search_blob` + similarity რანჟირება) → მხოლოდ ფილტრები. ფასები SQL-ში
-   დოლარში გადაჰყავს, რომ სხვადასხვა ვალუტა სწორად შედარდეს.
-
-6. **ლიმიტი.** ავტორიზაცია არ გვაქვს, ამიტომ მთავარი იდენტობა ბრაუზერის
-   ანონიმური token-ია (`X-Client-Id`), IP მხოლოდ backstop-ია — ერთ WiFi-ზე
-   ორი ადამიანი ერთმანეთს ლიმიტს აღარ ჭამს.
-
-7. **ფრონტი.** `web/index.html` — ერთი ფაილი, ფრეიმვორქის და build-ის
-   გარეშე. ყველა ფილტრში ნაგულისხმევად ყველაფერი მონიშნულია (= ფილტრი არ
-   არის); ვიწროვდები მონიშვნის მოხსნით. შენახული მანქანები, ძიებები და
-   შედარება localStorage-შია — სერვერზე პირადი არაფერი ინახება.
-
-8. **ავტომატიზაცია.** GitHub Actions: `parse.yml` (დღეში 2-ჯერ),
-   `prune.yml` (დღეში ერთხელ, შლის მხოლოდ იმას, რასაც წყარო დაადასტურებს რომ
-   აღარ არსებობს), `sync_backfill.yml` (ფოტოების backlog).
-
-### სად ვის უწევს ფული
-
-- Frontend: Cloudflare Workers (უფასო)
-- Backend: Render (უფასო, 15წთ-ში იძინებს)
-- DB: Supabase (500MB უფასოდ)
-- R2 photo storage: 10GB უფასოდ
-- GitHub Actions: public repo-ზე შეუზღუდავი
-
-### ლოკალურად გაშვება
-
-```bash
-uv sync
-uv run playwright install chromium
-
-cp .env.example .env
-# შეავსე .env-ში DATABASE_URL, R2_* keys
-
-uv run python -m src.scripts.init_db
-
-uv run python -m src.parsers.autopapa     # ერთხელ ჩამოწიე autopapa
-uv run python -m src.parsers.myauto       # ერთხელ ჩამოწიე myauto
-
-uv run uvicorn src.api.main:app --port 8765 --reload
-cd web && python -m http.server 5500       # → http://localhost:5500
-```
-
-ტესტები: `uv run pytest -q`
-
-### კონტრიბუცია
-
-Issue-ები და PR-ები მისასალმებელია.
-
-კონტაქტი: [@deme.brn](https://instagram.com/deme.brn)
-
-### ლიცენზია
-
-MIT.

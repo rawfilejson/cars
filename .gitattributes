@@ -1,3 +1,2 @@
-# uv.lock is written by `uv lock`, never by hand. Marking it generated tells
-# GitHub to collapse it in diffs and leave it out of the language stats.
+# uv.lock is not written by hand. marking it generated tells gitHub to collapse it in diffs and leave it out of the language stats.
 uv.lock linguist-generated=true

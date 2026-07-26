@@ -1,7 +1,6 @@
 # Deployment, step by step
 
-How to get the project from local to production. The site is anonymous and free,
-with no accounts and no payments.
+How to get the project from local to production.
 
 ---
 
@@ -19,8 +18,8 @@ with no accounts and no payments.
 [ GitHub Actions ] -> cron 2x/day -> Playwright scraping -> Supabase + R2
 ```
 
-Which file does what: the backend deploy is `render.yaml` plus `Dockerfile`, the
-frontend is `wrangler.toml`, scraping is `.github/workflows/parse.yml`, and the
+Which file does what? the backend deploy is `render.yaml` plus `Dockerfile`, the
+frontend is `wrangler.toml`, scraping is `.github/workflows/parse.yml` and the
 photo backfill is `.github/workflows/sync_backfill.yml`.
 
 ---
@@ -57,8 +56,7 @@ R2_PUBLIC_URL          https://<your-bucket>.r2.dev
    `{"status":"ok","db":true,...}`.
 
 > On the free plan the service sleeps when idle, so the first request after a
-> pause waits around 30 seconds for the cold start. The `starter` plan ($7/month)
-> removes that.
+> pause waits around 30 seconds for the cold start. The `starter` plan removes that.
 
 If the backend URL changed, update it in `web/config.js`.
 
@@ -93,18 +91,6 @@ origin. If you change domain, update it there and redeploy the backend.
 3. To test by hand: **Actions** -> pick the workflow -> **Run workflow**.
 4. To push a photo backlog through in one go: **Actions** -> **Photo Backfill** ->
    **Run workflow**, or `gh workflow run sync_backfill.yml`.
-
----
-
-## What it costs on free tiers
-
-| Service | Free | Paid |
-|---------|------|------|
-| Render | yes, with cold starts | starter $7/month, no cold start |
-| Cloudflare Workers | yes | — |
-| Supabase | yes, no automatic backups | Pro $25/month, backups and more space |
-| Cloudflare R2 | 10GB storage, free egress | ~$0.015/GB/month above that |
-| GitHub Actions | unlimited on a public repo | — |
 
 ---
 

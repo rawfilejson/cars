@@ -2,7 +2,7 @@
 .*/
 !.github/
 
-# Python
+# python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,7 +15,7 @@ venv/
 .env.local
 .env.*.local
 
-# Playwright session data, holds cookies and auth tokens
+# playwright session data, holds cookies and auth tokens
 auth.json
 chrome_profile/
 
