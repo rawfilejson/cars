@@ -1,9 +1,8 @@
 # One-off backfill: recover VIN and phone from a listing's description
 # when the structured field is empty.
 #
-# New listings already get this during scraping; this applies the same tested
-# extractors (src.common.vin.find_vin / src.common.normalize.phone_from_text)
-# to rows already in the database.
+# new listings already get this while scraping. this runs the same extractors
+# (vin.find_vin / normalize.phone_from_text) over rows already in the database
 #
 # Usage (dry run prints counts, writes nothing):
 #

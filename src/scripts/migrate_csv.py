@@ -16,9 +16,9 @@
 #     python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
 #     python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
 #
-# Note: in the old AutoPapa.csv the phone numbers were mangled into scientific
-# notation (e.g. 9.96E+11) and cannot be recovered, so phone stays empty. The
-# next parser run fills them back in.
+# in the old AutoPapa.csv the phone numbers were mangled into scientific notation
+# like 9.96E+11 and cannot be recovered, so phone stays empty. the next parser run
+# fills them back in
 
 from __future__ import annotations
 

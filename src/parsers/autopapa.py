@@ -58,7 +58,7 @@ def first_int(text: str | None) -> int | None:
     match = re.search(r"\d", s)
     if not match:
         return None
-    tail = re.match(r"[\d\s]+", s[match.start():])
+    tail = re.match(r"[\d\s]+", s[match.start() :])
     digits = re.sub(r"\D", "", tail.group(0)) if tail else match.group(0)
     return int(digits) if digits else None
 
@@ -66,7 +66,7 @@ def first_int(text: str | None) -> int | None:
 def parse_features(text: str | None) -> dict[str, str]:
     # `.comment-all` reads "feature1, key: value, feature2, ..." - pull the key:value pairs.
     #
-    # Plain features (ABS, ESP) are skipped here; they show up in the description text instead.
+    # plain features (ABS, ESP) are skipped here. they show up in the description instead
     if not text:
         return {}
     result: dict[str, str] = {}
@@ -255,7 +255,9 @@ async def scrape_one(
             page = await context.new_page()
             try:
                 await page.route("**/*", block_heavy_resources)
-                await page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
+                await page.goto(
+                    url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS
+                )
                 await page.wait_for_selector(".titleObject", timeout=8_000)
                 return await _build_car_from_page(context, page, url)
             except Exception as exc:
@@ -299,7 +301,7 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
     seller_text = (await cs_el.inner_text()).strip() if cs_el else ""
     description = clean_text(features_text + "\n\n" + seller_text)
     if not phone:
-        phone = phone_from_text(description)   # fall back to a number in the description
+        phone = phone_from_text(description)  # fall back to a number in the description
 
     views, posted = await extract_meta(page)
     video_url = await extract_video(page)
@@ -374,8 +376,14 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
                 page = await context.new_page()
                 try:
                     await page.route("**/*", block_heavy_resources)
-                    await page.goto(START_URL, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
-                    await page.wait_for_selector("div.boxCatalog2", timeout=PAGE_TIMEOUT_MS)
+                    await page.goto(
+                        START_URL,
+                        wait_until="domcontentloaded",
+                        timeout=PAGE_TIMEOUT_MS,
+                    )
+                    await page.wait_for_selector(
+                        "div.boxCatalog2", timeout=PAGE_TIMEOUT_MS
+                    )
                     all_links = await collect_listing_links(page, max_pages=max_pages)
                     break
                 except Exception as exc:
@@ -384,17 +392,23 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
                         title = await page.title()
                     except Exception:
                         pass
-                    print(f"  listing load failed ({attempt}/3): {type(exc).__name__} - title {title[:60]!r}")
+                    print(
+                        f"  listing load failed ({attempt}/3): {type(exc).__name__} - title {title[:60]!r}"
+                    )
                 finally:
                     await page.close()
                 await asyncio.sleep(3)
 
             if all_links is None:
-                print("  autopapa is blocking this IP (likely a bot challenge). HTML scraping "
-                      "needs a residential IP/proxy (set PROXY_URL). Skipping autopapa this run.")
+                print(
+                    "  autopapa is blocking this IP (likely a bot challenge). HTML scraping "
+                    "needs a residential IP/proxy (set PROXY_URL). Skipping autopapa this run."
+                )
                 return
 
-            new_links = [link for link in all_links if extract_id(link) not in already_saved]
+            new_links = [
+                link for link in all_links if extract_id(link) not in already_saved
+            ]
             total, new = len(all_links), len(new_links)
             print(f"  Found: {total} | New: {new} | Skipping: {total - new}")
 
@@ -410,7 +424,9 @@ async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
     print(f"\nDone in {time.time() - start_time:.0f}s")
 
 
-async def _scrape_all(context: BrowserContext, urls: list[str], start_time: float) -> None:
+async def _scrape_all(
+    context: BrowserContext, urls: list[str], start_time: float
+) -> None:
     semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
     tasks = [scrape_one(context, url, semaphore) for url in urls]
 

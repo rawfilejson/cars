@@ -42,7 +42,9 @@ def validate_car(car: Car) -> list[str]:
             issues.append(f"price_amount {car.price_amount} too high")
 
     if car.price_currency not in VALID_CURRENCIES:
-        issues.append(f"price_currency {car.price_currency!r} not in {VALID_CURRENCIES}")
+        issues.append(
+            f"price_currency {car.price_currency!r} not in {VALID_CURRENCIES}"
+        )
 
     if car.mileage_km is not None and not (0 <= car.mileage_km <= MILEAGE_MAX):
         issues.append(f"mileage_km {car.mileage_km} out of range 0-{MILEAGE_MAX}")

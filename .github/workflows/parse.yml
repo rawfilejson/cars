@@ -19,7 +19,7 @@
 name: Scheduled Parser
 
 on:
-  # twice a day; the random delay below spreads out the exact start time
+  # twice a day. the random delay below spreads out the exact start time
   schedule:
     - cron: '0 3 * * *'        # ~07:00 Tbilisi, plus the random delay
     - cron: '0 15 * * *'       # ~19:00 Tbilisi, plus the random delay

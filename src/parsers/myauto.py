@@ -1,6 +1,6 @@
 # Parser for myauto.ge, scraping the HTML with Playwright.
 #
-# The old API-based version was moved to HTML so that:
+# the old API version was moved to HTML because:
 #   * we don't depend on a private endpoint that breaks the day myauto changes it
 #   * we read the same visible HTML a real visitor sees
 #   * both parsers follow one pattern and can be maintained together
@@ -10,8 +10,7 @@
 #   2. each URL -> scrape_one() -> Car
 #   3. batch upsert into the database, plus a CSV append
 #
-# The font obfuscation is gone; today the plain HTML matches what is rendered on
-# screen.
+# the font obfuscation is gone. the plain HTML now matches what is on screen
 
 from __future__ import annotations
 
@@ -57,40 +56,95 @@ def extract_id(url: str) -> str:
 
 CURRENCY_MAP = {1: "USD", 2: "EUR", 3: "GEL"}
 FUEL_MAP = {
-    1: "ჰიბრიდი", 2: "ბენზინი", 3: "დიზელი", 4: "ელექტრო",
-    5: "ბენზინი/გაზი", 6: "ჰიბრიდი", 7: "დატენვადი ჰიბრიდი",
+    1: "ჰიბრიდი",
+    2: "ბენზინი",
+    3: "დიზელი",
+    4: "ელექტრო",
+    5: "ბენზინი/გაზი",
+    6: "ჰიბრიდი",
+    7: "დატენვადი ჰიბრიდი",
 }
 GEARBOX_MAP = {1: "მექანიკა", 2: "ავტომატიკა", 3: "ტიპტრონიკი", 4: "ვარიატორი"}
 DRIVE_MAP = {1: "წინა", 2: "უკანა", 3: "4x4"}
 DOORS_MAP = {1: 3, 2: 5, 3: 6}
 MATERIAL_MAP = {1: "ტყავი", 2: "ნაჭერი", 3: "ველვეტი", 4: "კომბინირებული", 5: "სხვა"}
 COLOR_MAP = {
-    1: "თეთრი", 2: "შავი", 3: "წითელი", 4: "მწვანე", 5: "ლურჯი",
-    6: "ვერცხლისფერი", 7: "ყვითელი", 8: "ნარინჯისფერი", 9: "ყავისფერი",
-    10: "ოქროსფერი", 11: "ბორდოსფერი", 12: "რუხი", 13: "შავი მეტალიკი",
-    14: "რუხი მეტალიკი", 15: "მუქი ლურჯი", 16: "ვერცხლისფერი მეტალიკი",
-    17: "ბეჟი", 18: "მწვანე მეტალიკი", 19: "სხვა",
+    1: "თეთრი",
+    2: "შავი",
+    3: "წითელი",
+    4: "მწვანე",
+    5: "ლურჯი",
+    6: "ვერცხლისფერი",
+    7: "ყვითელი",
+    8: "ნარინჯისფერი",
+    9: "ყავისფერი",
+    10: "ოქროსფერი",
+    11: "ბორდოსფერი",
+    12: "რუხი",
+    13: "შავი მეტალიკი",
+    14: "რუხი მეტალიკი",
+    15: "მუქი ლურჯი",
+    16: "ვერცხლისფერი მეტალიკი",
+    17: "ბეჟი",
+    18: "მწვანე მეტალიკი",
+    19: "სხვა",
 }
 LOCATION_MAP = {
-    1: "საქართველო", 2: "თბილისი", 3: "ბათუმი", 4: "ქუთაისი", 5: "რუსთავი",
-    6: "გორი", 7: "ფოთი", 8: "ზუგდიდი", 9: "ხაშური", 10: "სამტრედია",
-    11: "სენაკი", 12: "ოზურგეთი", 13: "მცხეთა", 14: "ახალციხე", 15: "მარნეული",
-    16: "თელავი", 17: "ბორჯომი", 18: "ქობულეთი", 19: "გარდაბანი", 20: "კასპი",
+    1: "საქართველო",
+    2: "თბილისი",
+    3: "ბათუმი",
+    4: "ქუთაისი",
+    5: "რუსთავი",
+    6: "გორი",
+    7: "ფოთი",
+    8: "ზუგდიდი",
+    9: "ხაშური",
+    10: "სამტრედია",
+    11: "სენაკი",
+    12: "ოზურგეთი",
+    13: "მცხეთა",
+    14: "ახალციხე",
+    15: "მარნეული",
+    16: "თელავი",
+    17: "ბორჯომი",
+    18: "ქობულეთი",
+    19: "გარდაბანი",
+    20: "კასპი",
 }
 CATEGORY_MAP = {
-    1: "სედანი", 2: "ჰეტჩბეკი", 3: "უნივერსალი", 4: "კუპე", 5: "ჯიპი",
-    6: "პიკაპი", 7: "კაბრიოლეტი", 8: "მინივენი", 9: "მიკროავტობუსი",
-    10: "ლიმუზინი", 11: "ფურგონი", 12: "სატვირთო", 66: "კროსოვერი",
+    1: "სედანი",
+    2: "ჰეტჩბეკი",
+    3: "უნივერსალი",
+    4: "კუპე",
+    5: "ჯიპი",
+    6: "პიკაპი",
+    7: "კაბრიოლეტი",
+    8: "მინივენი",
+    9: "მიკროავტობუსი",
+    10: "ლიმუზინი",
+    11: "ფურგონი",
+    12: "სატვირთო",
+    66: "კროსოვერი",
 }
 FEATURE_FLAGS = {
-    "abs": "ABS", "esd": "ESP", "el_windows": "ელ. შუშები",
-    "conditioner": "კონდინციონერი", "climat_control": "კლიმატკონტროლი",
-    "leather": "ტყავის სალონი", "disks": "ალუმინის დისკები",
-    "nav_system": "ნავიგაცია", "central_lock": "ცენტრალური საკეტი",
-    "hatch": "ლუქი", "alarm": "სიგნალიზაცია", "board_comp": "ბორტკომპიუტერი",
-    "hydraulics": "ჰიდრო", "chair_warming": "სავარძლების გათბობა",
-    "obstacle_indicator": "პარკტრონიკი", "back_camera": "უკანა კამერა",
-    "start_stop": "Start/Stop", "has_turbo": "ტურბო",
+    "abs": "ABS",
+    "esd": "ESP",
+    "el_windows": "ელ. შუშები",
+    "conditioner": "კონდინციონერი",
+    "climat_control": "კლიმატკონტროლი",
+    "leather": "ტყავის სალონი",
+    "disks": "ალუმინის დისკები",
+    "nav_system": "ნავიგაცია",
+    "central_lock": "ცენტრალური საკეტი",
+    "hatch": "ლუქი",
+    "alarm": "სიგნალიზაცია",
+    "board_comp": "ბორტკომპიუტერი",
+    "hydraulics": "ჰიდრო",
+    "chair_warming": "სავარძლების გათბობა",
+    "obstacle_indicator": "პარკტრონიკი",
+    "back_camera": "უკანა კამერა",
+    "start_stop": "Start/Stop",
+    "has_turbo": "ტურბო",
     "tech_inspection": "ტექდათვალიერება",
 }
 
@@ -207,14 +261,19 @@ def item_to_car(item: dict) -> Car | None:
         interior_material=MATERIAL_MAP.get(item.get("saloon_material_id"), ""),
         steering="მარჯვენა" if item.get("right_wheel") else "მარცხენა",
         customs_cleared=bool(item.get("customs_passed")),
-        has_catalyst=(True if has_catalyst == 1 else False if has_catalyst == 2 else None),
-        tech_inspection=bool(item.get("tech_inspection")) if item.get("tech_inspection") is not None else None,
+        has_catalyst=(
+            True if has_catalyst == 1 else False if has_catalyst == 2 else None
+        ),
+        tech_inspection=bool(item.get("tech_inspection"))
+        if item.get("tech_inspection") is not None
+        else None,
         vin=_build_vin_from_api(item),
         license_plate=(item.get("license_number") or "").strip(),
         location=LOCATION_MAP.get(item.get("location_id"), ""),
         seller_name=(item.get("client_name") or "").strip(),
         # masked in the listing API - fall back to a number written in the description
-        phone=_build_phone_from_api(item) or phone_from_text(item.get("car_desc") or ""),
+        phone=_build_phone_from_api(item)
+        or phone_from_text(item.get("car_desc") or ""),
         posted_date=(item.get("order_date") or "").strip(),
         views=_to_int(item.get("views")),
         description=_build_description_from_api(item),
@@ -224,35 +283,35 @@ def item_to_car(item: dict) -> Car | None:
 
 
 SPEC_TO_FIELD = {
-    "მწარმოებელი":          "manufacturer",
-    "მოდელი":               "model",
-    "წელი":                 "year",
-    "კატეგორია":            "body_type",
-    "გარბენი":              "mileage_km",
-    "საწვავის ტიპი":        "engine_type",
-    "ძრავის მოცულობა":      "engine_volume_l",
-    "ცილინდრები":           "cylinders",
-    "გადაცემათა კოლოფი":    "gearbox",
-    "წამყვანი თვლები":      "drive_wheels",
-    "კარები":               "doors",
-    "საჭე":                 "steering",
-    "ფერი":                 "color",
-    "სალონის ფერი":         "interior_color",
-    "სალონის მასალა":       "interior_material",
-    "ტექ. დათვალიერება":    "tech_inspection",
-    "კატალიზატორი":         "has_catalyst",
-    "მდგომარეობა":          "condition",
-    "ადგილების რაოდენობა":  "seats",
-    "სიმძლავრე":            "power_hp",
+    "მწარმოებელი": "manufacturer",
+    "მოდელი": "model",
+    "წელი": "year",
+    "კატეგორია": "body_type",
+    "გარბენი": "mileage_km",
+    "საწვავის ტიპი": "engine_type",
+    "ძრავის მოცულობა": "engine_volume_l",
+    "ცილინდრები": "cylinders",
+    "გადაცემათა კოლოფი": "gearbox",
+    "წამყვანი თვლები": "drive_wheels",
+    "კარები": "doors",
+    "საჭე": "steering",
+    "ფერი": "color",
+    "სალონის ფერი": "interior_color",
+    "სალონის მასალა": "interior_material",
+    "ტექ. დათვალიერება": "tech_inspection",
+    "კატალიზატორი": "has_catalyst",
+    "მდგომარეობა": "condition",
+    "ადგილების რაოდენობა": "seats",
+    "სიმძლავრე": "power_hp",
 }
 
 _INT_RANGES = {
-    "year":       (1900, 2030),
+    "year": (1900, 2030),
     "mileage_km": (0, 2_000_000),
-    "cylinders":  (1, 16),
-    "doors":      (1, 8),
-    "seats":      (1, 50),
-    "power_hp":   (1, 2000),
+    "cylinders": (1, 16),
+    "doors": (1, 8),
+    "seats": (1, 50),
+    "power_hp": (1, 2000),
 }
 _BOOL_FIELDS = {"tech_inspection", "has_catalyst"}
 
@@ -322,7 +381,7 @@ _TITLE_RE = re.compile(r"^(\d{4})\s+(\S+)\s+(.*)$")
 
 async def extract_title(page: Page) -> tuple[int | None, str, str]:
     # a title like "2014 Lexus ES 350 Base" -> (year, manufacturer, model)
-    el = await page.query_selector('p.leading-\\[100\\%\\]')
+    el = await page.query_selector("p.leading-\\[100\\%\\]")
     if not el:
         el = await page.query_selector("h1")
     if not el:
@@ -341,7 +400,9 @@ async def extract_title(page: Page) -> tuple[int | None, str, str]:
 
 async def extract_description(page: Page) -> str:
     # the description lives in p.text-raisin-80.whitespace-pre-wrap
-    el = await page.query_selector('p[class*="text-raisin-80"][class*="whitespace-pre-wrap"]')
+    el = await page.query_selector(
+        'p[class*="text-raisin-80"][class*="whitespace-pre-wrap"]'
+    )
     if not el:
         return ""
     return clean_text(await el.inner_text())
@@ -368,7 +429,9 @@ async def extract_photos(page: Page) -> list[str]:
 _PHOTO_N_RE = re.compile(r"/large/(\d+)_(\d+)\.jpg")
 
 
-def _ensure_all_photos(photos: list[str], car_id: str, max_photos: int = 40) -> list[str]:
+def _ensure_all_photos(
+    photos: list[str], car_id: str, max_photos: int = 40
+) -> list[str]:
     # If the page lazy-loaded and only thumbs were in the HTML, build every
     # _1.jpg, _2.jpg ... _N.jpg URL anyway.
     #
@@ -392,7 +455,7 @@ def _ensure_all_photos(photos: list[str], car_id: str, max_photos: int = 40) -> 
         if m:
             max_n = max(max_n, int(m.group(2)))
 
-    suffix = first[first.find(".jpg"):]
+    suffix = first[first.find(".jpg") :]
 
     return [f"{base}_{n}{suffix}" for n in range(1, min(max_n, max_photos) + 1)]
 
@@ -461,7 +524,7 @@ async def extract_phone(page: Page) -> str:
     # myauto hides the phone behind a login, so this returns empty.
     #
     # If some page does show a full number anyway (a test, a future feature, or a
-    # cached state) it comes back formatted; otherwise "".
+    # cached state) it comes back formatted. otherwise ""
     link = await page.query_selector('a[data-testid^="show-number-modal-phone"]')
     if not link:
         link = await page.query_selector('a[href^="tel:+995"]:not([href*="32 280"])')
@@ -491,14 +554,51 @@ async def extract_seller_name(page: Page) -> str:
 
 
 GE_CITIES = (
-    "თბილისი", "ბათუმი", "ქუთაისი", "რუსთავი", "გორი", "ფოთი", "ზუგდიდი",
-    "ხაშური", "სამტრედია", "სენაკი", "ოზურგეთი", "მცხეთა", "ახალციხე",
-    "მარნეული", "თელავი", "ბორჯომი", "ქობულეთი", "გარდაბანი", "კასპი",
-    "წყალტუბო", "ჭიათურა", "ზესტაფონი", "ქარელი", "ცხინვალი", "ახალქალაქი",
-    "ხონი", "ლანჩხუთი", "მესტია", "სიღნაღი", "ლაგოდეხი", "გურჯაანი",
-    "დმანისი", "თეთრიწყარო", "ბოლნისი", "წალკა", "თიანეთი", "დუშეთი",
-    "ცაგერი", "მარტვილი", "აბაშა", "ჩხოროწყუ", "წალენჯიხა", "ხობი",
-    "ჩხალთა", "ცხაკაია",
+    "თბილისი",
+    "ბათუმი",
+    "ქუთაისი",
+    "რუსთავი",
+    "გორი",
+    "ფოთი",
+    "ზუგდიდი",
+    "ხაშური",
+    "სამტრედია",
+    "სენაკი",
+    "ოზურგეთი",
+    "მცხეთა",
+    "ახალციხე",
+    "მარნეული",
+    "თელავი",
+    "ბორჯომი",
+    "ქობულეთი",
+    "გარდაბანი",
+    "კასპი",
+    "წყალტუბო",
+    "ჭიათურა",
+    "ზესტაფონი",
+    "ქარელი",
+    "ცხინვალი",
+    "ახალქალაქი",
+    "ხონი",
+    "ლანჩხუთი",
+    "მესტია",
+    "სიღნაღი",
+    "ლაგოდეხი",
+    "გურჯაანი",
+    "დმანისი",
+    "თეთრიწყარო",
+    "ბოლნისი",
+    "წალკა",
+    "თიანეთი",
+    "დუშეთი",
+    "ცაგერი",
+    "მარტვილი",
+    "აბაშა",
+    "ჩხოროწყუ",
+    "წალენჯიხა",
+    "ხობი",
+    "ჩხალთა",
+    "ცხაკაია",
 )
 
 
@@ -522,7 +622,7 @@ async def scrape_one(
 ) -> Car | None:
     # one detail page -> a Car, with retries
     #
-    # the semaphore is optional; pass None for a manual smoke test
+    # the semaphore is optional. pass None for a manual smoke test
     if semaphore is None:
         semaphore = asyncio.Semaphore(1)
 
@@ -531,12 +631,18 @@ async def scrape_one(
             page = await context.new_page()
             try:
                 await page.route("**/*", block_heavy_resources)
-                await page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
+                await page.goto(
+                    url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS
+                )
                 try:
-                    await page.wait_for_selector('div[class*="py-[4px]"]', timeout=10_000)
+                    await page.wait_for_selector(
+                        'div[class*="py-[4px]"]', timeout=10_000
+                    )
                 except Exception:
                     title = await page.evaluate("() => document.title")
-                    body_len = await page.evaluate("() => (document.body.innerText || '').length")
+                    body_len = await page.evaluate(
+                        "() => (document.body.innerText || '').length"
+                    )
                     is_homepage = title.startswith("ახალი და მეორადი")
                     if is_homepage or body_len < 200:
                         return None
@@ -650,7 +756,9 @@ async def _warmup(context: BrowserContext) -> None:
         await page.close()
 
 
-async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[dict], int]:
+async def _fetch_page_raw(
+    context: BrowserContext, page_num: int
+) -> tuple[list[dict], int]:
     # Returns (items, last_page). items have FULL car data, not just IDs.
     headers = {
         "Accept": "*/*",
@@ -667,6 +775,7 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
         "Page": page_num,
     }
     try:
+
         async def _fetch():
             response = await context.request.get(
                 f"{API_BASE}/ka/products",
@@ -677,11 +786,15 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
             if not response.ok:
                 return None
             return await response.json()
+
         data = await asyncio.wait_for(_fetch(), timeout=25.0)
         if data is None:
             return [], 0
     except Exception as exc:  # including asyncio.TimeoutError, all handled the same way
-        print(f"  API page {page_num} error: {type(exc).__name__}: {str(exc)[:80]}", flush=True)
+        print(
+            f"  API page {page_num} error: {type(exc).__name__}: {str(exc)[:80]}",
+            flush=True,
+        )
         return [], 0
 
     if data.get("statusCode") != 1:
@@ -693,7 +806,9 @@ async def _fetch_page_raw(context: BrowserContext, page_num: int) -> tuple[list[
     return items, last_page
 
 
-async def _fetch_ids_page(context: BrowserContext, page_num: int) -> tuple[list[str], int]:
+async def _fetch_ids_page(
+    context: BrowserContext, page_num: int
+) -> tuple[list[str], int]:
     # Returns (car_ids, last_page). Legacy - kept for the HTML scrape path.
     items, last_page = await _fetch_page_raw(context, page_num)
     ids = [str(item["car_id"]) for item in items if item.get("car_id")]
@@ -728,7 +843,9 @@ async def collect_all_ids(
             seen.add(car_id)
             all_ids.append(car_id)
         if page_num % 25 == 0 or page_num == last_page:
-            print(f"  [API {page_num}/{last_page}] collected:{len(all_ids)}", flush=True)
+            print(
+                f"  [API {page_num}/{last_page}] collected:{len(all_ids)}", flush=True
+            )
 
     return all_ids
 
@@ -784,7 +901,9 @@ async def run(max_pages: int | None = None) -> None:
                 return
             if max_pages:
                 last_page = min(last_page, max_pages)
-            print(f"  Total: {last_page} pages × 30 = ~{last_page * 30} listings (with dedup ~half)")
+            print(
+                f"  Total: {last_page} pages × 30 = ~{last_page * 30} listings (with dedup ~half)"
+            )
 
             buffer: list[Car] = []
             saved = 0
@@ -866,7 +985,9 @@ async def run_html(max_pages: int | None = None) -> None:
         try:
             cached = _load_cached_ids() if max_pages is None else None
             if cached is not None:
-                print(f"  Loaded {len(cached)} IDs from cache (delete {IDS_CACHE_PATH.name} to refresh)")
+                print(
+                    f"  Loaded {len(cached)} IDs from cache (delete {IDS_CACHE_PATH.name} to refresh)"
+                )
                 all_ids = cached
             else:
                 all_ids = await collect_all_ids(context, max_pages=max_pages)
@@ -874,8 +995,10 @@ async def run_html(max_pages: int | None = None) -> None:
                     _save_cached_ids(all_ids)
 
             new_ids = [cid for cid in all_ids if cid not in already_saved]
-            print(f"  Found: {len(all_ids)} | New: {len(new_ids)} | "
-                  f"Skipping: {len(all_ids) - len(new_ids)}")
+            print(
+                f"  Found: {len(all_ids)} | New: {len(new_ids)} | "
+                f"Skipping: {len(all_ids) - len(new_ids)}"
+            )
             if not new_ids:
                 print("Nothing new to scrape.")
                 return
@@ -933,7 +1056,7 @@ async def _scrape_all(
 
 
 async def smoke_test(url: str) -> Car | None:
-    # run one URL end to end; handy for debugging
+    # run one URL end to end. handy for debugging
     #
     # Usage:
     #     uv run python -c "from src.common.runtime import run as r; \\
@@ -975,8 +1098,9 @@ if __name__ == "__main__":
     args = sys.argv[1:]
 
     if args and args[0] == "smoke":
-        target_url = args[1] if len(args) > 1 else \
-            "https://www.myauto.ge/ka/pr/120183626/sale"
+        target_url = (
+            args[1] if len(args) > 1 else "https://www.myauto.ge/ka/pr/120183626/sale"
+        )
         _run_async(smoke_test(target_url))
     elif args and args[0] == "test" and len(args) > 1:
         _run_async(run(max_pages=int(args[1])))

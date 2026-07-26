@@ -78,11 +78,15 @@ async def _fetch_one(
     upload_to_cloud: bool,
     keep_local: bool,
 ) -> str | None:
-    # one photo; never raises. photo_sem caps how much I/O runs at once.
+    # one photo, never raises. photo_sem caps how much I/O runs at once
     async with photo_sem:
         try:
             return await fetch_and_store(
-                http_client, url, source, source_id, index,
+                http_client,
+                url,
+                source,
+                source_id,
+                index,
                 upload_to_cloud=upload_to_cloud,
                 keep_local=keep_local,
             )
@@ -101,17 +105,25 @@ async def process_car(
     upload_to_cloud: bool,
     keep_local: bool = True,
 ) -> int:
-    # one car's photos in parallel; never raises, always returns an int
+    # one car's photos in parallel. never raises, always returns an int
     #
     # gather preserves order, so the keys stay in photo order and a failed photo
     # comes back as None and is dropped.
-    results = await asyncio.gather(*(
-        _fetch_one(
-            http_client, photo_sem, source, source_id, index, url,
-            upload_to_cloud, keep_local,
+    results = await asyncio.gather(
+        *(
+            _fetch_one(
+                http_client,
+                photo_sem,
+                source,
+                source_id,
+                index,
+                url,
+                upload_to_cloud,
+                keep_local,
+            )
+            for index, url in enumerate(image_urls, start=1)
         )
-        for index, url in enumerate(image_urls, start=1)
-    ))
+    )
     keys = [key for key in results if key]
 
     if keys:
@@ -127,7 +139,9 @@ async def main() -> None:
     parser.add_argument("--source", help="only this source (autopapa/myauto)")
     parser.add_argument("--limit", type=int, help="maximum number of cars")
     parser.add_argument(
-        "--concurrent", type=int, default=8,
+        "--concurrent",
+        type=int,
+        default=8,
         help="how many photo downloads/uploads to run at once (I/O bound)",
     )
     parser.add_argument(
@@ -139,7 +153,7 @@ async def main() -> None:
         "--purge-local",
         action="store_true",
         help="delete the local file once R2 confirms the upload, so a "
-             "disk-constrained backfill does not fill up the runner",
+        "disk-constrained backfill does not fill up the runner",
     )
     parser.add_argument(
         "--shard",
@@ -196,15 +210,23 @@ async def main() -> None:
                 except asyncio.QueueEmpty:
                     return
                 n_photos = await process_car(
-                    client, photo_sem, car_id, source, source_id, urls,
-                    upload_to_cloud, keep_local,
+                    client,
+                    photo_sem,
+                    car_id,
+                    source,
+                    source_id,
+                    urls,
+                    upload_to_cloud,
+                    keep_local,
                 )
                 total_photos += n_photos
                 done += 1
                 if done % 10 == 0 or done == total:
                     elapsed = time.time() - start
                     rate = done / elapsed if elapsed else 0
-                    print(f"[{done}/{total}] photos:{total_photos} rate:{rate:.1f} car/s")
+                    print(
+                        f"[{done}/{total}] photos:{total_photos} rate:{rate:.1f} car/s"
+                    )
 
         await asyncio.gather(*(worker() for _ in range(args.concurrent)))
 

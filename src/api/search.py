@@ -3,7 +3,7 @@
 # The current frontend sends a single `query` and the backend works out whether
 # it is a VIN, a phone number or free text. The old frontend sent vin/phone/
 #
-# free_text separately; that form is deprecated but still accepted.
+# free_text separately. that form is deprecated but still accepted
 
 from __future__ import annotations
 
@@ -255,7 +255,7 @@ def _smart_route(req: SearchRequest, text: str) -> tuple[str, tuple, str]:
 
 
 def _browse_query(req: SearchRequest) -> tuple[str, tuple, str]:
-    # No text - just filters + sort. e.g. all 2018-2022 cars under $20k.
+    # no text, just filters + sort: all 2018-2022 cars under $20k
     if not _has_any_filter(req):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -354,9 +354,8 @@ _RESULT_CACHE_LOCK = threading.Lock()
 
 
 def _cache_put(key: str, rows: list, now: float) -> None:
-    # Store an entry and keep the cache within capacity. Overflow is evicted oldest
-    # first rather than calling clear(), so a cold start doesn't throw away every
-    # popular query at once.
+    # store an entry and keep the cache within capacity. we drop the oldest entry
+    # instead of calling clear(), so one cold start doesn't wipe every popular query
     with _RESULT_CACHE_LOCK:
         _RESULT_CACHE[key] = (now, rows)
         _RESULT_CACHE.move_to_end(key)
@@ -440,7 +439,7 @@ def _count_where(req: SearchRequest) -> tuple[str, tuple]:
 @router.post("/count", response_model=SearchCount)
 def search_count(req: SearchRequest) -> SearchCount:
     # Match count for the current query + filters - drives the live count on the
-    # search button. No rows, no rate limit; cached like searches.
+    # search button. no rows, no rate limit. cached like searches
     where, params = _count_where(req)
     sql = "SELECT COUNT(*) AS n FROM cars" + (f" WHERE {where}" if where else "")
     rows = _query_rows(sql, params)
@@ -449,7 +448,7 @@ def search_count(req: SearchRequest) -> SearchCount:
 
 @car_router.get("/{key}", response_model=CarPublic)
 def get_car(key: str, response: Response) -> CarPublic:
-    # Fetch one car for its permalink. {key} is {source}-{source_id}, e.g.
+    # fetch one car for its permalink. {key} is {source}-{source_id}, like
     # /car/myauto-121951594. No rate limit here, because this is not a search.
     m = _CAR_KEY_RE.match(key)
     if not m:

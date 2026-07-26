@@ -82,9 +82,12 @@ def test_list_fields_joined_with_semicolons(temp_exports):
 
 def test_bool_fields_serialized(temp_exports):
     # bool fields become "true"/"false", and None becomes empty
-    csv_export.append_cars_to_csv([
-        make_car(customs_cleared=True, has_turbo=False, tech_inspection=None),
-    ], "myauto")
+    csv_export.append_cars_to_csv(
+        [
+            make_car(customs_cleared=True, has_turbo=False, tech_inspection=None),
+        ],
+        "myauto",
+    )
 
     files = list(temp_exports.glob("myauto-*.csv"))
     with files[0].open(encoding="utf-8") as f:

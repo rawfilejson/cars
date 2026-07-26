@@ -2,7 +2,7 @@
 #
 # Two Windows-specific annoyances we hide here:
 #   - stdout defaults to cp1252 and crashes on Georgian text
-#   - some libraries (e.g. older psycopg async) prefer SelectorEventLoop
+#   - some libraries like older psycopg async prefer SelectorEventLoop
 #
 # We leave the default event loop (ProactorEventLoop) alone because
 # Playwright needs it for subprocesses. psycopg runs sync in a thread instead

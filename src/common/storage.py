@@ -36,7 +36,7 @@ _EXT_RE = re.compile(r"\.(jpg|jpeg|png|webp|gif)(?:\?|$)", re.IGNORECASE)
 
 _REFERERS = {
     "autopapa": "https://autopapa.ge/",
-    "myauto":   "https://www.myauto.ge/",
+    "myauto": "https://www.myauto.ge/",
 }
 
 
@@ -93,7 +93,9 @@ async def download_to_local(
             if attempt < len(_RETRY_DELAYS):
                 await asyncio.sleep(delay)
 
-    log.warning("download failed %s after %d tries - %s", url, len(_RETRY_DELAYS), last_exc)
+    log.warning(
+        "download failed %s after %d tries - %s", url, len(_RETRY_DELAYS), last_exc
+    )
     return False
 
 
@@ -104,6 +106,7 @@ def _create_r2_client() -> "S3Client | None":
     if not r2_is_configured():
         return None
     import boto3
+
     return boto3.client(
         "s3",
         endpoint_url=r2_endpoint(),
@@ -123,11 +126,11 @@ def get_r2_client() -> "S3Client | None":
 def _content_type(key: str) -> str:
     ext = key.rsplit(".", 1)[-1].lower()
     return {
-        "jpg":  "image/jpeg",
+        "jpg": "image/jpeg",
         "jpeg": "image/jpeg",
-        "png":  "image/png",
+        "png": "image/png",
         "webp": "image/webp",
-        "gif":  "image/gif",
+        "gif": "image/gif",
     }.get(ext, "image/jpeg")
 
 
@@ -135,6 +138,7 @@ def _r2_object_exists(client, key: str) -> bool:
     # HeadObject is a cheap check (a Class B operation, ~10x cheaper than a Class A
     # upload), so if the object is already there we skip re-uploading it.
     from botocore.exceptions import ClientError
+
     try:
         client.head_object(Bucket=R2_BUCKET, Key=key)
         return True

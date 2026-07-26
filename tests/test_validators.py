@@ -65,8 +65,12 @@ def test_mileage_out_of_range():
 
 
 def test_engine_volume_out_of_range():
-    assert any("engine_volume_l" in i for i in validate_car(make_car(engine_volume_l=0.05)))
-    assert any("engine_volume_l" in i for i in validate_car(make_car(engine_volume_l=20.0)))
+    assert any(
+        "engine_volume_l" in i for i in validate_car(make_car(engine_volume_l=0.05))
+    )
+    assert any(
+        "engine_volume_l" in i for i in validate_car(make_car(engine_volume_l=20.0))
+    )
 
 
 def test_power_hp_out_of_range():
@@ -100,11 +104,14 @@ def test_missing_required_fields():
     assert any("url" in i for i in issues)
 
 
-@pytest.mark.parametrize("field,bad,good", [
-    ("cylinders", 20, 6),
-    ("doors", 15, 4),
-    ("seats", 100, 5),
-])
+@pytest.mark.parametrize(
+    "field,bad,good",
+    [
+        ("cylinders", 20, 6),
+        ("doors", 15, 4),
+        ("seats", 100, 5),
+    ],
+)
 def test_simple_int_ranges(field, bad, good):
     assert validate_car(make_car(**{field: bad})) != []
     assert validate_car(make_car(**{field: good})) == []

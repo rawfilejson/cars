@@ -9,7 +9,7 @@
 #   * hourly limit: per token
 #   * hourly ceiling: per IP, as the backstop
 #
-# All timing comes from the database NOW(); the client's clock is not trusted.
+# all timing comes from the database NOW(). we don't trust the client's clock
 # The IP comes from CF-Connecting-IP. The origin is only reachable through
 # Cloudflare, which overwrites that header with the real client, so it cannot be
 # forged. Without Cloudflare the fallback is the last public IP in XFF.
@@ -91,7 +91,7 @@ def _limit_error(limit: int) -> HTTPException:
 
 
 def check_rate_limit(request: Request, is_pagination: bool = False) -> int | None:
-    # check the rate limit before running a search; returns how many tries are left
+    # check the rate limit before a search. returns how many tries are left
     #
     # is_pagination=True (page > 1) skips the cooldown, because paging through
     # results you already have is not a new search. The hourly IP ceiling still applies.
@@ -148,7 +148,7 @@ def check_rate_limit(request: Request, is_pagination: bool = False) -> int | Non
     if hourly_on and count_last_hour >= SEARCH_LIMIT_PER_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_HOUR)
 
-    # the IP backstop stays, aimed at scrapers rather than ordinary visitors
+    # the IP backstop is aimed at scrapers, not at ordinary visitors
     if ip and SEARCH_LIMIT_PER_IP_HOUR > 0 and ip_count >= SEARCH_LIMIT_PER_IP_HOUR:
         raise _limit_error(SEARCH_LIMIT_PER_IP_HOUR)
 

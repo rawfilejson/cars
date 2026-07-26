@@ -25,8 +25,8 @@ def clean_int(text: str | None) -> int | None:
 def sane_int(text: str | None, lo: int, hi: int) -> int | None:
     # clean_int + range check. Out-of-range → None.
     #
-    # Use for fields where sellers commonly enter garbage (e.g. HP "2490"
-    # when they meant engine cc). Better to drop than to lie.
+    # for fields where sellers type garbage, like HP "2490" when they meant
+    # engine cc. better to drop the value than to lie
     value = clean_int(text)
     if value is None or value < lo or value > hi:
         return None

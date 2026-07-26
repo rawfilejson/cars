@@ -56,17 +56,26 @@ def test_no_xff_falls_back_to_host():
 
 def test_no_identifiable_ip_returns_none():
     assert client_ip(_req()) is None
-    assert client_ip(_req({"x-forwarded-for": "garbage"}, client_host="also-garbage")) is None
+    assert (
+        client_ip(_req({"x-forwarded-for": "garbage"}, client_host="also-garbage"))
+        is None
+    )
 
 
-@pytest.mark.parametrize("token,expected", [
-    ("a1b2c3d4e5", "a1b2c3d4e5"),
-    ("123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174000"),
-    ("  pad_ded-token  ", "pad_ded-token"),   # trimmed before validation
-    ("short", None),                           # < 8 chars
-    ("' OR 1=1", None),                         # bad chars
-    ("", None),
-])
+@pytest.mark.parametrize(
+    "token,expected",
+    [
+        ("a1b2c3d4e5", "a1b2c3d4e5"),
+        (
+            "123e4567-e89b-12d3-a456-426614174000",
+            "123e4567-e89b-12d3-a456-426614174000",
+        ),
+        ("  pad_ded-token  ", "pad_ded-token"),  # trimmed before validation
+        ("short", None),  # < 8 chars
+        ("' OR 1=1", None),  # bad chars
+        ("", None),
+    ],
+)
 def test_client_token(token, expected):
     assert client_token(_req({"x-client-id": token})) == expected
 

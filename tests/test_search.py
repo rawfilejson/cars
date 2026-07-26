@@ -6,30 +6,39 @@ import pytest
 from fastapi import HTTPException
 
 from src.api.schemas import SearchRequest
-from src.api.search import _build_query, _count_where, _normalize_phone_query, _looks_like_phone
+from src.api.search import (
+    _build_query,
+    _count_where,
+    _normalize_phone_query,
+    _looks_like_phone,
+)
 
 
 def _build_filter_only(**kwargs):
     # Build a SearchRequest from kwargs and return its (fragments, params).
     from src.api.search import _filter_clauses
+
     return _filter_clauses(SearchRequest(**kwargs))
 
 
-@pytest.mark.parametrize("raw,expected", [
-    ("595515141",        "595515141"),
-    ("+995595515141",    "595515141"),
-    ("+995 595 515 141", "595515141"),
-    ("+995 595 51 51 41","595515141"),
-    ("995 595 515 141",  "595515141"),
-    ("(595) 51-51-41",   "595515141"),
-    ("5-9-5-5-1-5-1-4-1","595515141"),
-    ("55555 5555",       "555555555"),
-    ("abc595515141xyz",  "595515141"),
-    (" 595 515 141 ",    "595515141"),
-    ("",                 ""),
-    ("abc",              ""),
-    ("5555",             "5555"),
-])
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("595515141", "595515141"),
+        ("+995595515141", "595515141"),
+        ("+995 595 515 141", "595515141"),
+        ("+995 595 51 51 41", "595515141"),
+        ("995 595 515 141", "595515141"),
+        ("(595) 51-51-41", "595515141"),
+        ("5-9-5-5-1-5-1-4-1", "595515141"),
+        ("55555 5555", "555555555"),
+        ("abc595515141xyz", "595515141"),
+        (" 595 515 141 ", "595515141"),
+        ("", ""),
+        ("abc", ""),
+        ("5555", "5555"),
+    ],
+)
 def test_normalize_phone_query(raw, expected):
     # any user input reduces to the last 9 digits, or fewer
     assert _normalize_phone_query(raw) == expected
@@ -61,17 +70,20 @@ def test_count_where_empty_is_unfiltered():
     assert params == ()
 
 
-@pytest.mark.parametrize("text,expected", [
-    ("595515141",          True),
-    ("+995 595 515 141",   True),
-    ("5-9-5-5-1-5-1-4-1",  True),
-    ("(555) 51-51-41",     True),
-    ("Toyota Camry 2020",  False),
-    ("Toyota",             False),
-    ("123",                False),
-    ("123456",             False),
-    ("1234567",            True),
-])
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("595515141", True),
+        ("+995 595 515 141", True),
+        ("5-9-5-5-1-5-1-4-1", True),
+        ("(555) 51-51-41", True),
+        ("Toyota Camry 2020", False),
+        ("Toyota", False),
+        ("123", False),
+        ("123456", False),
+        ("1234567", True),
+    ],
+)
 def test_looks_like_phone(text, expected):
     assert _looks_like_phone(text) is expected
 
@@ -187,8 +199,8 @@ def test_result_cache_evicts_oldest_not_all():
         for i in range(overflow):
             s._cache_put(f"k{i}", [i], float(i))
         assert len(s._RESULT_CACHE) == s._RESULT_CACHE_MAX  # capped, not cleared
-        assert "k0" not in s._RESULT_CACHE                  # oldest evicted
-        assert f"k{overflow - 1}" in s._RESULT_CACHE        # newest retained
+        assert "k0" not in s._RESULT_CACHE  # oldest evicted
+        assert f"k{overflow - 1}" in s._RESULT_CACHE  # newest retained
     finally:
         s._RESULT_CACHE.clear()
 
@@ -227,6 +239,7 @@ def test_filter_locations_exact():
 
 def test_multi_select_counts_as_a_filter_for_browse():
     from src.api.search import _has_any_filter
+
     assert _has_any_filter(SearchRequest(manufacturers=["BMW"]))
     assert _has_any_filter(SearchRequest(locations=["თბილისი"]))
     assert _has_any_filter(SearchRequest(fuels=["ბენზინი"]))

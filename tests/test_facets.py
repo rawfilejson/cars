@@ -7,16 +7,19 @@ import pytest
 from src.api.facets import facet_canon, facet_variants
 
 
-@pytest.mark.parametrize("raw,canon", [
-    ("ჰეჩბეკი", "ჰეტჩბეკი"),
-    ("ჰეტჩბექი", "ჰეტჩბეკი"),
-    ("ჰეჩბექი", "ჰეტჩბეკი"),
-    ("ბენზინზე", "ბენზინი"),
-    ("დიზელზე", "დიზელი"),
-    ("4X4", "4x4"),
-    ("სედანი", "სედანი"),   # unknown → unchanged
-    ("", ""),
-])
+@pytest.mark.parametrize(
+    "raw,canon",
+    [
+        ("ჰეჩბეკი", "ჰეტჩბეკი"),
+        ("ჰეტჩბექი", "ჰეტჩბეკი"),
+        ("ჰეჩბექი", "ჰეტჩბეკი"),
+        ("ბენზინზე", "ბენზინი"),
+        ("დიზელზე", "დიზელი"),
+        ("4X4", "4x4"),
+        ("სედანი", "სედანი"),  # unknown → unchanged
+        ("", ""),
+    ],
+)
 def test_facet_canon(raw, canon):
     assert facet_canon(raw) == canon
 

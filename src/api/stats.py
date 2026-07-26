@@ -64,7 +64,7 @@ def get_stats(response: Response) -> Stats:
     response.headers["Cache-Control"] = "public, max-age=60"
     now = time.monotonic()
     # double-checked locking, so simultaneous cold-cache requests cause one COUNT
-    # rather than a stampede. Loads are rare anyway with a 60s TTL.
+    # instead of a stampede. loads are rare anyway with a 60s TTL
     with _cache_lock:
         if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
             return _cache[1]

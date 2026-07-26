@@ -35,7 +35,7 @@ SQLI_PAYLOADS = [
 def test_text_search_is_parameterized(payload):
     # User text must reach SQL only as %s params, never spliced into the query.
     sql, params, _ = _smart_route(SearchRequest(query=payload), payload)
-    assert "%s" in sql                                  # placeholders are used
+    assert "%s" in sql  # placeholders are used
     upper = sql.upper()
     assert "DROP" not in upper
     assert "PG_SLEEP" not in upper
@@ -48,20 +48,30 @@ def test_text_search_is_parameterized(payload):
 def test_sort_is_whitelisted():
     # Anything not in the whitelist falls back to the safe default ORDER BY.
     assert _sort_clause("price_asc") == _SORT_CLAUSES["price_asc"]
-    for bad in ["price_asc; DROP TABLE cars", "(SELECT 1)", "year_desc--", "", None, "x"]:
+    for bad in [
+        "price_asc; DROP TABLE cars",
+        "(SELECT 1)",
+        "year_desc--",
+        "",
+        None,
+        "x",
+    ]:
         assert _sort_clause(bad) == _SORT_CLAUSES["newest"]
 
 
-@pytest.mark.parametrize("key,ok", [
-    ("myauto-123", True),
-    ("autopapa-456", True),
-    ("myauto-1' OR '1", False),
-    ("myauto-1;DROP", False),
-    ("../../etc/passwd", False),
-    ("evil-123", False),
-    ("myauto-", False),
-    ("myauto-12a", False),
-])
+@pytest.mark.parametrize(
+    "key,ok",
+    [
+        ("myauto-123", True),
+        ("autopapa-456", True),
+        ("myauto-1' OR '1", False),
+        ("myauto-1;DROP", False),
+        ("../../etc/passwd", False),
+        ("evil-123", False),
+        ("myauto-", False),
+        ("myauto-12a", False),
+    ],
+)
 def test_car_key_regex_rejects_injection(key, ok):
     assert bool(_CAR_KEY_RE.match(key)) is ok
 
@@ -77,52 +87,68 @@ def test_car_key_regex_accepts_every_known_source():
 
 def test_car_key_regex_escapes_source_metacharacters():
     # Sources are re.escape()'d into the permalink regex, so a future source with
-    # regex metacharacters matches literally rather than as a pattern.
+    # regex metacharacters matches literally, not as a pattern
     sources = ("au.to", "my+auto")
     rx = re.compile(r"^(" + "|".join(re.escape(s) for s in sources) + r")-(\d+)$")
     assert rx.match("au.to-123")
     assert rx.match("my+auto-9")
-    assert not rx.match("auXto-123")   # '.' stays literal, not "any char"
+    assert not rx.match("auXto-123")  # '.' stays literal, not "any char"
 
 
-@pytest.mark.parametrize("vin,ok", [
-    ("WBA3A5C5XFD123456", True),
-    ("SHORT", False),
-    ("KMHL34xxxxx123456".replace("x", "*"), False),   # masked VIN
-    ("IIIIIIIIIIIIIIIII", False),                      # 'I' not allowed
-    ("", False),
-])
+@pytest.mark.parametrize(
+    "vin,ok",
+    [
+        ("WBA3A5C5XFD123456", True),
+        ("SHORT", False),
+        ("KMHL34xxxxx123456".replace("x", "*"), False),  # masked VIN
+        ("IIIIIIIIIIIIIIIII", False),  # 'I' not allowed
+        ("", False),
+    ],
+)
 def test_vin_validation(vin, ok):
     assert is_valid_vin(vin) is ok
 
 
-@pytest.mark.parametrize("amount,currency,expected", [
-    (0, "USD", None),
-    (-1, "GEL", None),
-    (5, "USD", None),         # sub-$100 sentinel
-    (50, "GEL", None),        # ~$18, junk
-    (8000, "USD", 8000),
-    (50000, "GEL", 50000),
-    (None, "USD", None),
-])
+@pytest.mark.parametrize(
+    "amount,currency,expected",
+    [
+        (0, "USD", None),
+        (-1, "GEL", None),
+        (5, "USD", None),  # sub-$100 sentinel
+        (50, "GEL", None),  # ~$18, junk
+        (8000, "USD", 8000),
+        (50000, "GEL", 50000),
+        (None, "USD", None),
+    ],
+)
 def test_price_floor_drops_junk(amount, currency, expected):
     assert _clean_price(amount, currency) == expected
 
 
-@pytest.mark.parametrize("token,ok", [
-    ("a1b2c3d4e5", True),
-    ("123e4567-e89b-12d3-a456-426614174000", True),
-    ("' OR 1=1", False),
-    ("<script>x", False),
-    ("short", False),         # < 8 chars
-    ("", False),
-    ("x" * 100, False),       # > 64 chars
-])
+@pytest.mark.parametrize(
+    "token,ok",
+    [
+        ("a1b2c3d4e5", True),
+        ("123e4567-e89b-12d3-a456-426614174000", True),
+        ("' OR 1=1", False),
+        ("<script>x", False),
+        ("short", False),  # < 8 chars
+        ("", False),
+        ("x" * 100, False),  # > 64 chars
+    ],
+)
 def test_client_id_format(token, ok):
     assert bool(_CLIENT_ID_RE.match(token)) is ok
 
 
 def test_private_ips_not_treated_as_public():
-    for priv in ["10.0.0.1", "192.168.1.1", "172.16.0.1", "127.0.0.1", "::1", "garbage"]:
+    for priv in [
+        "10.0.0.1",
+        "192.168.1.1",
+        "172.16.0.1",
+        "127.0.0.1",
+        "::1",
+        "garbage",
+    ]:
         assert _is_public_ip(priv) is False
     assert _is_public_ip("8.8.8.8") is True

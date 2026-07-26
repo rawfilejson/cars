@@ -169,7 +169,7 @@ async def upsert_cars(cars: Iterable[Car]) -> int:
 
 
 async def upsert_car(car: Car) -> None:
-    # insert a single car; convenience wrapper
+    # insert a single car. convenience wrapper
     await asyncio.to_thread(_upsert_cars_sync, [car])
 
 

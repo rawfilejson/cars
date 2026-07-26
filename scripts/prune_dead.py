@@ -8,7 +8,7 @@
 # never delete on doubt. Verified-alive rows get their updated_at bumped
 # (with --apply) so successive runs move on to new candidates.
 #
-# Dry run (default) prints what would happen; --apply deletes.
+# dry run prints what would happen. --apply deletes
 #
 #     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py
 #     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py --apply --days 30 --limit 500
@@ -63,7 +63,7 @@ def check_myauto(client: httpx.Client, source_id: str) -> str:
     if not prod:
         return "dead"
     status = prod.get("status_id")
-    # myauto status: 1 = active; anything else (sold/hidden/expired) is gone
+    # myauto status: 1 = active. anything else (sold/hidden/expired) is gone
     if status is not None and status != 1:
         return "dead"
     return "alive"

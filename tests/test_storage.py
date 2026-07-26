@@ -12,14 +12,17 @@ import pytest
 from src.common import storage
 
 
-@pytest.mark.parametrize("url,expected_ext", [
-    ("https://x.com/a/b/c.jpg", ".jpg"),
-    ("https://x.com/a/b/c.jpeg", ".jpeg"),
-    ("https://x.com/a/b/c.png?v=1", ".png"),
-    ("https://x.com/a/b/c.webp", ".webp"),
-    ("https://x.com/no-ext", ".jpg"),
-    ("https://x.com/a/b/c.JPG", ".jpg"),
-])
+@pytest.mark.parametrize(
+    "url,expected_ext",
+    [
+        ("https://x.com/a/b/c.jpg", ".jpg"),
+        ("https://x.com/a/b/c.jpeg", ".jpeg"),
+        ("https://x.com/a/b/c.png?v=1", ".png"),
+        ("https://x.com/a/b/c.webp", ".webp"),
+        ("https://x.com/no-ext", ".jpg"),
+        ("https://x.com/a/b/c.JPG", ".jpg"),
+    ],
+)
 def test_guess_extension(url, expected_ext):
     assert storage._guess_extension(url) == expected_ext
 
@@ -34,12 +37,15 @@ def test_make_image_key_with_query_string():
     assert key == "myauto/999/1.webp"
 
 
-@pytest.mark.parametrize("source,expected", [
-    ("autopapa", "https://autopapa.ge/"),
-    ("myauto",   "https://www.myauto.ge/"),
-    ("unknown",  ""),
-    ("",         ""),
-])
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        ("autopapa", "https://autopapa.ge/"),
+        ("myauto", "https://www.myauto.ge/"),
+        ("unknown", ""),
+        ("", ""),
+    ],
+)
 def test_referer_for(source, expected):
     assert storage.referer_for(source) == expected
 
@@ -74,7 +80,9 @@ async def test_download_to_local_writes_file(temp_photos_dir, fast_retries):
     assert file.read_bytes() == b"fake-jpeg-bytes"
 
 
-async def test_download_to_local_atomic_no_part_file_left(temp_photos_dir, fast_retries):
+async def test_download_to_local_atomic_no_part_file_left(
+    temp_photos_dir, fast_retries
+):
     # Success writes the complete final file via a temp `.part`, then renames - # no half-written file and no leftover `.part` on success.
     def handler(request):
         return httpx.Response(200, content=b"complete-bytes")
@@ -93,6 +101,7 @@ async def test_download_to_local_skips_if_exists(temp_photos_dir, fast_retries):
     target.write_bytes(b"cached")
 
     calls = []
+
     def handler(request):
         calls.append(request)
         return httpx.Response(200, content=b"new")
@@ -107,6 +116,7 @@ async def test_download_to_local_skips_if_exists(temp_photos_dir, fast_retries):
 
 async def test_download_to_local_retries_on_5xx(temp_photos_dir, fast_retries):
     calls = []
+
     def handler(request):
         calls.append(request)
         if len(calls) < 3:
@@ -121,6 +131,7 @@ async def test_download_to_local_retries_on_5xx(temp_photos_dir, fast_retries):
 
 async def test_download_to_local_no_retry_on_4xx(temp_photos_dir, fast_retries):
     calls = []
+
     def handler(request):
         calls.append(request)
         return httpx.Response(404)
@@ -131,8 +142,11 @@ async def test_download_to_local_no_retry_on_4xx(temp_photos_dir, fast_retries):
     assert len(calls) == 1
 
 
-async def test_download_to_local_gives_up_after_max_retries(temp_photos_dir, fast_retries):
+async def test_download_to_local_gives_up_after_max_retries(
+    temp_photos_dir, fast_retries
+):
     calls = []
+
     def handler(request):
         calls.append(request)
         return httpx.Response(503)
@@ -145,6 +159,7 @@ async def test_download_to_local_gives_up_after_max_retries(temp_photos_dir, fas
 
 async def test_download_to_local_uses_referer(temp_photos_dir, fast_retries):
     captured = []
+
     def handler(request):
         captured.append(request.headers.get("referer", ""))
         return httpx.Response(200, content=b"x")
@@ -168,6 +183,7 @@ def make_r2_client_mock(existing_keys: set[str]) -> MagicMock:
             return {}
         err = {"Error": {"Code": "404", "Message": "Not Found"}}
         raise ClientError(err, "HeadObject")
+
     client.head_object = MagicMock(side_effect=head_object)
     return client
 
