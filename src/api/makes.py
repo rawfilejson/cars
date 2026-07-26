@@ -76,7 +76,7 @@ def _order_makes(
     # manufacturers with the most listings first, and inside each one the models
     # by count too (alphabetically when tied). Rare models are dropped,
     # but a brand with any listing always shows up, even if it has just one car.
-    ranked: list[tuple[str, int, list[str]]] = []
+    ranked = []
     for manu, bucket in agg.items():
         kept = [(disp, cnt) for disp, cnt in bucket.values() if cnt >= _MIN_COUNT]
         if not kept:
@@ -104,7 +104,7 @@ def _load_makes() -> MakesResponse:
             rows = cur.fetchall()
 
     # reduce to the base model, merge duplicates and add their counts together
-    agg: dict[str, dict[str, tuple[str, int]]] = {}
+    agg = {}
     for row in rows:
         manu = row["manufacturer"]
         base = _base_model(manu, row["model"])

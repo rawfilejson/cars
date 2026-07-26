@@ -1,24 +1,9 @@
-# Migrate the old CSV dumps into PostgreSQL.
-#
-# Two formats are supported:
-#
-#   format A (the old AutoPapa.csv):
-#     ID, Manufacturer, Model, Engine_Volume, Mileage, Price, Year,
-#     Engine_Type, Steering, Phone, Customs, VIN, Description, URL, Media
-#
-#   format B (the newer MyAuto.csv):
-#     ID, Source, Manufacturer, Model, Year, Body_Type, Price, Currency,
-#     Price_With_Customs, ... Image_1..Image_20
-#
-# The format is detected from the header.
-#
-# run:
+# migrate the old CSV dumps into postgres
+# two layouts, told apart by the header. the old AutoPapa.csv keeps photos in one
+# comma-separated Media column, the newer MyAuto.csv splits them into Image_1..Image_20
+# phone numbers in the old AutoPapa.csv were mangled into scientific notation like
+# 9.96E+11 and cannot be recovered, so phone stays empty and the next parser run fills it
 #     python -m src.scripts.migrate_csv --file AutoPapa.csv --source autopapa
-#     python -m src.scripts.migrate_csv --file MyAuto.csv --source myauto
-#
-# in the old AutoPapa.csv the phone numbers were mangled into scientific notation
-# like 9.96E+11 and cannot be recovered, so phone stays empty. the next parser run
-# fills them back in
 
 from __future__ import annotations
 
@@ -97,7 +82,7 @@ def _row_to_car_format_b(row: dict[str, str], source: str) -> Car | None:
     if not source_id:
         return None
 
-    image_urls: list[str] = []
+    image_urls = []
     for i in range(1, 21):
         url = (row.get(f"Image_{i}") or "").strip()
         if url:
@@ -197,7 +182,7 @@ async def main() -> None:
 
     print(f"migrating {args.file} -> database (source = {args.source})")
 
-    buffer: list[Car] = []
+    buffer = []
     total = saved = 0
 
     for car in _iter_cars(args.file, args.source):

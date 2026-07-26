@@ -69,7 +69,7 @@ def parse_features(text: str | None) -> dict[str, str]:
     # plain features (ABS, ESP) are skipped here. they show up in the description instead
     if not text:
         return {}
-    result: dict[str, str] = {}
+    result = {}
     for part in text.split(","):
         if ":" not in part:
             continue
@@ -99,7 +99,7 @@ async def collect_listing_links(page: Page, max_pages: int | None = None) -> lis
     #
     # max_pages caps the number of pages walked (None = until pagination runs out).
     # Useful for smoke runs.
-    links: list[str] = []
+    links = []
     pages_seen = 0
 
     while True:
@@ -223,7 +223,7 @@ async def extract_video(page: Page) -> str:
 
 
 async def extract_photos(page: Page) -> list[str]:
-    photos: list[str] = []
+    photos = []
     for el in await page.query_selector_all("a.hidden-galler-images"):
         href = await el.get_attribute("href")
         if href:
@@ -430,7 +430,7 @@ async def _scrape_all(
     semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
     tasks = [scrape_one(context, url, semaphore) for url in urls]
 
-    buffer: list[Car] = []
+    buffer = []
     done = saved = 0
     total = len(urls)
 

@@ -89,7 +89,7 @@ async def create_stealth_context(playwright: Playwright) -> tuple:
         ],
     )
 
-    context_args: dict = {
+    context_args = {
         "user_agent": random.choice(USER_AGENTS),
         "viewport": {"width": 1366, "height": 768},
         "locale": "ka-GE",

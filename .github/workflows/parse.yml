@@ -1,11 +1,8 @@
-# =====================================================================
-# Scheduled parser
-# =====================================================================
+# scheduled parser
 # Runs both parsers twice a day, then syncs the photos.
-#
-# GitHub only allows a fixed cron time, so the job waits a random number of
-# minutes (0-59) before starting, to look less like a bot.
-#
+
+# GitHub only allows a fixed cron time, so the job waits a random number of minutes (0-59) before starting, to look less like a bot.
+
 # Secrets to create on the repo:
 #   Settings > Secrets and variables > Actions > New repository secret
 #     DATABASE_URL
@@ -14,15 +11,14 @@
 #     R2_SECRET_ACCESS_KEY
 #     R2_BUCKET
 #     R2_PUBLIC_URL
-# =====================================================================
 
 name: Scheduled Parser
 
 on:
   # twice a day. the random delay below spreads out the exact start time
   schedule:
-    - cron: '0 3 * * *'        # ~07:00 Tbilisi, plus the random delay
-    - cron: '0 15 * * *'       # ~19:00 Tbilisi, plus the random delay
+    - cron: '0 3 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:           # and by hand
 
 # only one run at a time

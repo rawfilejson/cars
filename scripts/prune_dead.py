@@ -1,17 +1,8 @@
-# Remove listings that have disappeared from their source site.
-#
-# A listing is a *candidate* when nothing has touched it in --days. Note
-# the scrapers skip listings that are already saved, so an old updated_at
-# does NOT mean the listing is gone - every candidate is verified against
-# the source, and only listings the source confirms are gone get deleted.
-# Anything unverifiable (blocked, timeout, odd status) is skipped - we
-# never delete on doubt. Verified-alive rows get their updated_at bumped
-# (with --apply) so successive runs move on to new candidates.
-#
-# dry run prints what would happen. --apply deletes
-#
-#     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py
-#     DATABASE_URL=postgresql://... uv run python scripts/prune_dead.py --apply --days 30 --limit 500
+# remove listings the source site has deleted
+# a row untouched for --days is only a candidate, the scrapers skip rows they already have
+# so every candidate is checked against the source and only confirmed deletions get removed
+# anything we cannot check is left alone
+# dry run by default, --apply deletes
 
 from __future__ import annotations
 
@@ -35,7 +26,7 @@ DELAY_SECONDS = 0.35   # be polite to the sources
 
 
 def check_myauto(client: httpx.Client, source_id: str) -> str:
-    # 'alive' | 'dead' | 'unknown' for a myauto listing.
+    # 'alive' | 'dead' | 'unknown' for a myauto listing
     try:
         r = client.get(
             f"https://api2.myauto.ge/ka/products/{source_id}",
@@ -63,7 +54,7 @@ def check_myauto(client: httpx.Client, source_id: str) -> str:
     if not prod:
         return "dead"
     status = prod.get("status_id")
-    # myauto status: 1 = active. anything else (sold/hidden/expired) is gone
+    # myauto status: 1 = active
     if status is not None and status != 1:
         return "dead"
     return "alive"
@@ -74,7 +65,7 @@ def check_autopapa(client: httpx.Client, url: str) -> str:
         r = client.get(url, timeout=15, follow_redirects=True)
     except Exception:
         return "unknown"
-    if r.status_code == 404 or r.status_code == 410:
+    if r.status_code in (404, 410):
         return "dead"
     if r.status_code != 200:
         return "unknown"
@@ -114,8 +105,8 @@ def main() -> None:
         if not candidates:
             return
 
-        dead: list[int] = []
-        alive: list[int] = []
+        dead = []
+        alive = []
         unknown = 0
         with httpx.Client() as client:
             for cid, source, source_id, url in candidates:
@@ -136,16 +127,15 @@ def main() -> None:
         print(f"dead {len(dead)}, alive {len(alive)}, unverifiable {unknown} (skipped)")
 
         if not args.apply:
-            print("dry run - re-run with --apply to delete the confirmed-dead rows")
+            print("dry run, use --apply to delete")
             return
         with conn.cursor() as cur:
             if dead:
                 cur.execute("DELETE FROM cars WHERE id = ANY(%s)", (dead,))
                 print(f"deleted {len(dead)} rows")
             if alive:
-                # mark as freshly seen so the next run checks new candidates
+                # bump so the next run moves on to other candidates
                 cur.execute("UPDATE cars SET updated_at = now() WHERE id = ANY(%s)", (alive,))
-                print(f"re-marked {len(alive)} rows as live")
 
 
 if __name__ == "__main__":

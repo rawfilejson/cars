@@ -1,18 +1,11 @@
-# Rate limiting on an anonymous browser token first, with the IP as a backstop.
-#
-# There are no accounts here. A single public IP is often shared by many people
-# (home wifi, mobile CGNAT), so the main identity is a token the browser keeps
-# in localStorage and sends as X-Client-Id. Two people on one network no longer
-# eat each other's quota. The IP only exists to stop someone rotating tokens.
-#
-#   * cooldown: a minimum gap between searches, per token
-#   * hourly limit: per token
-#   * hourly ceiling: per IP, as the backstop
-#
-# all timing comes from the database NOW(). we don't trust the client's clock
-# The IP comes from CF-Connecting-IP. The origin is only reachable through
-# Cloudflare, which overwrites that header with the real client, so it cannot be
-# forged. Without Cloudflare the fallback is the last public IP in XFF.
+# rate limiting on an anonymous browser token, with the IP as a backstop
+# one public IP is often shared by a whole home wifi or a mobile CGNAT, so the main
+# identity is a token the browser keeps in localStorage and sends as X-Client-Id
+# the IP only exists to stop someone rotating tokens
+# a cooldown and an hourly limit apply per token, the hourly ceiling per IP
+# timing comes from the database NOW(), we don't trust the client's clock
+# the IP comes from CF-Connecting-IP, which Cloudflare overwrites so it cannot be
+# forged. without Cloudflare the fallback is the last public IP in XFF
 
 from __future__ import annotations
 

@@ -1,13 +1,8 @@
-# Talking to PostgreSQL.
-#
-# There is a conflict on Windows: Playwright needs the ProactorEventLoop for
-# subprocesses, while async psycopg needs the SelectorEventLoop. They cannot run
-# together, so this uses sync psycopg and pushes each call onto its own thread
-# with asyncio.to_thread. From the outside the API is still async.
-#
-# The main entry points:
-#   * get_existing_ids(source) - ids we already stored, so a run can resume
-#   * upsert_cars(cars) - write a whole batch at once
+# talking to postgres
+# on windows playwright needs the ProactorEventLoop and async psycopg needs the
+# SelectorEventLoop, and they cannot run together. so this uses sync psycopg and
+# pushes each call onto its own thread with asyncio.to_thread. from the outside
+# the api is still async
 
 from __future__ import annotations
 

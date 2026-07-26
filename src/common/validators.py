@@ -23,7 +23,7 @@ VALID_CURRENCIES = {"USD", "EUR", "GEL", ""}
 
 def validate_car(car: Car) -> list[str]:
     # Return a list of issue strings. Empty list = clean.
-    issues: list[str] = []
+    issues = []
 
     if not car.source:
         issues.append("missing source")

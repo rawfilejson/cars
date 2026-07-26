@@ -31,7 +31,7 @@ async def main(limit: int) -> None:
             await page.goto(START_URL, wait_until="domcontentloaded")
             await page.wait_for_selector("div.boxCatalog2")
 
-            test_links: list[str] = []
+            test_links = []
             for anchor in await page.query_selector_all("a.with_hash2"):
                 href = await anchor.get_attribute("href")
                 if href:

@@ -56,7 +56,7 @@ class FacetsResponse(BaseModel):
 
 
 def _load_facets() -> FacetsResponse:
-    out: dict[str, list[str]] = {}
+    out = {}
     with connection() as conn:
         with conn.cursor() as cur:
             for key, col in _FIELDS.items():
@@ -72,7 +72,7 @@ def _load_facets() -> FacetsResponse:
                     (_MIN_COUNT,),
                 )
                 # fold duplicates into the canonical value, keeping the most-common-first order
-                seen: dict[str, None] = {}
+                seen = {}
                 for row in cur.fetchall():
                     seen.setdefault(facet_canon(row["v"]), None)
                 out[key] = list(seen.keys())

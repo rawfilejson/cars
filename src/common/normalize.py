@@ -66,18 +66,12 @@ def split_price(raw: str | None) -> tuple[int | None, str]:
 
 
 def format_phone(raw: str | None) -> str:
-    # Georgian numbers are displayed as "+995 595 515 141".
-    #
-    # Search ignores the spaces: regexp_replace(phone, '\\D', '', 'g') reduces it to
-    # digits and then LIKE matches on those. So we store it prettily and search on
-    # the digits.
-    #
-    # Examples:
+    # georgian numbers are stored as "+995 595 515 141"
+    # search strips the spaces with regexp_replace(phone, '\\D', '', 'g') and matches on
+    # the digits, so we can store it readable and still find it
     #   "tel:+995595515141" -> "+995 595 515 141"
     #   "595 51 51 41"      -> "+995 595 515 141"
-    #   "+995595515141"     -> "+995 595 515 141"
     #   "+7 916 123 45 67"  -> "+7 916 123 45 67"
-    #   ""                  -> ""
     if not raw:
         return ""
 

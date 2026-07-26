@@ -1,13 +1,11 @@
 # Photo backfill: move the built-up image_urls into R2 without needing a local machine.
 # Source CDN -> runner -> R2, deleting each local copy straight away (--purge-local).
-#
-# Auto-chaining: the schedule picks the backlog up again every 6 hours. sync_photos
-# only selects pending rows, so it is resumable. Once the backlog is clear
-# (pending = 0) the run disables this schedule itself via gh workflow disable,
-# which needs no PAT.
-#
-# Required secrets: DATABASE_URL, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
-# R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
+
+# Auto-chaining: the schedule picks the backlog up again every 6 hours
+# sync_photosonly selects pending rows, so it is resumable
+# Once the backlog is clear (pending = 0) the run disables this schedule itself via gh workflow disable,which needs no PAT.
+
+# Required secrets: DATABASE_URL,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET,R2_PUBLIC_URL
 
 name: Photo Backfill
 
@@ -68,7 +66,7 @@ jobs:
           if [ -n "$LIMIT" ]; then
             ARGS="$ARGS --limit $LIMIT"
           fi
-          echo "Running: sync_photos $ARGS"
+          echo "Running sync_photos $ARGS"
           uv run python -m src.scripts.sync_photos $ARGS
 
       - name: Stop auto-chaining when backlog is clear
@@ -78,9 +76,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PENDING=$(uv run python -c "import psycopg; from src.common.config import DATABASE_URL; c=psycopg.connect(DATABASE_URL); cur=c.cursor(); cur.execute('SELECT COUNT(*) FROM cars WHERE image_urls IS NOT NULL AND array_length(image_urls,1)>0 AND (image_keys IS NULL OR array_length(image_keys,1) IS NULL)'); print(cur.fetchone()[0])")
-          echo "Pending cars: $PENDING"
+          echo "Pending cars $PENDING"
           if [ "$PENDING" = "0" ]; then
-            echo "Backlog clear, disabling the schedule."
+            echo "Backlog clear, disabling the schedule"
             gh workflow disable "Photo Backfill" --repo "$GITHUB_REPOSITORY"
           fi
 

@@ -95,7 +95,7 @@ def _normalize_phone_query(raw: str) -> str:
 
 def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
     # Merge a legacy single value + the new multi-select list - de-duped, non-empty.
-    out: list[str] = []
+    out = []
     if singular:
         out.append(singular)
     if plural:
@@ -105,8 +105,8 @@ def _multi_values(singular: str | None, plural: list[str] | None) -> list[str]:
 
 def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     # Filter SQL fragments + their parameter values.
-    fragments: list[str] = []
-    params: list = []
+    fragments = []
+    params = []
     if req.year_from is not None:
         fragments.append("year >= %s")
         params.append(req.year_from)
@@ -136,7 +136,7 @@ def _filter_clauses(req: SearchRequest) -> tuple[list[str], list]:
     ):
         selected = _multi_values(singular, plural)
         if selected:
-            variants: list[str] = []
+            variants = []
             for value in selected:
                 variants.extend(facet_variants(value))
             variants = list(dict.fromkeys(variants))

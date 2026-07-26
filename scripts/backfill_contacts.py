@@ -56,7 +56,7 @@ def main() -> None:
             if not rows:
                 break
 
-            page_updates: list[tuple[str | None, str | None, int]] = []
+            page_updates = []
             for cid, vin, phone, desc in rows:
                 last_id = cid
                 scanned += 1

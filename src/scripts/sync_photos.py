@@ -39,7 +39,7 @@ def fetch_pending_sync(
           AND array_length(image_urls, 1) > 0
           AND (image_keys IS NULL OR array_length(image_keys, 1) IS NULL)
     """
-    params: list = []
+    params = []
 
     if source:
         query += " AND source = %s"
@@ -191,7 +191,7 @@ async def main() -> None:
     done = 0
 
     photo_sem = asyncio.Semaphore(args.concurrent)
-    queue: asyncio.Queue = asyncio.Queue()
+    queue = asyncio.Queue()
     for car in pending:
         queue.put_nowait(car)
 

@@ -165,7 +165,7 @@ def _build_image_urls(item: dict, max_images: int = 20) -> list[str]:
     if not (car_id and photo and pic_count):
         return []
     photo_ver = item.get("photo_ver") or ""
-    urls: list[str] = []
+    urls = []
     for i in range(1, min(pic_count, max_images) + 1):
         url = IMAGE_URL_TEMPLATE.format(photo=photo, car_id=car_id, n=i)
         if photo_ver:
@@ -175,7 +175,7 @@ def _build_image_urls(item: dict, max_images: int = 20) -> list[str]:
 
 
 def _build_description_from_api(item: dict) -> str:
-    parts: list[str] = []
+    parts = []
     raw = clean_text(item.get("car_desc") or "")
     if raw:
         parts.append(raw)
@@ -398,8 +398,8 @@ async def extract_description(page: Page) -> str:
 
 async def extract_photos(page: Page) -> list[str]:
     # photos: take the /large/ versions, rewriting thumbs into large
-    photos: list[str] = []
-    seen: set[str] = set()
+    photos = []
+    seen = set()
     elements = await page.query_selector_all("img[src*='/photos/']")
     for el in elements:
         src = await el.get_attribute("src")
@@ -664,7 +664,7 @@ async def _build_car_from_page(page: Page, url: str) -> Car:
     if vin and not is_valid_vin(vin):
         vin = ""
 
-    spec_fields: dict[str, object] = {}
+    spec_fields = {}
     for label, raw_value in spec.items():
         field = SPEC_TO_FIELD.get(label)
         if not field:
@@ -820,8 +820,8 @@ async def collect_all_ids(
         last_page = min(last_page, max_pages)
     print(f"  Total: ~{last_page * 30} listings across {last_page} pages")
 
-    all_ids: list[str] = list(first_ids)
-    seen: set[str] = set(first_ids)
+    all_ids = list(first_ids)
+    seen = set(first_ids)
 
     for page_num in range(2, last_page + 1):
         ids, _ = await _fetch_ids_page(context, page_num)
@@ -893,9 +893,9 @@ async def run(max_pages: int | None = None) -> None:
                 f"  Total: {last_page} pages × 30 = ~{last_page * 30} listings (with dedup ~half)"
             )
 
-            buffer: list[Car] = []
+            buffer = []
             saved = 0
-            seen_ids: set[str] = set(already_saved)
+            seen_ids = set(already_saved)
 
             def _consume(items: list[dict]) -> int:
                 added = 0
@@ -1006,7 +1006,7 @@ async def _scrape_all(
     semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
     tasks = [scrape_one(context, url, semaphore) for url in urls]
 
-    buffer: list[Car] = []
+    buffer = []
     done = saved = 0
     total = len(urls)
 

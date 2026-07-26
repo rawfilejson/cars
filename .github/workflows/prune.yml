@@ -1,10 +1,9 @@
-# =====================================================================
-# Dead-listing prune
-# =====================================================================
-# Once a day, check the listings we haven't seen for the longest time against
-# the source, and delete only the ones the source confirms are gone.
+
+# dead-listing prune
+
+# Once a day, check the listings we haven't seen for the longest time against the source, and delete only the ones the source confirms are gone.
 # The script logs a dry run first, then applies.
-# =====================================================================
+
 
 name: Prune Dead Listings
 
