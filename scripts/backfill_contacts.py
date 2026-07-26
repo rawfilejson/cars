@@ -1,16 +1,10 @@
-# One-off backfill: recover VIN and phone from a listing's description
-# when the structured field is empty.
-#
-# new listings already get this while scraping. this runs the same extractors
-# (vin.find_vin / normalize.phone_from_text) over rows already in the database
-#
-# Usage (dry run prints counts, writes nothing):
-#
-#     DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py
-#
-# Add --apply to write the updates:
-#
-#     DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py --apply
+# One-off backfill: recover VIN and phone from a listing's description when the structured field is empty
+
+# new listings already get this while scraping. this runs the same extractors (vin.find_vin / normalize.phone_from_text) over rows already in the database
+
+# Usage (dry run prints counts, writes nothing): DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py
+
+# Add --apply to write the updates: DATABASE_URL=postgresql://... uv run python scripts/backfill_contacts.py --apply
 
 from __future__ import annotations
 
@@ -99,16 +93,11 @@ def main() -> None:
                     )
                 updated += len(page_updates)
 
-            tail = f", updated {updated}" if apply else ""
-            print(f"  scanned {scanned} | vin {vin_found} | phone {phone_found}{tail}")
+            print(f"scanned {scanned}, vin {vin_found}, phone {phone_found}, updated {updated}")
 
-    print(f"\nscanned {scanned} rows missing a VIN or phone")
-    print(f"  VINs recoverable:   {vin_found}")
-    print(f"  phones recoverable: {phone_found}")
-    if apply:
-        print(f"  rows updated:       {updated}")
-    else:
-        print("dry run - re-run with --apply to write")
+    print(f"{scanned} rows checked, {vin_found} vins and {phone_found} phones recoverable")
+    if not apply:
+        print("dry run, use --apply to write")
 
 
 if __name__ == "__main__":

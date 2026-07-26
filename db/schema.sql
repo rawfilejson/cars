@@ -1,4 +1,4 @@
--- Database schema. A single `cars` table holds the data from every source.
+-- Database schema. A single `cars` table holds the data from every source
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -97,30 +97,26 @@ CREATE INDEX IF NOT EXISTS cars_updated_at_idx ON cars(updated_at DESC);
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Careful: adding the generated search_blob column to an existing database is a
--- full table rewrite. Set `SET statement_timeout = 0;` in the same transaction first.
+-- Careful: adding the generated search_blob column to an existing database is a full table rewrite
+-- set `SET statement_timeout = 0;` in the same transaction first.
 CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
--- Phone search runs `LIKE '%suffix'` against the normalised digits. A leading
--- wildcard over a function call cannot use a b-tree, so every search would be a
--- full scan. This trigram GIN index sits on exactly the expression search.py
+-- Phone search runs `LIKE '%suffix'` against the normalised digits
+-- a leading wildcard over a function call cannot use a b-tree, so every search would be a full scan
+-- this trigram GIN index sits on exactly the expression search.py
 -- uses, which removes the scan.
---
--- On a fresh database the plain CREATE INDEX below is enough: init_db runs
--- schema.sql in one transaction and building on an empty table is instant.
--- On a large existing database this form locks the table while it builds, so run
--- it separately instead (outside schema.sql, after init_db) with CONCURRENTLY,
--- which cannot live inside a transaction and therefore cannot go here:
---   CREATE INDEX CONCURRENTLY cars_phone_digits_trgm_idx
+
+-- On a fresh database the plain CREATE INDEX below is enough: init_db runs schema.sql in one transaction and building on an empty table is instant
+-- On a large existing database this form locks the table while it builds, so run it separately instead (outside schema.sql, after init_db) with CONCURRENTLY
+-- which cannot live inside a transaction and therefore cannot go here: CREATE INDEX CONCURRENTLY cars_phone_digits_trgm_idx
 --     ON cars USING gin (regexp_replace(phone, '\D', '', 'g') gin_trgm_ops)
 --     WHERE phone IS NOT NULL AND phone <> '';
 CREATE INDEX IF NOT EXISTS cars_phone_digits_trgm_idx
     ON cars USING gin (regexp_replace(phone, '\D', '', 'g') gin_trgm_ops)
     WHERE phone IS NOT NULL AND phone <> '';
 
--- Rate-limit identity: client_id (the browser's anonymous token) is primary,
--- user_ip is only the backstop.
+-- Rate-limit identity: client_id (the browser's anonymous token) is primary, user_ip is only the backstop
 CREATE TABLE IF NOT EXISTS searches (
     id              BIGSERIAL PRIMARY KEY,
     query           TEXT        NOT NULL,
@@ -137,7 +133,6 @@ CREATE INDEX IF NOT EXISTS searches_created_at_idx ON searches(created_at DESC);
 CREATE INDEX IF NOT EXISTS searches_client_id_created_idx ON searches (client_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS searches_user_ip_created_idx ON searches (user_ip, created_at DESC);
 
--- With no RLS policies, Supabase's anonymous REST access is closed off. The
--- backend connects as the owner role, which bypasses RLS, so nothing changes for it.
+-- With no RLS policies, Supabase's anonymous REST access is closed off.  The backend connects as the owner role, which bypasses RLS, so nothing changes for it
 ALTER TABLE cars     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE searches ENABLE ROW LEVEL SECURITY;

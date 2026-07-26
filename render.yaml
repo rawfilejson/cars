@@ -20,7 +20,7 @@ services:
         value: "0"
       - key: SEARCH_LIMIT_PER_IP_HOUR
         value: "3000"
-      # secrets - set these manually
+      # secrets 
       - key: DATABASE_URL
         sync: false
       - key: R2_ACCOUNT_ID

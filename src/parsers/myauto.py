@@ -856,7 +856,7 @@ def _load_cached_ids() -> list[str] | None:
 def _save_cached_ids(ids: list[str]) -> None:
     IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     IDS_CACHE_PATH.write_text(json.dumps(ids), encoding="utf-8")
-    print(f"  Cached {len(ids)} IDs → {IDS_CACHE_PATH}")
+    print(f"  cached {len(ids)} ids to {IDS_CACHE_PATH}")
 
 
 async def run(max_pages: int | None = None) -> None:
@@ -1055,23 +1055,15 @@ async def smoke_test(url: str) -> Car | None:
         try:
             car = await scrape_one(context, url)
             if car:
-                print("=" * 60)
-                print(f"car_id:       {car.source_id}")
-                print(f"title:        {car.year} {car.manufacturer} {car.model}")
-                print(f"price:        {car.price_amount} {car.price_currency}")
-                print(f"mileage:      {car.mileage_km} km")
-                print(f"engine:       {car.engine_volume_l} L, {car.engine_type}")
-                print(f"gearbox:      {car.gearbox}")
-                print(f"drive:        {car.drive_wheels}")
-                print(f"color:        {car.color} (interior: {car.interior_color})")
-                print(f"steering:     {car.steering}")
-                print(f"VIN:          {car.vin or '(none)'}")
-                print(f"phone:        {car.phone or '(masked)'}")
-                print(f"photos:       {len(car.image_urls)}")
-                print(f"description:  {car.description[:120]}...")
-                print("=" * 60)
+                print(f"{car.source_id} {car.year} {car.manufacturer} {car.model}")
+                print(f"{car.price_amount} {car.price_currency}, {car.mileage_km} km, "
+                      f"{car.engine_volume_l} L {car.engine_type}, {car.gearbox}, "
+                      f"{car.drive_wheels}, {car.color}, {car.steering}")
+                print(f"vin {car.vin or '-'}, phone {car.phone or '-'}, "
+                      f"{len(car.image_urls)} photos")
+                print(car.description[:120])
             else:
-                print("FAILED")
+                print("failed")
             return car
         finally:
             await context.close()

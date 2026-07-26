@@ -221,12 +221,8 @@ async def main() -> None:
                 )
                 total_photos += n_photos
                 done += 1
-                if done % 10 == 0 or done == total:
-                    elapsed = time.time() - start
-                    rate = done / elapsed if elapsed else 0
-                    print(
-                        f"[{done}/{total}] photos:{total_photos} rate:{rate:.1f} car/s"
-                    )
+                if done % 100 == 0 or done == total:
+                    print(f"{done}/{total} cars, {total_photos} photos")
 
         await asyncio.gather(*(worker() for _ in range(args.concurrent)))
 

@@ -16,9 +16,7 @@ if sys.stdout.encoding != "utf-8":
 def main():
     with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
         with conn.cursor() as cur:
-            print("=" * 70)
-            print("CARS BY SOURCE")
-            print("=" * 70)
+            print("cars by source")
             cur.execute("""
                 SELECT source, COUNT(*) AS total,
                        COUNT(*) FILTER (WHERE vin <> '') AS with_vin,
@@ -26,14 +24,11 @@ def main():
                        COUNT(*) FILTER (WHERE image_urls IS NOT NULL AND array_length(image_urls, 1) > 0) AS with_photos
                 FROM cars GROUP BY source ORDER BY source
             """)
-            for row in cur.fetchall():
-                print(f"  {row['source']:10s}  total:{row['total']:6d}  "
-                      f"vin:{row['with_vin']:5d}  phone:{row['with_phone']:5d}  "
-                      f"photos:{row['with_photos']:5d}")
+            for r in cur.fetchall():
+                print(f"  {r['source']} total={r['total']} vin={r['with_vin']} "
+                      f"phone={r['with_phone']} photos={r['with_photos']}")
 
-            print("\n" + "=" * 70)
-            print("SAMPLE: autopapa, 3 latest cars")
-            print("=" * 70)
+            print("\nlatest autopapa cars")
             cur.execute("""
                 SELECT source_id, manufacturer, model, year, price_amount, price_currency,
                        mileage_km, engine_volume_l, engine_type, location, phone, vin,
@@ -41,20 +36,14 @@ def main():
                 FROM cars WHERE source = 'autopapa'
                 ORDER BY updated_at DESC LIMIT 3
             """)
-            for row in cur.fetchall():
-                print(f"\n  source_id:    {row['source_id']}")
-                print(f"  car:          {row['year']} {row['manufacturer']} {row['model']}")
-                print(f"  price:        {row['price_amount']} {row['price_currency']}")
-                print(f"  mileage:      {row['mileage_km']} km")
-                print(f"  engine:       {row['engine_volume_l']} L, {row['engine_type']}")
-                print(f"  location:     {row['location']}")
-                print(f"  phone:        {row['phone'] or '(empty)'}")
-                print(f"  vin:          {row['vin'] or '(none)'}")
-                print(f"  photos:       {row['photo_count'] or 0}")
+            for r in cur.fetchall():
+                print(f"  {r['source_id']} {r['year']} {r['manufacturer']} {r['model']} "
+                      f"{r['price_amount']} {r['price_currency']} {r['mileage_km']}km "
+                      f"{r['engine_volume_l']}L {r['engine_type']} {r['location']} "
+                      f"vin={r['vin'] or '-'} phone={r['phone'] or '-'} "
+                      f"photos={r['photo_count'] or 0}")
 
-            print("\n" + "=" * 70)
-            print("PHONE FORMATS - sample of distinct patterns")
-            print("=" * 70)
+            print("\nmost common phone formats")
             cur.execute("""
                 SELECT phone, COUNT(*) AS n
                 FROM cars
@@ -63,12 +52,9 @@ def main():
                 ORDER BY COUNT(*) DESC
                 LIMIT 10
             """)
-            for row in cur.fetchall():
-                print(f"  {row['phone']:25s}  ×{row['n']}")
+            for r in cur.fetchall():
+                print(f"  {r['phone']} x{r['n']}")
 
-            print("\n" + "=" * 70)
-            print("PHONE FORMAT STATS - joined vs spaced")
-            print("=" * 70)
             cur.execute("""
                 SELECT
                   COUNT(*) FILTER (WHERE phone LIKE '%% %%' AND phone <> '') AS spaced_format,
@@ -77,11 +63,9 @@ def main():
                   COUNT(*) AS total
                 FROM cars
             """)
-            row = cur.fetchone()
-            print(f"  spaced  (\"+995 595 515 141\"):  {row['spaced_format']}")
-            print(f"  joined  (\"+995595515141\"):     {row['joined_format']}")
-            print(f"  empty:                          {row['empty_phone']}")
-            print(f"  total:                          {row['total']}")
+            r = cur.fetchone()
+            print(f"\nspaced={r['spaced_format']} joined={r['joined_format']} "
+                  f"empty={r['empty_phone']} total={r['total']}")
 
 
 if __name__ == "__main__":

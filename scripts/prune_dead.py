@@ -133,9 +133,7 @@ def main() -> None:
                     unknown += 1
                 time.sleep(DELAY_SECONDS)
 
-        print(f"  confirmed dead: {len(dead)}")
-        print(f"  still alive:    {len(alive)}")
-        print(f"  unverifiable:   {unknown} (skipped)")
+        print(f"dead {len(dead)}, alive {len(alive)}, unverifiable {unknown} (skipped)")
 
         if not args.apply:
             print("dry run - re-run with --apply to delete the confirmed-dead rows")

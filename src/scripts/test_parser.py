@@ -50,13 +50,10 @@ async def main(limit: int) -> None:
             print(f"\nscraped: {len(cars)}/{len(test_links)}")
 
             for car in cars:
-                print(
-                    f"  - {car.source_id} | {car.manufacturer} {car.model} | "
-                    f"{car.year} | {car.price_amount} {car.price_currency} | "
-                    f"VIN: {car.vin or '<empty>'} | "
-                    f"photos: {len(car.image_urls)} | "
-                    f"phone: {car.phone or '<empty>'}"
-                )
+                print(f"  {car.source_id} {car.year} {car.manufacturer} {car.model} "
+                      f"{car.price_amount} {car.price_currency} "
+                      f"vin={car.vin or '-'} phone={car.phone or '-'} "
+                      f"photos={len(car.image_urls)}")
 
             if cars:
                 saved = await upsert_cars(cars)
