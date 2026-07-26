@@ -1,10 +1,7 @@
-# Initialise the database by running schema.sql against an empty PostgreSQL.
-#
-# usage:
+# run schema.sql against an empty postgres
 #     python -m src.scripts.init_db
-#
-# On Supabase, Neon or any cloud database run this once. With Docker the schema
-# is applied automatically by the docker-compose entrypoint.
+# on supabase, neon or any cloud database run this once. with docker the schema
+# is applied automatically by the compose entrypoint
 
 from __future__ import annotations
 

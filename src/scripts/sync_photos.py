@@ -1,10 +1,8 @@
 # Photo sync: read image_urls from the database and fetch anything not yet
 # downloaded, storing it locally and in R2.
-#
 # run:
 #     python -m src.scripts.sync_photos              # every car
 #     python -m src.scripts.sync_photos --source autopapa --limit 100
-#
 # What it does:
 #   1. pick the cars whose image_keys are still empty
 #   2. download each car's image_urls into the local photos/ folder
@@ -29,7 +27,6 @@ def fetch_pending_sync(
     source: str | None, limit: int | None, shard: tuple[int, int] | None = None
 ) -> list[tuple[int, str, str, list[str]]]:
     # cars that still have no image_keys but do have image_urls
-    #
     # shard=(x, n) takes only the cars where id %% n == x. That is how the parallel
     # blitz splits work across n runners without overlap.
     query = """
@@ -106,7 +103,6 @@ async def process_car(
     keep_local: bool = True,
 ) -> int:
     # one car's photos in parallel. never raises, always returns an int
-    #
     # gather preserves order, so the keys stay in photo order and a failed photo
     # comes back as None and is dropped.
     results = await asyncio.gather(

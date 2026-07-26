@@ -1,5 +1,4 @@
 # Cleanup helpers for messy data from car listing sites.
-#
 # raw text from these sites looks like "$11 500", a mileage written in km or
 # miles, or an engine size like "2.5" with a litre suffix. we turn that into
 # numbers we can sort and search by
@@ -24,7 +23,6 @@ def clean_int(text: str | None) -> int | None:
 
 def sane_int(text: str | None, lo: int, hi: int) -> int | None:
     # clean_int + range check. Out-of-range -> None.
-    #
     # for fields where sellers type garbage, like HP "2490" when they meant
     # engine cc. better to drop the value than to lie
     value = clean_int(text)
@@ -158,7 +156,6 @@ def clean_text(text: str | None) -> str:
 
 def clean_engine_volume(text: str | None) -> float | None:
     # Engine volume in liters. Handles common bad-data cases:
-    #
     # "2.5 L" -> 2.5
     # "1499"     -> 1.499 (was entered in CC instead of L)
     # "460"      -> None (impossible, treat as garbage)

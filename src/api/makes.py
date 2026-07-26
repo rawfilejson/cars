@@ -72,7 +72,6 @@ def _order_makes(
     agg: dict[str, dict[str, tuple[str, int]]],
 ) -> dict[str, list[str]]:
     # aggregated counts -> {manufacturer: [models]}, most listings first
-    #
     # manufacturers with the most listings first, and inside each one the models
     # by count too (alphabetically when tied). Rare models are dropped,
     # but a brand with any listing always shows up, even if it has just one car.

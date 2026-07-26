@@ -30,7 +30,6 @@ csv.field_size_limit(10 * 1024 * 1024)
 
 def _detect_format(header: list[str]) -> str:
     # work out the format from the header fields
-    #
     # format B puts photos in separate Image_1, Image_2... columns,
     # while format A has them comma-separated in a single Media column.
     columns = {h.strip().lower() for h in header}

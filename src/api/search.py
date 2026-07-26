@@ -1,8 +1,6 @@
 # The search endpoint: one smart search, plus the legacy per-field form.
-#
 # The current frontend sends a single `query` and the backend works out whether
 # it is a VIN, a phone number or free text. The old frontend sent vin/phone/
-#
 # free_text separately. that form is deprecated but still accepted
 
 from __future__ import annotations

@@ -1,5 +1,4 @@
 # Respect the source's robots.txt: check before fetching anything.
-#
 # It is read once per host and cached. If it cannot be read we allow the fetch,
 # since a missing robots.txt is not a prohibition.
 

@@ -1,5 +1,4 @@
 # Playwright setup with light anti-bot measures.
-#
 # These won't get us past Cloudflare bot-fight or DataDome. For autopapa.ge
 # and myauto.ge's current setup, this is enough.
 

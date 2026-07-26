@@ -422,7 +422,6 @@ def _ensure_all_photos(
 ) -> list[str]:
     # If the page lazy-loaded and only thumbs were in the HTML, build every
     # _1.jpg, _2.jpg ... _N.jpg URL anyway.
-    #
     # Work the pattern out from the first URL, then add its variants.
     if not photos:
         return []
@@ -510,7 +509,6 @@ _MASK_CHARS = "*"
 
 async def extract_phone(page: Page) -> str:
     # myauto hides the phone behind a login, so this returns empty.
-    #
     # If some page does show a full number anyway (a test, a future feature, or a
     # cached state) it comes back formatted. otherwise ""
     link = await page.query_selector('a[data-testid^="show-number-modal-phone"]')
@@ -609,7 +607,6 @@ async def scrape_one(
     semaphore: asyncio.Semaphore | None = None,
 ) -> Car | None:
     # one detail page -> a Car, with retries
-    #
     # the semaphore is optional. pass None for a manual smoke test
     if semaphore is None:
         semaphore = asyncio.Semaphore(1)
@@ -728,7 +725,6 @@ MYAUTO_UA = (
 
 async def _warmup(context: BrowserContext) -> None:
     # open myauto.ge first so the Cloudflare cookies get set
-    #
     # Don't wait for the SPA to fully hydrate: take the response on `commit`, then
     # pause briefly for the cookies. domcontentloaded sometimes does not arrive
     # within 25s.
@@ -862,12 +858,10 @@ def _save_cached_ids(ids: list[str]) -> None:
 async def run(max_pages: int | None = None) -> None:
     # API-fast mode: each /products page returns full car data, not just IDs.
     # Single pass: fetch -> parse -> upsert. No per-car Playwright detail scrape.
-    #
     # Speed: ~5-10 min for full ~50k cars. Tradeoffs:
     #   - Phones are masked in the listing endpoint (we store '') - same as HTML
     #   - Photo URLs are built from item.photo / item.pic_number (deterministic)
     #   - Description = car_desc + feature flags
-    #
     # To use the slower HTML scrape per car instead, call run_html().
     print(f"MyAuto parser (API-fast mode, page-concurrency={CONCURRENT_PAGES})")
 
@@ -959,7 +953,6 @@ async def run(max_pages: int | None = None) -> None:
 
 async def run_html(max_pages: int | None = None) -> None:
     # Slower HTML-detail scrape path (one Playwright page per car).
-    #
     # Kept for reference / debugging. The API-fast `run()` is preferred.
     print(f"MyAuto parser (HTML scrape mode, concurrency={CONCURRENT_PAGES})")
 
@@ -1045,8 +1038,6 @@ async def _scrape_all(
 
 async def smoke_test(url: str) -> Car | None:
     # run one URL end to end. handy for debugging
-    #
-    # Usage:
     #     uv run python -c "from src.common.runtime import run as r; \\
     #         from src.parsers.myauto import smoke_test; \\
     #         r(smoke_test('https://www.myauto.ge/ka/pr/120183626/sale'))"

@@ -1,10 +1,7 @@
 # CSV export: a plain archive in exports/, kept alongside the database
-#
 # File layout is exports/{source}-{YYYY-MM-DD}.csv, one file per source per
 # day. A second run on the same day appends and does not repeat the header.
-#
 # Headers come from Car.model_fields, so autopapa and myauto share one schema.
-#
 # List fields (image_urls, image_keys) are joined with ";" into a single cell.
 # Booleans become "true"/"false"/"", and None becomes an empty string, not "None".
 
@@ -46,7 +43,6 @@ def _car_to_row(car: Car) -> dict[str, str]:
 
 def append_cars_to_csv(cars: list[Car], source: str, day: date | None = None) -> int:
     # append a batch. if the file is new, write the header first
-    #
     # Returns the number of rows written.
     if not cars:
         return 0

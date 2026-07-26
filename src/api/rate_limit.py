@@ -43,7 +43,6 @@ def _is_ip(value: str) -> bool:
 
 def client_ip(request: Request) -> str | None:
     # the real client IP, or None if we cannot work it out
-    #
     # CF-Connecting-IP is trustworthy because the origin is only reachable through
     # Cloudflare's edge, so a client cannot supply or fake it. Running without
     # Cloudflare, fall back to the last public IP in XFF, then the peer host.
@@ -85,12 +84,9 @@ def _limit_error(limit: int) -> HTTPException:
 
 def check_rate_limit(request: Request, is_pagination: bool = False) -> int | None:
     # check the rate limit before a search. returns how many tries are left
-    #
-    # is_pagination=True (page > 1) skips the cooldown, because paging through
-    # results you already have is not a new search. The hourly IP ceiling still applies.
-    #
-    # Raises:
-    #     HTTPException 429 for the cooldown, the token's hourly limit, or the IP ceiling
+    # is_pagination=True (page > 1) skips the cooldown, paging through results you
+    # already have is not a new search. the hourly IP ceiling still applies
+    # raises HTTPException 429 for the cooldown, the token limit or the IP ceiling
     ip = client_ip(request)
     token = client_token(request)
 

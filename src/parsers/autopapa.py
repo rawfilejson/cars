@@ -1,8 +1,6 @@
 # Scraper for autopapa.ge listings.
-#
 # We use Playwright (not plain HTTP) because the VIN reveal needs a click,
 # and the price-with-customs block is rendered after page load.
-#
 # Flow:
 #   1. Walk through the search results paginating with the `next` button.
 #   2. For each listing URL, open the detail page and pull out everything.
@@ -65,7 +63,6 @@ def first_int(text: str | None) -> int | None:
 
 def parse_features(text: str | None) -> dict[str, str]:
     # `.comment-all` reads "feature1, key: value, feature2, ..." - pull the key:value pairs.
-    #
     # plain features (ABS, ESP) are skipped here. they show up in the description instead
     if not text:
         return {}
@@ -96,7 +93,6 @@ def has_keyword(text: str | None, *keywords: str) -> bool:
 
 async def collect_listing_links(page: Page, max_pages: int | None = None) -> list[str]:
     # Paginate through search results, return all detail-page URLs.
-    #
     # max_pages caps the number of pages walked (None = until pagination runs out).
     # Useful for smoke runs.
     links = []
@@ -354,7 +350,6 @@ async def _build_car_from_page(context: BrowserContext, page: Page, url: str) ->
 
 async def run(max_pages: int | None = None, refresh_all: bool = False) -> None:
     # Full parser.
-    #
     # max_pages: cap on listing pagination (None = all). Smoke runs use 1.
     # refresh_all: if True, re-scrape rows we already have (default skips them).
     print(f"AutoPapa parser (concurrency={CONCURRENT_PAGES}, max_pages={max_pages})")

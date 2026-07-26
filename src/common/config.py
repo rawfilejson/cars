@@ -1,5 +1,4 @@
 # Project configuration - everything tunable lives here.
-#
 # Values come from environment variables (or .env file via python-dotenv).
 # Secrets never live in code.
 

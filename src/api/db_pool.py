@@ -1,9 +1,7 @@
 # Shared psycopg connection pool for the API.
-#
 # Each search before this opened a fresh TLS connection to Supabase
 # (~2s connect time on top of ~150ms of real query work). With a pool that
 # keeps connections warm, that 2s overhead is gone.
-#
 # The pool is created lazily so module import doesn't block, and closed
 # cleanly via FastAPI lifespan.
 

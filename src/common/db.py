@@ -147,7 +147,6 @@ def _update_image_keys_sync(car_db_id: int, keys: list[str]) -> None:
 
 async def get_existing_ids(source: str) -> set[str]:
     # source_ids we already have, so an interrupted run can pick up where it stopped
-    #
     # If a script died halfway through, the next run knows these cars are already
     # stored and skips them.
     return await asyncio.to_thread(_get_existing_ids_sync, source)

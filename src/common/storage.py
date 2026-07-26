@@ -1,7 +1,5 @@
 # Photo storage - download from source CDN to local + Cloudflare R2.
-#
 # R2 is S3-compatible, so boto3 works. We just point it at R2's endpoint.
-#
 # Key layout (same in local and R2):
 #     {source}/{source_id}/{index}.jpg
 
@@ -64,7 +62,6 @@ async def download_to_local(
     client: httpx.AsyncClient, url: str, key: str, source: str = ""
 ) -> bool:
     # Download URL -> local file. Skips if already present.
-    #
     # Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx -> no retry.
     path = local_path(key)
     if path.exists() and path.stat().st_size > 0:
@@ -190,11 +187,9 @@ async def fetch_and_store(
     keep_local: bool = True,
 ) -> str | None:
     # Returns the storage key on success, None on failure.
-    #
     # With upload_to_cloud on, a failed R2 upload returns None so no key is stored.
     # Writing a key for a photo that never landed would show a broken image on the
     # site, and the car would no longer look pending so it would never be retried.
-    #
     # keep_local=False deletes the local copy once R2 confirms the upload, which is
     # how the backfill survives a GitHub runner's small disk.
     key = make_image_key(source, source_id, index, url)

@@ -1,8 +1,6 @@
 # FastAPI app: the backend entry point
-#
 # run locally:
 #     uv run uvicorn src.api.main:app --reload --port 8765
-#
 # website:
 #     http://localhost:8765/docs - Swagger UI (auto-generated API docs)
 #     http://localhost:8765/healthz - health check
