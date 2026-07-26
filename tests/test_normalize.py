@@ -1,4 +1,4 @@
-# Tests for normalize.py: phone, price, engine volume and customs.
+# Tests for normalize.py: phone, price, engine volume and customs
 
 from __future__ import annotations
 
@@ -62,7 +62,8 @@ def test_format_phone_landline_3():
 
 
 def test_format_phone_unknown_keeps_digits():
-    # unknown format keeps the + and the digits. we never drop digits
+    # unknown format keeps the + and the digits
+    # we never drop digits
     assert format_phone("12345") == "+12345"
 
 

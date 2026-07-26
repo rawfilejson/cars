@@ -1,7 +1,5 @@
-# Security regression tests - lock in the protections verified during the
-# penetration assessment (SQLi, sort whitelist, key/VIN/token validation,
-# price flooring, IP classification).
-#
+# Security regression tests - lock in the protections verified during the penetration assessment
+# (SQLi, sort whitelist, key/VIN/token validation, price flooring, IP classification)
 # Run: uv run pytest tests/test_security.py -q
 
 from __future__ import annotations
@@ -33,7 +31,7 @@ SQLI_PAYLOADS = [
 
 @pytest.mark.parametrize("payload", SQLI_PAYLOADS)
 def test_text_search_is_parameterized(payload):
-    # User text must reach SQL only as %s params, never spliced into the query.
+    # User text must reach SQL only as %s params, never spliced into the query
     sql, params, _ = _smart_route(SearchRequest(query=payload), payload)
     assert "%s" in sql  # placeholders are used
     upper = sql.upper()
@@ -46,7 +44,7 @@ def test_text_search_is_parameterized(payload):
 
 
 def test_sort_is_whitelisted():
-    # Anything not in the whitelist falls back to the safe default ORDER BY.
+    # Anything not in the whitelist falls back to the safe default order by
     assert _sort_clause("price_asc") == _SORT_CLAUSES["price_asc"]
     for bad in [
         "price_asc; DROP TABLE cars",
@@ -92,7 +90,7 @@ def test_car_key_regex_escapes_source_metacharacters():
     rx = re.compile(r"^(" + "|".join(re.escape(s) for s in sources) + r")-(\d+)$")
     assert rx.match("au.to-123")
     assert rx.match("my+auto-9")
-    assert not rx.match("auXto-123")  # '.' stays literal, not "any char"
+    assert not rx.match("auXto-123")  # '.' stays literal, not any char
 
 
 @pytest.mark.parametrize(
@@ -114,8 +112,8 @@ def test_vin_validation(vin, ok):
     [
         (0, "USD", None),
         (-1, "GEL", None),
-        (5, "USD", None),  # sub-$100 sentinel
-        (50, "GEL", None),  # ~$18, junk
+        (5, "USD", None),
+        (50, "GEL", None),
         (8000, "USD", 8000),
         (50000, "GEL", 50000),
         (None, "USD", None),

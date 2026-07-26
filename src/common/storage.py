@@ -63,9 +63,9 @@ _RETRY_DELAYS = (1.0, 2.0, 4.0)
 async def download_to_local(
     client: httpx.AsyncClient, url: str, key: str, source: str = ""
 ) -> bool:
-    # Download URL → local file. Skips if already present.
+    # Download URL -> local file. Skips if already present.
     #
-    # Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx → no retry.
+    # Retries 3x on transient errors (timeouts, 5xx). Permanent 4xx -> no retry.
     path = local_path(key)
     if path.exists() and path.stat().st_size > 0:
         return True

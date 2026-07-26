@@ -1,8 +1,8 @@
 # Cleanup helpers for messy data from car listing sites.
 #
-# Raw text from these sites looks like "$11 500", "312 000 კმ. / 195 000 მილი"
-# (kilometres / miles) or "2.5 ლ" (litres). We turn that into numbers we can
-# sort and search by.
+# raw text from these sites looks like "$11 500", a mileage written in km or
+# miles, or an engine size like "2.5" with a litre suffix. we turn that into
+# numbers we can sort and search by
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ _PRICE_GEL = re.compile(r"₾|gel|ლარ", re.IGNORECASE)
 
 
 def clean_int(text: str | None) -> int | None:
-    # Strip everything non-digit, return int. Empty in → None.
+    # Strip everything non-digit, return int. Empty in -> None.
     if not text:
         return None
     digits = re.sub(r"\D", "", str(text))
@@ -23,7 +23,7 @@ def clean_int(text: str | None) -> int | None:
 
 
 def sane_int(text: str | None, lo: int, hi: int) -> int | None:
-    # clean_int + range check. Out-of-range → None.
+    # clean_int + range check. Out-of-range -> None.
     #
     # for fields where sellers type garbage, like HP "2490" when they meant
     # engine cc. better to drop the value than to lie
@@ -46,7 +46,8 @@ def clean_decimal(text: str | None) -> float | None:
 
 
 def split_price(raw: str | None) -> tuple[int | None, str]:
-    # `$9 500` → (9500, "USD"). Detects $, €, ₾, or GEL/USD/EUR words.
+    # "$9 500" -> (9500, "USD"). picks up the dollar, euro and lari signs, or the
+    # words GEL, USD and EUR
     if not raw:
         return None, ""
 
@@ -72,11 +73,11 @@ def format_phone(raw: str | None) -> str:
     # the digits.
     #
     # Examples:
-    #   "tel:+995595515141" → "+995 595 515 141"
-    #   "595 51 51 41"      → "+995 595 515 141"
-    #   "+995595515141"     → "+995 595 515 141"
-    #   "+7 916 123 45 67"  → "+7 916 123 45 67"
-    #   ""                  → ""
+    #   "tel:+995595515141" -> "+995 595 515 141"
+    #   "595 51 51 41"      -> "+995 595 515 141"
+    #   "+995595515141"     -> "+995 595 515 141"
+    #   "+7 916 123 45 67"  -> "+7 916 123 45 67"
+    #   ""                  -> ""
     if not raw:
         return ""
 
@@ -164,9 +165,9 @@ def clean_text(text: str | None) -> str:
 def clean_engine_volume(text: str | None) -> float | None:
     # Engine volume in liters. Handles common bad-data cases:
     #
-    # "2.5 ლ" (litres) -> 2.5
-    # "1499"     → 1.499 (was entered in CC instead of L)
-    # "460"      → None (impossible, treat as garbage)
+    # "2.5 L" -> 2.5
+    # "1499"     -> 1.499 (was entered in CC instead of L)
+    # "460"      -> None (impossible, treat as garbage)
     value = clean_decimal(text)
     if value is None:
         return None

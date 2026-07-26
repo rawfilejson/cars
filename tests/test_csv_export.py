@@ -1,4 +1,4 @@
-# CSV export tests: headers, appending, and list/bool/null handling.
+# CSV export tests: headers, appending, and list/bool/null handling
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# facets canonicalization - dirty variant → one canonical value, and back.
+# facets canonicalization - dirty variant -> one canonical value, and back
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from src.api.facets import facet_canon, facet_variants
         ("ბენზინზე", "ბენზინი"),
         ("დიზელზე", "დიზელი"),
         ("4X4", "4x4"),
-        ("სედანი", "სედანი"),  # unknown → unchanged
+        ("სედანი", "სედანი"),  # unknown -> unchanged
         ("", ""),
     ],
 )

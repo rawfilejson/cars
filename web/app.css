@@ -27,8 +27,9 @@ html {
   }
 }
 
-/* top rule doubles as a loading bar: idle = full red line, during a search it
-   dips to zero and climbs left→right to show progress. Absolute, not fixed - it belongs to the page top and must not follow the scroll */
+/* top rule doubles as a loading bar: idle is a full red line, during a search it
+   dips to zero and climbs left to right to show progress. absolute rather than
+   fixed, it belongs to the top of the page and must not follow the scroll */
 .top-rule {
   position: absolute;
   top: 0;
@@ -2106,7 +2107,7 @@ body.saved-open .toast {
 .pager-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
-/* the close (×) spins as it highlights */
+/* the close button spins as it highlights */
 .cmp-x:hover,
 .tr-pop-x:hover {
   transform: rotate(90deg);

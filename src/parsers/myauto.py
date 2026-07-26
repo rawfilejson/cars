@@ -1,16 +1,4 @@
-# Parser for myauto.ge, scraping the HTML with Playwright.
-#
-# the old API version was moved to HTML because:
-#   * we don't depend on a private endpoint that breaks the day myauto changes it
-#   * we read the same visible HTML a real visitor sees
-#   * both parsers follow one pattern and can be maintained together
-#
-# The flow:
-#   1. listing pages -> a list of car URLs
-#   2. each URL -> scrape_one() -> Car
-#   3. batch upsert into the database, plus a CSV append
-#
-# the font obfuscation is gone. the plain HTML now matches what is on screen
+# parser for myauto.ge, scraping the HTML with playwright
 
 from __future__ import annotations
 
@@ -49,7 +37,7 @@ _ID_FROM_URL_RE = re.compile(r"/pr/(\d+)(?:/|$)")
 
 
 def extract_id(url: str) -> str:
-    # car_id from the URL: .../pr/120183626/sale -> "120183626"
+    # car_id from the url
     match = _ID_FROM_URL_RE.search(url)
     return match.group(1) if match else ""
 
@@ -159,7 +147,7 @@ def _to_int(value) -> int | None:
 
 
 def _positive_int(value) -> int | None:
-    # 0 → None. myauto uses 0 for unknown numeric fields.
+    # 0 -> None. myauto uses 0 for unknown numeric fields.
     n = _to_int(value)
     return n if n and n > 0 else None
 
@@ -200,7 +188,7 @@ def _build_description_from_api(item: dict) -> str:
 
 
 def _build_phone_from_api(item: dict) -> str:
-    # Listings endpoint returns phone masked ('995557607***'). Masked → ''.
+    # Listings endpoint returns phone masked ('995557607***'). Masked -> ''.
     raw = item.get("client_phone")
     if raw is None:
         return ""
@@ -231,7 +219,7 @@ def _build_model_from_api(item: dict) -> str:
 
 
 def item_to_car(item: dict) -> Car | None:
-    # Convert one API item → Car. Returns None if missing required fields.
+    # Convert one API item -> Car. Returns None if missing required fields.
     car_id = item.get("car_id")
     if not car_id:
         return None
@@ -873,7 +861,7 @@ def _save_cached_ids(ids: list[str]) -> None:
 
 async def run(max_pages: int | None = None) -> None:
     # API-fast mode: each /products page returns full car data, not just IDs.
-    # Single pass: fetch → parse → upsert. No per-car Playwright detail scrape.
+    # Single pass: fetch -> parse -> upsert. No per-car Playwright detail scrape.
     #
     # Speed: ~5-10 min for full ~50k cars. Tradeoffs:
     #   - Phones are masked in the listing endpoint (we store '') - same as HTML

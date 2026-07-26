@@ -51,7 +51,7 @@ def extract_id(url: str) -> str:
 
 
 def first_int(text: str | None) -> int | None:
-    # First integer in `text`. "4/5" -> 4, "26 000 კმ" (km) -> 26000.
+    # first integer in the text. "4/5" -> 4, "26 000 km" -> 26000
     if not text:
         return None
     s = str(text)

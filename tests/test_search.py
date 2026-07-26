@@ -1,4 +1,4 @@
-# Tests for the search logic: smart routing, the legacy fields, phone normalisation.
+# Tests for the search logic: smart routing, the legacy fields, phone normalisation
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from src.api.search import (
 
 
 def _build_filter_only(**kwargs):
-    # Build a SearchRequest from kwargs and return its (fragments, params).
+    # Build a SearchRequest from kwargs and return its (fragments, params)
     from src.api.search import _filter_clauses
 
     return _filter_clauses(SearchRequest(**kwargs))
@@ -51,7 +51,7 @@ def test_count_where_filters_only():
 
 
 def test_count_where_text_query_applies_words_and_filters():
-    # A freeform query must be counted (word LIKEs) together with the filters.
+    # A freeform query must be counted (word LIKEs) together with the filters
     where, params = _count_where(SearchRequest(query="camry", manufacturers=["Toyota"]))
     assert "search_blob LIKE %s" in where
     assert "lower(manufacturer) IN (%s)" in where
@@ -96,7 +96,7 @@ def test_smart_route_vin_exact():
 
 
 def test_smart_route_vin_lowercase_uppercased():
-    # user can type lowercase, we uppercase before matching.
+    # user can type lowercase, we uppercase before matching
     sql, params, qtype = _build_query(SearchRequest(query="wba1234567890abcd"))
     assert qtype == "vin"
     assert params == ("WBA1234567890ABCD",)
@@ -110,7 +110,7 @@ def test_smart_route_phone():
 
 
 def test_smart_route_short_text_ok():
-    # Single-word brand search is fine - Ctrl-F semantics.
+    # Single-word brand search is fine Ctrl-F semantics
     sql, params, qtype = _build_query(SearchRequest(query="Toyota"))
     assert qtype == "search"
     assert "search_blob LIKE" in sql
@@ -118,11 +118,11 @@ def test_smart_route_short_text_ok():
 
 
 def test_smart_route_multi_word_AND():
-    # Each word gets its own LIKE clause joined with AND.
-    #
-    # Param order: the word patterns come first (the WHERE clause), then the
-    # similarity-rank text. The two-phase paging CTE references the ORDER BY
-    # in both the inner and outer SELECT, so the rank text is bound twice.
+    # Each word gets its own LIKE clause joined with AND
+
+    # param order: the word patterns come first (the WHERE clause), then the similarity-rank text
+    # the two-phase paging CTE references the ORDER BY
+    # in both the inner and outer SELECT, so the rank text is bound twice
     sql, params, qtype = _build_query(SearchRequest(query="Toyota Camry 2020"))
     assert qtype == "search"
     assert sql.count("search_blob LIKE") == 3
@@ -131,7 +131,8 @@ def test_smart_route_multi_word_AND():
 
 
 def test_smart_route_georgian_query():
-    # Georgian text works as a search term. Georgian has no case so
+    # Georgian text works as a search term
+    # Georgian has no case so
     # .lower() is a no-op for these chars.
     sql, params, qtype = _build_query(SearchRequest(query="თბილისი"))
     assert qtype == "search"
@@ -189,8 +190,7 @@ def test_empty_request_rejected():
 
 
 def test_result_cache_evicts_oldest_not_all():
-    # Over capacity the cache drops the OLDEST entries (FIFO/LRU), not the
-    # whole thing - a full wipe would stampede Supabase on the next burst.
+    # Over capacity the cache drops the OLDEST entries (FIFO/LRU), not the whole thing - a full wipe would stampede Supabase on the next burst
     from src.api import search as s
 
     s._RESULT_CACHE.clear()
@@ -213,7 +213,7 @@ def test_filter_multi_body_types_one_in_clause():
 
 
 def test_filter_singular_and_plural_merge():
-    # Legacy single value + new multi-select list collapse into one IN.
+    # Legacy single value + new multi-select list collapse into one IN
     frags, params = _build_filter_only(body_type="სედანი", body_types=["ჯიპი"])
     assert len([f for f in frags if "body_type IN" in f]) == 1
     assert "სედანი" in params and "ჯიპი" in params
@@ -247,15 +247,15 @@ def test_multi_select_counts_as_a_filter_for_browse():
 
 
 def test_browse_by_manufacturer_only_routes_to_browse():
-    # No text, just a brand multi-select -> browse query, no 400.
+    # No text, just a brand multi-select -> browse query, no 400
     sql, params, qtype = _build_query(SearchRequest(manufacturers=["BMW"]))
     assert qtype == "browse"
     assert "lower(manufacturer) IN" in sql
 
 
 def test_fx_rates_single_source_of_truth():
-    # The SQL price-conversion CASE and the Python _clean_price helper must use
-    # the same FX rates - both derive from config.FX_RATES_TO_USD, never drift.
+    # The SQL price-conversion CASE and the Python _clean_price helper must use the same FX rates - both derive from config
+    # FX_RATES_TO_USD, never drift
     from src.common.config import FX_RATES_TO_USD
     from src.api.search import _PRICE_USD_RAW, _FX_TO_USD
 

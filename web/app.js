@@ -1226,7 +1226,7 @@ function _driveIcon(v) {
         bl = on,
         br = on;
     if (/4x4|4wd|awd|ოთხ|სრულ|all|სავ/.test(s)) {
-        /* ყველა მუქი */ } else if (/უკან|rear|\brwd\b|უკანა/.test(s)) {
+        /* all four stay dark */ } else if (/უკან|rear|\brwd\b|უკანა/.test(s)) {
         tl = off;
         tr = off;
     } else {

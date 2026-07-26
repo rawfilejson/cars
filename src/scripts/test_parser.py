@@ -1,8 +1,7 @@
 # A quick parser check against a handful of cars.
-#
-# run:
-#     uv run python -m src.scripts.test_parser --limit 5
-#
+
+# run: uv run python -m src.scripts.test_parser --limit 5
+
 # not a replacement for a full run. it just confirms the pipeline works end to
 # end: links -> scrape -> database
 
