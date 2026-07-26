@@ -602,6 +602,15 @@ const TRANSLATIONS = {
 const LANG_KEY = "cardb_lang";
 const DEFAULT_LANG = "ka";
 
+// ?lang=en in the URL wins once and is remembered, so a link can point someone
+// straight at a specific language without changing the default for everyone else
+(function langFromUrl() {
+    try {
+        const wanted = new URLSearchParams(location.search).get("lang");
+        if (wanted && TRANSLATIONS[wanted]) localStorage.setItem(LANG_KEY, wanted);
+    } catch { /* no URL access, keep the stored language */ }
+})();
+
 function getLang() {
     return localStorage.getItem(LANG_KEY) || DEFAULT_LANG;
 }
