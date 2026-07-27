@@ -223,7 +223,7 @@ const TRANSLATIONS = {
         compare_title: "Comparison",
         compare_clear: "Clear",
         compare_max: "Up to 4 cars",
-        cmp_wins: "{n} wins",
+        cmp_wins: "{n} win|{n} wins",
         cmp_leads_in: "wins {n} of {m}",
         cmp_better_pick: "looks like the better pick",
         cmp_reason_newer: "newer",
@@ -236,7 +236,7 @@ const TRANSLATIONS = {
         cmp_close_call: "These cars are very similar - no clear favourite.",
         save_comparison: "Save comparison",
         saved_comparisons_h: "Saved comparisons",
-        cmp_cars_n: "{n} cars",
+        cmp_cars_n: "{n} car|{n} cars",
         hidden_h: "Hidden",
         spec_power: "Power",
         ad_label: "Advertisement",
@@ -252,8 +252,8 @@ const TRANSLATIONS = {
         btn_search: "Search",
         btn_searching: "Searching...",
         empty_state: "Search results will appear here",
-        results_count: "{n} results",
-        results_remaining: "You have {n} searches left this hour",
+        results_count: "{n} result|{n} results",
+        results_remaining: "You have {n} search left this hour|You have {n} searches left this hour",
         page_of: "Page {p} of {n}",
         page_prev: "← Prev",
         page_next: "Next →",
@@ -627,7 +627,13 @@ const LANG_LABELS = {
 function t(key, vars = {}) {
     const lang = getLang();
     const dict = TRANSLATIONS[lang] || TRANSLATIONS[DEFAULT_LANG];
-    const template = dict[key] ?? TRANSLATIONS.en[key] ?? key; // fall back to English, never a raw key
+    let template = dict[key] ?? TRANSLATIONS.en[key] ?? key; // fall back to English, never a raw key
+    // "one|many" picks a form by n, for languages that inflect a noun after a numeral
+    // georgian and kazakh keep the singular whatever the number, so they carry no pipe
+    if (template.includes("|")) {
+        const forms = template.split("|");
+        template = Number(vars.n) === 1 ? forms[0] : forms[1];
+    }
     return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
 }
 
