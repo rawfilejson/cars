@@ -1,10 +1,6 @@
-# mark listings the source site has deleted
-# a row untouched for --days is only a candidate, the scrapers skip rows they already have
-# so every candidate is checked against the source and only confirmed deletions get marked
+# mark listings the source site has deleted a row untouched for --days is only a candidate, the scrapers skip rows they already have so every candidate is checked against the source and only confirmed deletions get marked
 # anything we cannot check is left alone
-# the row stays, it just gets a gone_at date. browse and text search hide it, a VIN or
-# phone lookup still finds it, which is the whole point of keeping an archive
-# dry run by default, --apply writes
+# the row stays, it just gets a gone_at date. browse and text search hide it, a VIN or phone lookup still finds it, which is the whole point of keeping an archive dry run by default, --apply writes
 
 from __future__ import annotations
 
@@ -139,8 +135,7 @@ def main() -> None:
                 )
                 print(f"marked {len(dead)} rows gone")
             if alive:
-                # bump so the next run moves on to other candidates, and un-mark anything
-                # that came back
+                # bump so the next run moves on to other candidates, and un-mark anything that came back
                 cur.execute(
                     "UPDATE cars SET updated_at = now(), gone_at = NULL WHERE id = ANY(%s)",
                     (alive,),

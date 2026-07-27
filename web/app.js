@@ -1,5 +1,4 @@
-// Frontend logic for index.html. Plain browser JavaScript, no framework
-// and no build step - config.js and i18n.js load before this file.
+// Frontend logic for index.html. Plain browser JavaScript, no framework and no build step - config.js and i18n.js load before this file.
 
 const API_BASE = window.API_BASE || 'http://127.0.0.1:8765';
 
@@ -606,13 +605,11 @@ function onBrandChange() {
     const model = document.getElementById('f-model');
     const brands = Array.from(brand.selectedOptions).map(o => o.value).filter(Boolean);
     const totalBrands = Array.from(brand.options).filter(o => o.value).length;
-    // models only mean something once you narrow to a few brands. "all brands"
-    // or a near-complete set leaves the model dropdown empty and disabled
+    // models only mean something once you narrow to a few brands. "all brands" or a near-complete set leaves the model dropdown empty and disabled
     const MODEL_MAX_BRANDS = 5;
     const narrowed = brands.length > 0 && brands.length < totalBrands && brands.length <= MODEL_MAX_BRANDS;
     const keep = new Set(Array.from(model.selectedOptions).map(o => o.value));
-    // a newly-added brand starts with all its models included - adding a brand should
-    // widen results, never silently exclude it through an unselected model subset
+    // a newly-added brand starts with all its models included - adding a brand should widen results, never silently exclude it through an unselected model subset
     const prevBrands = model._brands || [];
     for (const b of brands)
         if (!prevBrands.includes(b))
@@ -620,8 +617,7 @@ function onBrandChange() {
     model.innerHTML = _buildModelOptions(narrowed ? brands : [], keep);
     model._brands = narrowed ? brands.slice() : [];
     model.disabled = !narrowed;
-    // default: all models of the picked brand(s) are selected (none matched a prior
-    // pick, like a fresh brand choice) and the user narrows down from there
+    // default: all models of the picked brand(s) are selected (none matched a prior pick, like a fresh brand choice) and the user narrows down from there
     const opts = Array.from(model.options).filter(o => o.value);
     if (opts.length && !opts.some(o => o.selected)) opts.forEach(o => o.selected = true);
     if (model._cdd) model._cdd.render();
@@ -749,8 +745,7 @@ function _syncUrl(payload) {
     if (location.pathname + location.search !== url) history.replaceState(history.state, '', url);
 }
 
-// one search at a time - a second Enter/click while a request is in flight would
-// fire a duplicate POST whose cooldown-429 error wipes the results the first just drew
+// one search at a time - a second Enter/click while a request is in flight would fire a duplicate POST whose cooldown-429 error wipes the results the first just drew
 let _searchInFlight = false;
 let _lastPayload = null; // last payload actually searched - used to restore the URL
 
@@ -3138,8 +3133,7 @@ window.addEventListener('popstate', () => {
     else if (route.view === 'notfound') showNotFound();
 })();
 
-// keepSize=true only re-anchors position on scroll. the size is frozen at open time
-// so scrolling never shrinks the panel
+// keepSize=true only re-anchors position on scroll. the size is frozen at open time so scrolling never shrinks the panel
 function _placeCddPanel(btn, panel, keepSize) {
     const r = btn.getBoundingClientRect();
     if (!keepSize) {
@@ -3302,8 +3296,8 @@ function enhanceSelect(sel) {
                     const brand = o.dataset.brand || '';
                     const mono = (label.split('·').pop() || '').trim().charAt(0).toUpperCase();
                     const n = o.dataset.n || '';
-                    // model groups show the brand's logo, with an initials fallback. other
-                    // grouped dropdowns fall back to the class letter
+                    // model groups show the brand's logo, with an initials fallback
+                    // other grouped dropdowns fall back to the class letter
                     const badge = brand ? _brandBadge(brand) : `<span class="grp-badge">${escapeHtml(mono)}</span>`;
                     const gst = _groupState(i);
                     const gcheck = multi ? `<span class="grp-check cdd-box ${_boxCls(gst)}" data-groupcheck="${i}" role="checkbox" aria-checked="${gst === 'all' ? 'true' : gst === 'some' ? 'mixed' : 'false'}" aria-label="${escapeHtml(t('select_all_group'))}">${CDD_TICK}</span>` : '';

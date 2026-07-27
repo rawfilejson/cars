@@ -79,8 +79,7 @@ CREATE TABLE IF NOT EXISTS cars (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    -- set when the source confirms the listing is gone. we keep the row, a sold car
-    -- is the most interesting thing a VIN lookup can return
+    -- set when the source confirms the listing is gone. we keep the row, a sold car is the most interesting thing a VIN lookup can return
     gone_at         TIMESTAMPTZ,
 
     CONSTRAINT cars_source_id_unique UNIQUE (source, source_id)
@@ -107,14 +106,11 @@ CREATE INDEX IF NOT EXISTS cars_live_idx ON cars(updated_at DESC) WHERE gone_at 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Careful: adding the generated search_blob column to an existing database is a full table rewrite
--- set `SET statement_timeout = 0;` in the same transaction first.
+-- set `SET statement_timeout = 0;` in the same transaction first
 CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
--- Phone search runs `LIKE '%suffix'` against the normalised digits
--- a leading wildcard over a function call cannot use a b-tree, so every search would be a full scan
--- this trigram GIN index sits on exactly the expression search.py
--- uses, which removes the scan.
+-- Phone search runs `LIKE '%suffix'` against the normalised digits a leading wildcard over a function call cannot use a b-tree, so every search would be a full scan this trigram GIN index sits on exactly the expression search.py uses, which removes the scan.
 
 -- On a fresh database the plain CREATE INDEX below is enough: init_db runs schema.sql in one transaction and building on an empty table is instant
 -- On a large existing database this form locks the table while it builds, so run it separately instead (outside schema.sql, after init_db) with CONCURRENTLY

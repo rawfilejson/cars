@@ -27,7 +27,7 @@ _FIELDS = {
     "location": "location",
 }
 
-# messy variant -> canonical value. The sources spell the same thing several ways.
+# messy variant -> canonical value. The sources spell the same thing several ways
 _CANON = {
     "ჰეჩბეკი": "ჰეტჩბეკი",
     "ჰეტჩბექი": "ჰეტჩბეკი",
@@ -85,8 +85,8 @@ def get_facets(response: Response) -> FacetsResponse:
     global _cache
     response.headers["Cache-Control"] = "public, max-age=3600"
     now = time.monotonic()
-    # double-checked locking, so simultaneous cold-cache requests cause one DB load
-    # instead of a stampede. loads are rare anyway with an hourly TTL
+    # double-checked locking, so simultaneous cold-cache requests cause one DB load instead of a stampede
+    # loads are rare anyway with an hourly TTL
     with _cache_lock:
         if _cache is not None and now - _cache[0] < _CACHE_TTL_SECONDS:
             return _cache[1]
