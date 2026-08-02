@@ -3,3 +3,5 @@ Allow: /$
 Allow: /terms.html
 Allow: /privacy.html
 Disallow: /car/
+
+Sitemap: https://cars.demee-metreveli.workers.dev/sitemap.xml

@@ -110,7 +110,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS cars_search_blob_trgm_idx ON cars USING gin (search_blob gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS cars_description_trgm_idx ON cars USING gin (description gin_trgm_ops);
 
--- Phone search runs `LIKE '%suffix'` against the normalised digits a leading wildcard over a function call cannot use a b-tree, so every search would be a full scan this trigram GIN index sits on exactly the expression search.py uses, which removes the scan.
+-- Phone search runs `LIKE '%suffix'` against the normalised digits. a leading wildcard over a function call cannot use a b-tree, so every search would be a full scan
+-- this trigram GIN index sits on exactly the expression search.py uses, which removes the scan
 
 -- On a fresh database the plain CREATE INDEX below is enough: init_db runs schema.sql in one transaction and building on an empty table is instant
 -- On a large existing database this form locks the table while it builds, so run it separately instead (outside schema.sql, after init_db) with CONCURRENTLY
